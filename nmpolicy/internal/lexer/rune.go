@@ -17,6 +17,7 @@
 package lexer
 
 import (
+	"strings"
 	"unicode"
 
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/lexer/scanner"
@@ -32,4 +33,8 @@ func (l *lexer) isSpace() bool {
 
 func (l *lexer) isEOF() bool {
 	return l.scn.Rune() == scanner.EOF
+}
+
+func (l *lexer) isString() bool {
+	return strings.ContainsRune(`"'`, l.scn.Rune())
 }
