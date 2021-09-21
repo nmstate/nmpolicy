@@ -79,6 +79,8 @@ func (l *lexer) lexCurrentRune() (*Token, error) {
 		return nil, nil
 	} else if l.isDigit() {
 		return l.lexNumber()
+	} else if l.isString() {
+		return l.lexString()
 	}
 	return nil, fmt.Errorf("illegal rune %s", string(l.scn.Rune()))
 }
@@ -98,6 +100,25 @@ func (l *lexer) lexNumber() (*Token, error) {
 		} else {
 			// nmpolicy supports only simple numbers with just digist
 			return nil, fmt.Errorf("invalid number format (%s is not a digit)", string(l.scn.Rune()))
+		}
+	}
+}
+
+func (l *lexer) lexString() (*Token, error) {
+	token := &Token{l.scn.Position(), STRING, ""}
+	// Strings should close with the same rune they have started
+	expectedTerminator := l.scn.Rune()
+	for {
+		if err := l.scn.Next(); err != nil {
+			return nil, err
+		}
+
+		if l.isEOF() {
+			return nil, fmt.Errorf("invalid string format (missing %s terminator)", string(expectedTerminator))
+		} else if l.scn.Rune() == expectedTerminator {
+			return token, nil
+		} else {
+			token.Literal += string(l.scn.Rune())
 		}
 	}
 }
