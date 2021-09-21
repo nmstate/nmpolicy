@@ -38,3 +38,7 @@ func (l *lexer) isEOF() bool {
 func (l *lexer) isString() bool {
 	return strings.ContainsRune(`"'`, l.scn.Rune())
 }
+
+func (l *lexer) isLetter() bool {
+	return unicode.IsLetter(l.scn.Rune())
+}
