@@ -57,6 +57,27 @@ func TestLexer(t *testing.T) {
 			{12, lexer.IDENTITY, "fo-o-o1"},
 			{20, lexer.EOF, ""}},
 		}},
+		{" . foo1.dar1.0.dar2:=foo3 . dar3 ... ", expected{tokens: []lexer.Token{
+			{1, lexer.DOT, "."},
+			{3, lexer.IDENTITY, "foo1"},
+			{7, lexer.DOT, "."},
+			{8, lexer.IDENTITY, "dar1"},
+			{12, lexer.DOT, "."},
+			{13, lexer.NUMBER, "0"},
+			{14, lexer.DOT, "."},
+			{15, lexer.IDENTITY, "dar2"},
+			{19, lexer.REPLACE, ":="},
+			{21, lexer.IDENTITY, "foo3"},
+			{26, lexer.DOT, "."},
+			{28, lexer.IDENTITY, "dar3"},
+			{33, lexer.DOT, "."},
+			{34, lexer.DOT, "."},
+			{35, lexer.DOT, "."},
+			{36, lexer.EOF, ""}},
+		}},
+		{"foo=bar", expected{
+			err: "illegal rune =",
+		}},
 		{" foo 1foo ", expected{
 			err: "invalid number format (f is not a digit)",
 		}},
@@ -72,8 +93,8 @@ func TestLexer(t *testing.T) {
 		{"155 -44", expected{
 			err: "illegal rune -",
 		}},
-		{"255 1.3", expected{
-			err: "invalid number format (. is not a digit)",
+		{"255 1,3", expected{
+			err: "invalid number format (, is not a digit)",
 		}},
 		{"355 1e3", expected{
 			err: "invalid number format (e is not a digit)",
@@ -81,8 +102,8 @@ func TestLexer(t *testing.T) {
 		{"455 0xEA", expected{
 			err: "invalid number format (x is not a digit)",
 		}},
-		{"555 2.3-4", expected{
-			err: "invalid number format (. is not a digit)",
+		{"555 2,3-4", expected{
+			err: "invalid number format (, is not a digit)",
 		}},
 		{"655 3333_444_333", expected{
 			err: "invalid number format (_ is not a digit)",

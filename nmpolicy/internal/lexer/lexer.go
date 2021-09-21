@@ -83,6 +83,10 @@ func (l *lexer) lexCurrentRune() (*Token, error) {
 		return l.lexString()
 	} else if l.isLetter() {
 		return l.lexIdentity()
+	} else if l.isDot() {
+		return &Token{l.scn.Position(), DOT, string(l.scn.Rune())}, nil
+	} else if l.isColon() {
+		return l.lexReplace()
 	}
 	return nil, fmt.Errorf("illegal rune %s", string(l.scn.Rune()))
 }
@@ -96,6 +100,11 @@ func (l *lexer) lexNumber() (*Token, error) {
 
 		if l.isEOF() || l.isSpace() {
 			// If it's EOF or space we have finish here
+			return token, nil
+		} else if l.isDot() {
+			if err := l.scn.Prev(); err != nil {
+				return nil, fmt.Errorf("failed lexing number: %w", err)
+			}
 			return token, nil
 		} else if l.isDigit() {
 			token.Literal += string(l.scn.Rune())
@@ -134,10 +143,29 @@ func (l *lexer) lexIdentity() (*Token, error) {
 
 		if l.isEOF() || l.isSpace() {
 			return token, nil
+		} else if l.isDot() || l.isEqual() || l.isColon() {
+			if err := l.scn.Prev(); err != nil {
+				return nil, fmt.Errorf("failed lexing identity: %w", err)
+			}
+			return token, nil
 		} else if l.isDigit() || l.isLetter() || l.scn.Rune() == '-' {
 			token.Literal += string(l.scn.Rune())
 		} else {
 			return nil, fmt.Errorf("invalid identity format (%s is not a digit, letter or -)", string(l.scn.Rune()))
 		}
+	}
+}
+
+func (l *lexer) lexReplace() (*Token, error) {
+	var literal strings.Builder
+	literal.WriteRune(l.scn.Rune())
+	if err := l.scn.Next(); err != nil {
+		return nil, err
+	}
+	if l.isEqual() {
+		literal.WriteRune(l.scn.Rune())
+		return &Token{l.scn.Position() - 1, REPLACE, literal.String()}, nil
+	} else {
+		return nil, fmt.Errorf("invalid replace operation format (%s is not equal char)", string(l.scn.Rune()))
 	}
 }
