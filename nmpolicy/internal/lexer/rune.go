@@ -42,3 +42,15 @@ func (l *lexer) isString() bool {
 func (l *lexer) isLetter() bool {
 	return unicode.IsLetter(l.scn.Rune())
 }
+
+func (l *lexer) isDot() bool {
+	return l.scn.Rune() == '.'
+}
+
+func (l *lexer) isEqual() bool {
+	return l.scn.Rune() == '='
+}
+
+func (l *lexer) isColon() bool {
+	return l.scn.Rune() == ':'
+}
