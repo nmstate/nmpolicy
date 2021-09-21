@@ -81,6 +81,8 @@ func (l *lexer) lexCurrentRune() (*Token, error) {
 		return l.lexNumber()
 	} else if l.isString() {
 		return l.lexString()
+	} else if l.isLetter() {
+		return l.lexIdentity()
 	}
 	return nil, fmt.Errorf("illegal rune %s", string(l.scn.Rune()))
 }
@@ -119,6 +121,23 @@ func (l *lexer) lexString() (*Token, error) {
 			return token, nil
 		} else {
 			token.Literal += string(l.scn.Rune())
+		}
+	}
+}
+
+func (l *lexer) lexIdentity() (*Token, error) {
+	token := &Token{l.scn.Position(), IDENTITY, string(l.scn.Rune())}
+	for {
+		if err := l.scn.Next(); err != nil {
+			return nil, err
+		}
+
+		if l.isEOF() || l.isSpace() {
+			return token, nil
+		} else if l.isDigit() || l.isLetter() || l.scn.Rune() == '-' {
+			token.Literal += string(l.scn.Rune())
+		} else {
+			return nil, fmt.Errorf("invalid identity format (%s is not a digit, letter or -)", string(l.scn.Rune()))
 		}
 	}
 }

@@ -51,11 +51,23 @@ func TestLexer(t *testing.T) {
 			{55, lexer.STRING, ""},
 			{57, lexer.EOF, ""}},
 		}},
+		{" foo f1-o-o fo-o-o1  ", expected{tokens: []lexer.Token{
+			{1, lexer.IDENTITY, "foo"},
+			{5, lexer.IDENTITY, "f1-o-o"},
+			{12, lexer.IDENTITY, "fo-o-o1"},
+			{20, lexer.EOF, ""}},
+		}},
+		{" foo 1foo ", expected{
+			err: "invalid number format (f is not a digit)",
+		}},
+		{" foo -foo ", expected{
+			err: "illegal rune -",
+		}},
 		{` "bar1" "foo dar`, expected{
-			err: `invalid string format (missing " terminator), pos=15`,
+			err: `invalid string format (missing " terminator)`,
 		}},
 		{` "bar1" 'foo dar`, expected{
-			err: "invalid string format (missing ' terminator), pos=15",
+			err: "invalid string format (missing ' terminator)",
 		}},
 		{"155 -44", expected{
 			err: "illegal rune -",
