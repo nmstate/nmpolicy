@@ -87,6 +87,8 @@ func (l *lexer) lexCurrentRune() (*Token, error) {
 		return &Token{l.scn.Position(), DOT, string(l.scn.Rune())}, nil
 	} else if l.isColon() {
 		return l.lexReplace()
+	} else if l.isPlus() {
+		return &Token{l.scn.Position(), MERGE, string(l.scn.Rune())}, nil
 	}
 	return nil, fmt.Errorf("illegal rune %s", string(l.scn.Rune()))
 }
@@ -143,7 +145,7 @@ func (l *lexer) lexIdentity() (*Token, error) {
 
 		if l.isEOF() || l.isSpace() {
 			return token, nil
-		} else if l.isDot() || l.isEqual() || l.isColon() {
+		} else if l.isDot() || l.isEqual() || l.isColon() || l.isPlus() {
 			if err := l.scn.Prev(); err != nil {
 				return nil, fmt.Errorf("failed lexing identity: %w", err)
 			}

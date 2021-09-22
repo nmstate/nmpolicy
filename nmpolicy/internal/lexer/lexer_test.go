@@ -57,7 +57,7 @@ func TestLexer(t *testing.T) {
 			{12, lexer.IDENTITY, "fo-o-o1"},
 			{20, lexer.EOF, ""}},
 		}},
-		{" . foo1.dar1.0.dar2:=foo3 . dar3 ... ", expected{tokens: []lexer.Token{
+		{" . foo1.dar1.0.dar2:=foo3 . dar3 ... moo3+boo3", expected{tokens: []lexer.Token{
 			{1, lexer.DOT, "."},
 			{3, lexer.IDENTITY, "foo1"},
 			{7, lexer.DOT, "."},
@@ -73,7 +73,10 @@ func TestLexer(t *testing.T) {
 			{33, lexer.DOT, "."},
 			{34, lexer.DOT, "."},
 			{35, lexer.DOT, "."},
-			{36, lexer.EOF, ""}},
+			{37, lexer.IDENTITY, "moo3"},
+			{41, lexer.MERGE, "+"},
+			{42, lexer.IDENTITY, "boo3"},
+			{45, lexer.EOF, ""}},
 		}},
 		{"foo=bar", expected{
 			err: "illegal rune =",
