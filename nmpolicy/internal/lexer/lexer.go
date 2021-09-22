@@ -86,7 +86,9 @@ func (l *lexer) lexCurrentRune() (*Token, error) {
 	} else if l.isDot() {
 		return &Token{l.scn.Position(), DOT, string(l.scn.Rune())}, nil
 	} else if l.isColon() {
-		return l.lexReplace()
+		return l.lexEqualAs(REPLACE)
+	} else if l.isEqual() {
+		return l.lexEqualAs(EQFILTER)
 	} else if l.isPlus() {
 		return &Token{l.scn.Position(), MERGE, string(l.scn.Rune())}, nil
 	} else if l.isPipe() {
@@ -160,7 +162,7 @@ func (l *lexer) lexIdentity() (*Token, error) {
 	}
 }
 
-func (l *lexer) lexReplace() (*Token, error) {
+func (l *lexer) lexEqualAs(tokenType TokenType) (*Token, error) {
 	var literal strings.Builder
 	literal.WriteRune(l.scn.Rune())
 	if err := l.scn.Next(); err != nil {
@@ -168,8 +170,8 @@ func (l *lexer) lexReplace() (*Token, error) {
 	}
 	if l.isEqual() {
 		literal.WriteRune(l.scn.Rune())
-		return &Token{l.scn.Position() - 1, REPLACE, literal.String()}, nil
+		return &Token{l.scn.Position() - 1, tokenType, literal.String()}, nil
 	} else {
-		return nil, fmt.Errorf("invalid replace operation format (%s is not equal char)", string(l.scn.Rune()))
+		return nil, fmt.Errorf("invalid %s operation format (%s is not equal char)", tokenType, string(l.scn.Rune()))
 	}
 }
