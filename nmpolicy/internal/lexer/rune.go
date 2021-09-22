@@ -58,3 +58,7 @@ func (l *lexer) isColon() bool {
 func (l *lexer) isPlus() bool {
 	return l.scn.Rune() == '+'
 }
+
+func (l *lexer) isPipe() bool {
+	return l.scn.Rune() == '|'
+}
