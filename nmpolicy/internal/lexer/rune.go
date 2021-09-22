@@ -54,3 +54,7 @@ func (l *lexer) isEqual() bool {
 func (l *lexer) isColon() bool {
 	return l.scn.Rune() == ':'
 }
+
+func (l *lexer) isPlus() bool {
+	return l.scn.Rune() == '+'
+}
