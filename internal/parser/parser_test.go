@@ -31,6 +31,7 @@ func (l *lexerStub) Lex() (*lexer.Token, error) {
 	if r.token != nil {
 		r.token.Position = l.idx
 	}
+
 	l.idx++
 	var err error
 	if r.err != "" {
@@ -86,6 +87,10 @@ func TestParser(t *testing.T) {
 
 	eof := func() lexStubReturn {
 		return symbol(lexer.EOF)
+	}
+
+	pipe := func() lexStubReturn {
+		return symbol(lexer.PIPE)
 	}
 
 	type parserShouldReturn struct {
@@ -334,9 +339,10 @@ assign:
 			path(),
 			id("dar"),
 			assign(),
-		}, parserShouldReturn{ast: "", err: `bad ASSIGN operation format: supported argument missing, pos=5
+			eof(),
+		}, parserShouldReturn{ast: "", err: `bad ASSIGN operation format: supported argument missing, pos=6
 | 0123456789
-| .....^`}},
+| ......^`}},
 
 		{whenLexReturns{
 			id("foo"),
@@ -403,6 +409,52 @@ merge:
 		}, parserShouldReturn{ast: "", err: `bad MERGE operation format: only paths can be merged, pos=6
 | 0123456789
 | ......^`}},
+		{whenLexReturns{
+			id("foo1"),
+			path(),
+			id("bar1"),
+			pipe(),
+			id("foo2"),
+			path(),
+			id("bar2"),
+		}, parserShouldReturn{
+			ast: `
+pos: 0
+path:
+- pos: 0
+  id: foo1
+- pos: 2
+  id: bar1
+pipe:
+  pos: 4
+  path: 
+  - pos: 4
+    id: foo2
+  - pos: 6
+    id: bar2
+`,
+		}},
+		{whenLexReturns{
+			id("foo"),
+			path(),
+			num("3"),
+			path(),
+			id("dar"),
+			pipe(),
+		}, parserShouldReturn{ast: "", err: `missing command, pos=5
+| 0123456789
+| .....^`}},
+
+		{whenLexReturns{
+			pipe(),
+			id("foo"),
+			path(),
+			num("3"),
+			path(),
+			id("dar"),
+		}, parserShouldReturn{ast: "", err: `bad PIPE operation format: missing cmd to pipe from, pos=0
+| 0123456789
+| ^`}},
 	}
 
 	for ti, tt := range tests {

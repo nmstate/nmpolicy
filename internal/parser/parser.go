@@ -81,6 +81,15 @@ func (p *Parser) parseCommand() (*ast.Command, error) {
 				cmd.Merge = arguments
 			}
 			cmd.Path = nil
+		} else if tokenType == lexer.PIPE {
+			if cmd == nil {
+				return nil, badOperationFormat(tokenType, "missing cmd to pipe from")
+			}
+			pipedCmd, err := p.parseCommand()
+			if err != nil {
+				return nil, err
+			}
+			cmd.Pipe = pipedCmd
 		} else {
 			return nil, fmt.Errorf("parsing token %s not implemented yet", p.currentToken.Type)
 		}
