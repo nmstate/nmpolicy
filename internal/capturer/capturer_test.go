@@ -52,7 +52,36 @@ equal:
     - id: running
     - id: destination
   - string: 0.0.0.0/0
-`},
+`,
+
+				"base-iface-routes": `
+equal:
+- path:
+  - id: routes
+  - id: running
+  - id: next-hop-interface
+- path:
+  - id: capturer
+  - id: default-gw
+  - id: routes
+  - id: running
+  - idx: 0
+  - id: next-hop-interface
+`,
+				"primary-nic": `
+equal:
+- path:
+  - id: interfaces
+  - id: name
+- path:
+  - id: capturer
+  - id: default-gw
+  - id: routes
+  - id: running
+  - idx: 0
+  - id: next-hop-interface
+`,
+			},
 
 			currentState: `
 routes:
@@ -85,6 +114,30 @@ routes:
     next-hop-address: 192.168.100.1
     next-hop-interface: eth1
     table-id: 254
+`,
+				"base-iface-routes": `
+routes:
+  running:
+  - destination: 0.0.0.0/0
+    next-hop-address: 192.168.100.1
+    next-hop-interface: eth1
+    table-id: 254
+  - destination: 1.1.1.0/24
+    next-hop-address: 192.168.100.1
+    next-hop-interface: eth1
+    table-id: 254
+`,
+				"primary-nic": `
+interfaces:
+  - name: eth1
+    type: ethernet
+    state: up
+    ipv4:
+      address:
+      - ip: 10.244.0.1
+        prefix-length: 24
+      dhcp: false
+      enabled: true
 `,
 			},
 		},

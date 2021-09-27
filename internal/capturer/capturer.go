@@ -80,7 +80,7 @@ func (c *Capturer) filterStateByEquality(s state.State, arguments []ast.Argument
 		if ok {
 			filteredSlice := []interface{}{}
 			for _, valueToCheck := range sliceToFilter {
-				matches, err := c.matchFieldValue(valueToCheck, field, rhs)
+				matches, err := c.matchFieldValue(s, valueToCheck, field, rhs)
 				if err != nil {
 					return nil, err
 				}
@@ -155,14 +155,14 @@ func filter(toFilter interface{}, path ast.Path, filterFn func(interface{}) (int
 	}
 }
 
-func (c *Capturer) matchFieldValue(valueToCheck interface{}, field string, value ast.Argument) (bool, error) {
+func (c *Capturer) matchFieldValue(s state.State, valueToCheck interface{}, field string, value ast.Argument) (bool, error) {
 	mapToCheck, ok := valueToCheck.(map[string]interface{})
 	if !ok {
 		return false, fmt.Errorf("invalid equality command: non map type '%T' when accessing '%s'", valueToCheck, field)
 	}
 	valueToCompare, ok := mapToCheck[field]
 	if !ok {
-		return false, nil
+		return false, fmt.Errorf("invalid equality expresion: missing field '%s'", field)
 	}
 	if value.String != nil {
 		stringToCompare, ok := valueToCompare.(string)
@@ -178,5 +178,58 @@ func (c *Capturer) matchFieldValue(valueToCheck interface{}, field string, value
 		}
 		return numberToCompare == *value.Number, nil
 	}
-	return false, nil
+	if value.Path != nil {
+		valueFromPath, err := c.walkPath(s, value.Path)
+		if err != nil {
+			return false, err
+		}
+		return valueToCompare == valueFromPath, nil
+	} else {
+		return false, fmt.Errorf("invalid equality filter: missing right hand side value")
+	}
+}
+
+func (c *Capturer) walkPath(state state.State, path []ast.Step) (interface{}, error) {
+	var walkedState interface{}
+	path, stateToWalk, err := c.resolveCommandIfReferenced(state, path)
+	if err != nil {
+		return nil, err
+	}
+
+	walkedState = stateToWalk
+	for _, step := range path {
+		if step.Identity != nil {
+			walkedState = walkedState.(map[string]interface{})[*step.Identity]
+		} else if step.Index != nil {
+			walkedState = walkedState.([]interface{})[*step.Index]
+		}
+	}
+	return walkedState, nil
+}
+
+func (c *Capturer) resolveCommandIfReferenced(state state.State, path []ast.Step) ([]ast.Step, state.State, error) {
+	if commandReferencedAtPath(path) {
+		if len(path) < 2 || path[1].Identity == nil {
+			return nil, nil, fmt.Errorf("invalid path: 'capturer' is missing the command name")
+		}
+
+		commandName := *path[1].Identity
+		command, ok := c.commandByName[commandName]
+		if !ok {
+			return nil, nil, fmt.Errorf("invalid path: missing command '%s'", commandName)
+		}
+
+		var err error
+		state, err = c.capture(commandName, command)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		path = path[2:]
+	}
+	return path, state, nil
+}
+
+func commandReferencedAtPath(path ast.Path) bool {
+	return path[0].Identity != nil && *path[0].Identity == "capturer"
 }
