@@ -16,24 +16,88 @@
 
 package lexer
 
-type Lexer struct{}
+import (
+	"fmt"
+	"strings"
 
-func New() Lexer {
-	return Lexer{}
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/lexer/scanner"
+)
+
+// Lexer struct is used to tokenize values returned by a reader.
+type lexer struct {
+	scn *scanner.Scanner
 }
 
-func (l Lexer) Lex(expression string) ([]Token, error) {
-	if expression == `routes.running.destination=="0.0.0.0/0"` {
-		return []Token{
-			{0, IDENTITY, "routes"},
-			{6, DOT, "."},
-			{7, IDENTITY, "running"},
-			{14, DOT, "."},
-			{15, IDENTITY, "destination"},
-			{26, EQFILTER, "=="},
-			{28, STRING, "0.0.0.0/0"},
-			{38, EOF, ""},
-		}, nil
+// NewLexer construct a Lexer using reader as the input.
+func New() *lexer {
+	return &lexer{}
+}
+
+// Lex scans the input for the next token.
+// It returns a Token struct with position, type, and the literal value.
+func (l *lexer) Lex(expression string) ([]Token, error) {
+	l.scn = scanner.New(strings.NewReader(expression))
+	// keep looping until we return a token
+	tokens := []Token{}
+	for {
+		token, err := l.lex()
+		if err != nil {
+			return nil, err
+		}
+		if token == nil {
+			continue
+		}
+		tokens = append(tokens, *token)
+		if token.Type == EOF {
+			break
+		}
 	}
-	return nil, nil
+	return tokens, nil
+}
+
+func (l *lexer) lex() (*Token, error) {
+	for {
+		err := l.scn.Next()
+		if err != nil {
+			return nil, err
+		}
+		token, err := l.lexCurrentRune()
+		if err != nil {
+			return nil, err
+		}
+		if token == nil {
+			continue
+		}
+		return token, nil
+	}
+}
+
+func (l *lexer) lexCurrentRune() (*Token, error) {
+	if l.isEOF() {
+		return &Token{l.scn.Position(), EOF, ""}, nil
+	} else if l.isSpace() {
+		return nil, nil
+	} else if l.isDigit() {
+		return l.lexNumber()
+	}
+	return nil, fmt.Errorf("illegal rune %s", string(l.scn.Rune()))
+}
+
+func (l *lexer) lexNumber() (*Token, error) {
+	token := &Token{l.scn.Position(), NUMBER, string(l.scn.Rune())}
+	for {
+		if err := l.scn.Next(); err != nil {
+			return nil, err
+		}
+
+		if l.isEOF() || l.isSpace() {
+			// If it's EOF or space we have finish here
+			return token, nil
+		} else if l.isDigit() {
+			token.Literal += string(l.scn.Rune())
+		} else {
+			// nmpolicy supports only simple numbers with just digist
+			return nil, fmt.Errorf("invalid number format (%s is not a digit)", string(l.scn.Rune()))
+		}
+	}
 }
