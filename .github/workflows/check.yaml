@@ -1,7 +1,7 @@
 name: checks
 on: [push, pull_request]
 env:
-  GO_VERSION: 1.17
+  GO_VERSION: 1.16
 jobs:
   lint:
     name: lint
