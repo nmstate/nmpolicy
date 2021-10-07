@@ -1,0 +1,14 @@
+@startyaml
+pos: 0
+filtereq:
+  - pos: 0
+    path:
+      - pos: 0
+        id: routes
+      - pos: 7
+        id: running
+      - pos: 15
+        id: destination
+  - pos: 28
+    string: 0.0.0.0/0
+@endyaml

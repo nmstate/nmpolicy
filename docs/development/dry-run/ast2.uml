@@ -1,0 +1,26 @@
+@startyaml
+pos: 0                                                                          
+filtereq:                                                                          
+  - pos: 0                                                                      
+    path:                                                                       
+      - pos: 0                                                                  
+        id: routes                                                              
+      - pos: 7                                                                  
+        id: running                                                             
+      - pos: 15                                                                 
+        id: next-hop-interface                                                  
+  - pos: 35                                                                     
+    path:                                                                       
+      - pos: 35                                                                 
+        id: capture                                                             
+      - pos: 43                                                                 
+        id: default-gw                                                          
+      - pos: 54                                                                 
+        id: routes                                                              
+      - pos: 61                                                                 
+        id: running                                                             
+      - pos: 69                                                                 
+        idx: 0                                                                  
+      - pos: 71                                                                 
+        id: next-hop-interface                                                  
+@endyaml
