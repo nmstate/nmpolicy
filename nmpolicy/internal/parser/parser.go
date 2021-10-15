@@ -17,64 +17,150 @@
 package parser
 
 import (
-	"reflect"
+	"fmt"
 
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/ast"
+
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/lexer"
 )
 
-type Parser struct{}
-
-func New() Parser {
-	return Parser{}
+type Parser struct {
+	tokens          []lexer.Token
+	currentTokenIdx int
+	lastNode        *ast.Node
 }
 
-func (p Parser) Parse(tokens []lexer.Token) (ast.Node, error) {
-	tokenRoutes := lexer.Token{Position: 0, Type: lexer.IDENTITY, Literal: "routes"}
-	tokenRunning := lexer.Token{Position: 7, Type: lexer.IDENTITY, Literal: "running"}
-	tokenDestination := lexer.Token{Position: 15, Type: lexer.IDENTITY, Literal: "destination"}
-	tokenDefaultGw := lexer.Token{Position: 28, Type: lexer.STRING, Literal: "0.0.0.0/0"}
-	tokenEqFilter := lexer.Token{Position: 26, Type: lexer.EQFILTER, Literal: "=="}
+func New() *Parser {
+	return &Parser{}
+}
 
-	if reflect.DeepEqual(tokens, []lexer.Token{
-		tokenRoutes,
-		{Position: 6, Type: lexer.DOT, Literal: "."},
-		tokenRunning,
-		{Position: 14, Type: lexer.DOT, Literal: "."},
-		tokenDestination,
-		tokenEqFilter,
-		tokenDefaultGw,
-		{Position: 38, Type: lexer.EOF, Literal: ""},
-	}) {
-		return ast.Node{
-			Meta: ast.Meta{Position: tokenEqFilter.Position},
-			EqFilter: &ast.TernaryOperator{
-				ast.Node{
-					Meta:     ast.Meta{Position: 0},
-					Terminal: ast.CurrentStateIdentity()},
-				ast.Node{
-					Meta: ast.Meta{Position: 0},
-					Path: &ast.VariadicOperator{
-						ast.Node{
-							Meta:     ast.Meta{Position: tokenRoutes.Position},
-							Terminal: ast.Terminal{Identity: &tokenRoutes.Literal},
-						},
-						ast.Node{
-							Meta:     ast.Meta{Position: tokenRunning.Position},
-							Terminal: ast.Terminal{Identity: &tokenRunning.Literal},
-						},
-						ast.Node{
-							Meta:     ast.Meta{Position: tokenDestination.Position},
-							Terminal: ast.Terminal{Identity: &tokenDestination.Literal},
-						},
-					},
-				},
-				ast.Node{
-					Meta:     ast.Meta{Position: tokenDefaultGw.Position},
-					Terminal: ast.Terminal{String: &tokenDefaultGw.Literal},
-				},
-			},
-		}, nil
+func (p *Parser) Parse(tokens []lexer.Token) (ast.Node, error) {
+	p.tokens = tokens
+	node, err := p.parse()
+	if err != nil {
+		return ast.Node{}, err
 	}
-	return ast.Node{}, nil
+	return node, nil
+}
+
+func (p *Parser) parse() (ast.Node, error) {
+	for {
+		if p.currentToken() == nil {
+			return ast.Node{}, nil
+		} else if p.currentToken().Type == lexer.EOF {
+			break
+		} else if p.currentToken().Type == lexer.STRING {
+			str := p.parseString()
+			p.lastNode = &str
+		} else if p.currentToken().Type == lexer.IDENTITY {
+			identity := p.parseIdentity()
+			p.lastNode = &identity
+			path, err := p.parsePath()
+			if err != nil {
+				return ast.Node{}, err
+			}
+			p.lastNode = path
+		} else if p.currentToken().Type == lexer.EQFILTER {
+			eqfilter, err := p.parseEqFilter()
+			if err != nil {
+				return ast.Node{}, err
+			}
+			p.lastNode = eqfilter
+		} else {
+			return ast.Node{}, &InvalidExpressionError{fmt.Sprintf("unexpected token `%+v`", p.currentToken().Literal)}
+		}
+		p.nextToken()
+	}
+	return *p.lastNode, nil
+}
+
+func (p *Parser) nextToken() {
+	if len(p.tokens) == 0 {
+		return
+	}
+	if p.currentTokenIdx >= len(p.tokens)-1 {
+		p.currentTokenIdx = len(p.tokens) - 1
+	} else {
+		p.currentTokenIdx++
+	}
+}
+
+func (p *Parser) prevToken() {
+	if len(p.tokens) == 0 {
+		return
+	}
+	if p.currentTokenIdx > 0 {
+		p.currentTokenIdx--
+	}
+	if p.currentTokenIdx >= len(p.tokens)-1 {
+		p.currentTokenIdx = len(p.tokens) - 1
+	}
+}
+
+func (p *Parser) currentToken() *lexer.Token {
+	return &p.tokens[p.currentTokenIdx]
+}
+
+func (p *Parser) parseIdentity() ast.Node {
+	return ast.Node{
+		Meta:     ast.Meta{Position: p.currentToken().Position},
+		Terminal: ast.Terminal{Identity: &p.currentToken().Literal},
+	}
+}
+
+func (p *Parser) parseString() ast.Node {
+	return ast.Node{
+		Meta:     ast.Meta{Position: p.currentToken().Position},
+		Terminal: ast.Terminal{String: &p.currentToken().Literal},
+	}
+}
+
+func (p *Parser) parsePath() (*ast.Node, error) {
+	operator := &ast.Node{
+		Meta: ast.Meta{Position: p.currentToken().Position},
+		Path: &ast.VariadicOperator{*p.lastNode},
+	}
+	for {
+		p.nextToken()
+		if p.currentToken().Type == lexer.DOT {
+			p.nextToken()
+			if p.currentToken().Type == lexer.IDENTITY {
+				path := append(*operator.Path, p.parseIdentity())
+				operator.Path = &path
+			} else {
+				return nil, &InvalidPathError{"missing identity after dot"}
+			}
+		} else if p.currentToken().Type != lexer.EOF && p.currentToken().Type != lexer.EQFILTER {
+			return nil, &InvalidPathError{"missing dot"}
+		} else {
+			// Token has not being consumed let's go back.
+			p.prevToken()
+			break
+		}
+	}
+	return operator, nil
+}
+
+func (p *Parser) parseEqFilter() (*ast.Node, error) {
+	operator := &ast.Node{
+		Meta:     ast.Meta{Position: p.currentToken().Position},
+		EqFilter: &ast.TernaryOperator{},
+	}
+	if p.lastNode == nil {
+		return nil, &InvalidEqualityFilter{"missing left hand argument"}
+	}
+	if p.lastNode.Path == nil {
+		return nil, &InvalidEqualityFilter{"left hand argument is not a path"}
+	}
+	operator.EqFilter[0].Terminal = ast.CurrentStateIdentity()
+	operator.EqFilter[1] = *p.lastNode
+
+	p.nextToken()
+
+	if p.currentToken().Type == lexer.STRING {
+		operator.EqFilter[2] = p.parseString()
+	} else if p.currentToken().Type != lexer.EOF {
+		return nil, &InvalidEqualityFilter{"right hand argument is not a string"}
+	}
+	return operator, nil
 }
