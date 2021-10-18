@@ -29,4 +29,4 @@ jobs:
       with:
         go-version: ${{ env.GO_VERSION }}
     - name: Build cmd
-      run: go build ./cmd/nmpolicy 
+      run: go build -o ./.out/nmpolicy ./cmd/nmpolicy
