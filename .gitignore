@@ -13,3 +13,6 @@
 
 # Ignore git merge artifacts
 *.orig
+
+# Deps vendoring from golang
+vendor/
