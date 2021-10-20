@@ -1,8 +1,6 @@
 package resolver
 
 import (
-	"fmt"
-
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/ast"
 )
 
@@ -27,7 +25,7 @@ func applyFuncOnPath(inputState interface{},
 		return applyFuncOnSlice(originalSlice, path, expectedNode, funcToApply, shouldFilterSlice)
 	}
 
-	return nil, pathError(fmt.Errorf("invalid type %T for identity step '%v'", inputState, path[0]))
+	return nil, pathError("invalid type %T for identity step '%v'", inputState, path[0])
 }
 
 func applyFuncOnSlice(originalSlice []interface{},
@@ -63,7 +61,7 @@ func applyFuncOnMap(path []ast.Node,
 	shouldFilterSlice bool) (interface{}, error) {
 	currentStep := path[0]
 	if currentStep.Identity == nil {
-		return nil, pathError(fmt.Errorf("%v has unsupported fromat", currentStep))
+		return nil, pathError("%v has unsupported fromat", currentStep)
 	}
 
 	nextPath := path[1:]
@@ -71,7 +69,7 @@ func applyFuncOnMap(path []ast.Node,
 
 	value, ok := originalMap[key]
 	if !ok {
-		return nil, pathError(fmt.Errorf("cannot find key %s in %v", key, originalMap))
+		return nil, pathError("cannot find key %s in %v", key, originalMap)
 	}
 
 	adjuctedValue, err := applyFuncOnPath(value, nextPath, expectedNode, funcToApply, shouldFilterSlice)
