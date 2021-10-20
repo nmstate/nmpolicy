@@ -16,3 +16,7 @@
 
 # Deps vendoring from golang
 vendor/
+
+# IDEs, editor's
+.idea
+.sw*
