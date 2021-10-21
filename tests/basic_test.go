@@ -29,6 +29,7 @@ func TestBasicPolicy(t *testing.T) {
 	t.Run("Basic policy", func(t *testing.T) {
 		testEmptyPolicy(t)
 		testPolicyWithOnlyDesiredState(t)
+		testPolicyWithCachedCapturesAndNoDesiredStateRef(t)
 	})
 }
 
@@ -57,6 +58,35 @@ func testPolicyWithOnlyDesiredState(t *testing.T) {
 
 		assert.NoError(t, err)
 		expectedState := types.GeneratedState{
+			DesiredState: stateData,
+			MetaInfo:     types.MetaInfo{Version: "0"},
+		}
+		assert.Equal(t, expectedState, resetTimeStamp(s))
+	})
+}
+
+func testPolicyWithCachedCapturesAndNoDesiredStateRef(t *testing.T) {
+	t.Run("with all captures cached and desired state that has no ref", func(t *testing.T) {
+		stateData := []byte(`this is not a legal yaml format!`)
+		const capID0 = "cap0"
+		policySpec := types.PolicySpec{
+			Capture: map[string]string{
+				capID0: "my expression",
+			},
+			DesiredState: stateData,
+		}
+
+		cacheState := types.CachedState{
+			Capture: map[string]types.CaptureState{capID0: {State: []byte("some captured state")}},
+		}
+		s, err := nmpolicy.GenerateState(
+			policySpec,
+			nil,
+			cacheState)
+
+		assert.NoError(t, err)
+		expectedState := types.GeneratedState{
+			Cache:        cacheState,
 			DesiredState: stateData,
 			MetaInfo:     types.MetaInfo{Version: "0"},
 		}

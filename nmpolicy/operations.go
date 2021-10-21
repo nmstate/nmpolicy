@@ -16,8 +16,13 @@
 package nmpolicy
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/capture"
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/lexer"
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/parser"
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/resolver"
 	"github.com/nmstate/nmpolicy/nmpolicy/types"
 )
 
@@ -33,15 +38,25 @@ import (
 // - Meta Info: Extended information about the generated state (e.g. the policy version).
 //
 // On failure, an error is returned.
-func GenerateState(nmpolicy types.PolicySpec, currentState types.NMState, cache types.CachedState) (types.GeneratedState, error) {
-	var desiredState types.NMState
+func GenerateState(nmpolicy types.PolicySpec, currentState []byte, cache types.CachedState) (types.GeneratedState, error) {
+	var capturesState map[string]types.CaptureState
+	var desiredState []byte
 
 	if nmpolicy.DesiredState != nil {
 		desiredState = append(desiredState, nmpolicy.DesiredState...)
+
+		capResolver := capture.New(lexer.New(), parser.New(), resolver.New())
+		var err error
+		capturesState, err = capResolver.Resolve(nmpolicy.Capture, cache.Capture, currentState)
+		if err != nil {
+			return types.GeneratedState{}, fmt.Errorf("failed to generate state, err: %v", err)
+		}
+
+		// TODO: Resolve/expend the desired state.
 	}
 
 	return types.GeneratedState{
-		Cache:        types.NoCache(),
+		Cache:        types.CachedState{Capture: capturesState},
 		DesiredState: desiredState,
 		MetaInfo: types.MetaInfo{
 			Version:   "0",
