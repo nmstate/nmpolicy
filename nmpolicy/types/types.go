@@ -18,30 +18,24 @@ package types
 import "time"
 
 type PolicySpec struct {
-	Capture      map[CaptureID]Expression
-	DesiredState NMState
+	Capture      map[string]string
+	DesiredState []byte
 }
-
-type Expression string
 
 type CachedState struct {
-	Capture map[CaptureID]CaptureState
+	Capture map[string]CaptureState
 }
-
-type CaptureID string
 
 type GeneratedState struct {
 	Cache        CachedState
-	DesiredState NMState
+	DesiredState []byte
 	MetaInfo     MetaInfo
 }
 
 type CaptureState struct {
-	State    NMState
+	State    []byte
 	MetaInfo MetaInfo
 }
-
-type NMState []byte
 
 type MetaInfo struct {
 	Version   string
