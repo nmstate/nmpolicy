@@ -22,6 +22,7 @@ import (
 	assert "github.com/stretchr/testify/require"
 
 	"github.com/nmstate/nmpolicy/nmpolicy"
+	"github.com/nmstate/nmpolicy/nmpolicy/types"
 )
 
 func TestBasicPolicy(t *testing.T) {
@@ -33,11 +34,11 @@ func TestBasicPolicy(t *testing.T) {
 
 func testEmptyPolicy(t *testing.T) {
 	t.Run("is empty", func(t *testing.T) {
-		s, err := nmpolicy.GenerateState(nmpolicy.PolicySpec{}, nil, nmpolicy.NoCache())
+		s, err := nmpolicy.GenerateState(types.PolicySpec{}, nil, types.NoCache())
 
 		assert.NoError(t, err)
 
-		expectedEmptyState := nmpolicy.GeneratedState{MetaInfo: nmpolicy.MetaInfo{Version: "0"}}
+		expectedEmptyState := types.GeneratedState{MetaInfo: types.MetaInfo{Version: "0"}}
 		assert.NotEqual(t, time.Time{}, s.MetaInfo.TimeStamp)
 		assert.Equal(t, expectedEmptyState, resetTimeStamp(s))
 	})
@@ -48,22 +49,22 @@ func testPolicyWithOnlyDesiredState(t *testing.T) {
 	// the policy just passes it as is to the output with no modifications.
 	t.Run("with only desired state", func(t *testing.T) {
 		stateData := []byte(`this is not a legal yaml format!`)
-		policySpec := nmpolicy.PolicySpec{
+		policySpec := types.PolicySpec{
 			DesiredState: stateData,
 		}
 
-		s, err := nmpolicy.GenerateState(policySpec, nil, nmpolicy.NoCache())
+		s, err := nmpolicy.GenerateState(policySpec, nil, types.NoCache())
 
 		assert.NoError(t, err)
-		expectedState := nmpolicy.GeneratedState{
+		expectedState := types.GeneratedState{
 			DesiredState: stateData,
-			MetaInfo:     nmpolicy.MetaInfo{Version: "0"},
+			MetaInfo:     types.MetaInfo{Version: "0"},
 		}
 		assert.Equal(t, expectedState, resetTimeStamp(s))
 	})
 }
 
-func resetTimeStamp(s nmpolicy.GeneratedState) nmpolicy.GeneratedState {
+func resetTimeStamp(s types.GeneratedState) types.GeneratedState {
 	s.MetaInfo.TimeStamp = time.Time{}
 	return s
 }
