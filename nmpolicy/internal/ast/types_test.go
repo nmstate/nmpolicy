@@ -58,7 +58,7 @@ eqfilter:
 		Meta: ast.Meta{Position: 1},
 		EqFilter: &ast.TernaryOperator{
 			{Meta: ast.Meta{Position: 2}, Path: &ast.VariadicOperator{
-				{Meta: ast.Meta{Position: 3}, Terminal: ast.Terminal{Identity: strPtr("currentState")}},
+				{Meta: ast.Meta{Position: 3}, Terminal: ast.CurrentStateIdentity()},
 			}},
 			{Meta: ast.Meta{Position: 4}, Path: &ast.VariadicOperator{
 				{Meta: ast.Meta{Position: 5}, Terminal: ast.Terminal{Identity: strPtr("routes")}},
