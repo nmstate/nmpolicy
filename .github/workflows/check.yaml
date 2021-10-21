@@ -56,4 +56,4 @@ jobs:
       with:
         go-version: ${{ env.GO_VERSION }}
     - name: Run tests
-      run: go test -v ./tests/...
+      run: ./scripts/make.sh --integration-test
