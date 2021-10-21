@@ -17,7 +17,7 @@
  *
  */
 
-package nmpolicy
+package types
 
 import "time"
 
