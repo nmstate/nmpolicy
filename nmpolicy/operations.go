@@ -17,6 +17,8 @@ package nmpolicy
 
 import (
 	"time"
+
+	"github.com/nmstate/nmpolicy/nmpolicy/types"
 )
 
 // GenerateState creates a NMPolicy state based on the given input data:
@@ -31,17 +33,17 @@ import (
 // - Meta Info: Extended information about the generated state (e.g. the policy version).
 //
 // On failure, an error is returned.
-func GenerateState(nmpolicy PolicySpec, currentState NMState, cache CachedState) (GeneratedState, error) {
-	var desiredState NMState
+func GenerateState(nmpolicy types.PolicySpec, currentState types.NMState, cache types.CachedState) (types.GeneratedState, error) {
+	var desiredState types.NMState
 
 	if nmpolicy.DesiredState != nil {
 		desiredState = append(desiredState, nmpolicy.DesiredState...)
 	}
 
-	return GeneratedState{
-		Cache:        NoCache(),
+	return types.GeneratedState{
+		Cache:        types.NoCache(),
 		DesiredState: desiredState,
-		MetaInfo: MetaInfo{
+		MetaInfo: types.MetaInfo{
 			Version:   "0",
 			TimeStamp: time.Now().UTC(),
 		},
