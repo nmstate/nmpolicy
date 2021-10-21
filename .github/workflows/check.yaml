@@ -18,9 +18,7 @@ jobs:
         env:
           CGO_ENABLED: 0
         with:
-          version: v1.40.0
-      - name: basic-format
-        run: ./scripts/make.sh --fmt
+          version: v1.42.1
   build:
     name: build
     runs-on: ubuntu-latest
