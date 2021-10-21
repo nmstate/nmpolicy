@@ -32,7 +32,6 @@ func strPtr(str string) *string {
 }
 
 func TestYAML(t *testing.T) {
-
 	astYAML := `
 pos: 1
 eqfilter: 
