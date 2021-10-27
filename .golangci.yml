@@ -85,18 +85,9 @@ linters:
     - varcheck
     - whitespace
 
-  # don't enable:
-  # - asciicheck
-  # - scopelint
-  # - gochecknoglobals
-  # - gocognit
-  # - godot
-  # - godox
-  # - goerr113
-  # - interfacer
-  # - maligned
-  # - nestif
-  # - prealloc
-  # - testpackage
-  # - revive
-  # - wsl
+issues:                                                                         
+  exclude-rules:                                                                
+    - path: _test.go                                                            
+      linters:                                                                  
+        - funlen                                                                
+        - dupl               
