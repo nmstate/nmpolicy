@@ -35,7 +35,7 @@ func New(astPool AstPooler, lexerFactory LexerFactory, parserFactory ParserFacto
 }
 
 func (c Capture) Resolve(capturesExpr CapsExpressions, capturesCache CapsState, state types.NMState) (CapsState, error) {
-	if len(capturesExpr) == 0 || len(state) == 0 && len(capturesCache) == 0 {
+	if len(capturesExpr) == 0 || len(state) == 0 {
 		return nil, nil
 	}
 
@@ -52,7 +52,6 @@ func (c Capture) Resolve(capturesExpr CapsExpressions, capturesCache CapsState, 
 		if err != nil {
 			return nil, fmt.Errorf("failed to resolve capture expression, err: %v", err)
 		}
-
 		c.astPool.Add(capID, astRoot)
 	}
 

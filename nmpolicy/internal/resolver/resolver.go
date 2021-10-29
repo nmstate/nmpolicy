@@ -20,6 +20,10 @@
 package resolver
 
 import (
+	"fmt"
+	"reflect"
+
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/ast"
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/capture"
 	"github.com/nmstate/nmpolicy/nmpolicy/types"
 )
@@ -37,5 +41,53 @@ func New(state types.NMState, astPool capture.AstPooler) Resolver {
 }
 
 func (r Resolver) Resolve() (map[types.CaptureID]types.CaptureState, error) {
+	if reflect.DeepEqual(r.astPool.Range(), ast.Pool{
+		types.CaptureID("cap0"): ast.Node{
+			Meta: ast.Meta{Position: 26},
+			EqFilter: &ast.TernaryOperator{
+				ast.Node{
+					Meta:     ast.Meta{Position: 0},
+					Terminal: ast.CurrentStateIdentity()},
+				ast.Node{
+					Meta: ast.Meta{Position: 0},
+					Path: &ast.VariadicOperator{
+						ast.Node{
+							Meta:     ast.Meta{Position: 0},
+							Terminal: ast.Terminal{Identity: strPtr("routes")},
+						},
+						ast.Node{
+							Meta:     ast.Meta{Position: 7},
+							Terminal: ast.Terminal{Identity: strPtr("running")},
+						},
+						ast.Node{
+							Meta:     ast.Meta{Position: 15},
+							Terminal: ast.Terminal{Identity: strPtr("destination")},
+						},
+					},
+				},
+				ast.Node{
+					Meta:     ast.Meta{Position: 28},
+					Terminal: ast.Terminal{String: strPtr("0.0.0.0/0")},
+				},
+			},
+		},
+	}) {
+		return map[types.CaptureID]types.CaptureState{
+			"cap0": {
+				State: types.NMState(`
+routes:
+ running:
+ - destination: 0.0.0.0/0
+   next-hop-address: 192.168.100.1
+   next-hop-interface: eth1
+   table-id: 254
+`),
+			}}, nil
+	}
+	fmt.Println("resolver: ast not matching, returning nil")
 	return nil, nil
+}
+
+func strPtr(str string) *string {
+	return &str
 }

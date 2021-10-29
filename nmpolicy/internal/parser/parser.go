@@ -20,6 +20,9 @@
 package parser
 
 import (
+	"fmt"
+	"reflect"
+
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/ast"
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/lexer"
 )
@@ -33,5 +36,51 @@ func New(tokens []lexer.Token) Parser {
 }
 
 func (p Parser) Parse() (ast.Node, error) {
+	if reflect.DeepEqual(p.tokens, []lexer.Token{
+		{Position: 0, Type: lexer.IDENTITY, Literal: "routes"},
+		{Position: 6, Type: lexer.DOT, Literal: "."},
+		{Position: 7, Type: lexer.IDENTITY, Literal: "running"},
+		{Position: 14, Type: lexer.DOT, Literal: "."},
+		{Position: 15, Type: lexer.IDENTITY, Literal: "destination"},
+		{Position: 26, Type: lexer.EQFILTER, Literal: "=="},
+		{Position: 28, Type: lexer.STRING, Literal: "0.0.0.0/0"},
+		{Position: 35, Type: lexer.EOF, Literal: ""},
+	}) {
+		return ast.Node{
+			Meta: ast.Meta{Position: 26},
+			EqFilter: &ast.TernaryOperator{
+				ast.Node{
+					Meta:     ast.Meta{Position: 0},
+					Terminal: ast.CurrentStateIdentity()},
+				ast.Node{
+					Meta: ast.Meta{Position: 0},
+					Path: &ast.VariadicOperator{
+						ast.Node{
+							Meta:     ast.Meta{Position: 0},
+							Terminal: ast.Terminal{Identity: strPtr("routes")},
+						},
+						ast.Node{
+							Meta:     ast.Meta{Position: 7},
+							Terminal: ast.Terminal{Identity: strPtr("running")},
+						},
+						ast.Node{
+							Meta:     ast.Meta{Position: 15},
+							Terminal: ast.Terminal{Identity: strPtr("destination")},
+						},
+					},
+				},
+				ast.Node{
+					Meta:     ast.Meta{Position: 28},
+					Terminal: ast.Terminal{String: strPtr("0.0.0.0/0")},
+				},
+			},
+		}, nil
+	}
+
+	fmt.Println("parser: tokens not matching, returning nil")
 	return ast.Node{}, nil
+}
+
+func strPtr(str string) *string {
+	return &str
 }

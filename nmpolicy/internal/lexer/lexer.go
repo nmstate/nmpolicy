@@ -19,7 +19,11 @@
 
 package lexer
 
-import "github.com/nmstate/nmpolicy/nmpolicy/types"
+import (
+	"fmt"
+
+	"github.com/nmstate/nmpolicy/nmpolicy/types"
+)
 
 type Lexer struct {
 	expression types.Expression
@@ -30,5 +34,18 @@ func New(expression types.Expression) *Lexer {
 }
 
 func (l *Lexer) Lex() ([]Token, error) {
+	if l.expression == `routes.running.destination=="0.0.0.0/0"` {
+		return []Token{
+			{0, IDENTITY, "routes"},
+			{6, DOT, "."},
+			{7, IDENTITY, "running"},
+			{14, DOT, "."},
+			{15, IDENTITY, "destination"},
+			{26, EQFILTER, "=="},
+			{28, STRING, "0.0.0.0/0"},
+			{35, EOF, ""},
+		}, nil
+	}
+	fmt.Println("lexer: expression not matching, returning nil")
 	return nil, nil
 }

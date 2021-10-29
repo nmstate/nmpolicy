@@ -34,6 +34,7 @@ func TestBasicPolicy(t *testing.T) {
 		testEmptyPolicy(t)
 		testPolicyWithOnlyDesiredState(t)
 		testPolicyWithCachedCapturesAndNoDesiredStateRef(t)
+		testPolicyWithFilterCaptureAndNoDesiredState(t)
 	})
 }
 
@@ -85,12 +86,93 @@ func testPolicyWithCachedCapturesAndNoDesiredStateRef(t *testing.T) {
 		}
 		s, err := nmpolicy.GenerateState(
 			policySpec,
-			nil,
+			types.NMState("some state"),
 			cacheState)
 
 		assert.NoError(t, err)
 		expectedState := types.GeneratedState{
 			Cache:        cacheState,
+			DesiredState: stateData,
+			MetaInfo:     types.MetaInfo{Version: "0"},
+		}
+		assert.Equal(t, expectedState, resetTimeStamp(s))
+	})
+}
+
+func testPolicyWithFilterCaptureAndNoDesiredState(t *testing.T) {
+	t.Run("with a eqfilter capture expression and desired state that has no ref", func(t *testing.T) {
+		stateData := []byte(`
+routes:
+  running:
+  - destination: 0.0.0.0/0
+    next-hop-address: 192.168.100.1
+    next-hop-interface: eth1
+    table-id: 254
+  - destination: 1.1.1.0/24
+    next-hop-address: 192.168.100.1
+    next-hop-interface: eth1
+    table-id: 254
+  config:
+  - destination: 0.0.0.0/0
+    next-hop-address: 192.168.100.1
+    next-hop-interface: eth1
+    table-id: 254
+  - destination: 1.1.1.0/24
+    next-hop-address: 192.168.100.1
+    next-hop-interface: eth1
+    table-id: 254
+interfaces:
+  - name: eth1
+    type: ethernet
+    state: up
+    ipv4:
+      address:
+      - ip: 10.244.0.1
+        prefix-length: 24
+      - ip: 169.254.1.0
+        prefix-length: 16
+      dhcp: false
+      enabled: true
+  - name: eth2
+    type: ethernet
+    state: down
+    ipv4:
+      address:
+      - ip: 1.2.3.4
+        prefix-length: 24
+      dhcp: false
+      enabled: false
+`)
+		const capID0 = "cap0"
+		policySpec := types.PolicySpec{
+			Capture: map[types.CaptureID]types.Expression{
+				capID0: `routes.running.destination=="0.0.0.0/0"`,
+			},
+			DesiredState: stateData,
+		}
+
+		cacheState := types.CachedState{}
+		s, err := nmpolicy.GenerateState(
+			policySpec,
+			stateData,
+			cacheState)
+
+		assert.NoError(t, err)
+		expectedState := types.GeneratedState{
+			Cache: types.CachedState{
+				Capture: map[types.CaptureID]types.CaptureState{
+					capID0: {
+						State: types.NMState(`
+routes:
+ running:
+ - destination: 0.0.0.0/0
+   next-hop-address: 192.168.100.1
+   next-hop-interface: eth1
+   table-id: 254
+`),
+					},
+				},
+			},
 			DesiredState: stateData,
 			MetaInfo:     types.MetaInfo{Version: "0"},
 		}

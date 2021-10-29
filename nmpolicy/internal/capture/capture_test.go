@@ -46,14 +46,15 @@ func TestBasicPolicy(t *testing.T) {
 }
 
 func testNoExpressions(t *testing.T) {
-	t.Run("resolve with no expression", func(t *testing.T) {
+	t.Run("resolve with no expression and cache", func(t *testing.T) {
+		captureCache := map[types.CaptureID]types.CaptureState{"cap0": {State: []byte("some captured state")}}
 		capCtrl := capture.New(ast.NewPool(),
 			lexerFactory(lexerStub{}),
 			parserFactory(parserStub{}),
 			resolverFactory(resolverStub{}))
 		resolvedCaps, err := capCtrl.Resolve(
 			capture.CapsExpressions{},
-			map[types.CaptureID]types.CaptureState{"cap0": {State: []byte("some captured state")}},
+			captureCache,
 			types.NMState("some state"),
 		)
 		assert.NoError(t, err)
@@ -80,7 +81,7 @@ func testNoCacheAndState(t *testing.T) {
 }
 
 func testAllCapturesCached(t *testing.T) {
-	t.Run("resolve with all captures cached", func(t *testing.T) {
+	t.Run("resolve with all captures cached and state", func(t *testing.T) {
 		capCache := map[types.CaptureID]types.CaptureState{
 			"cap0": {State: []byte("some captured state")},
 			"cap1": {State: []byte("another captured state")},
@@ -96,7 +97,7 @@ func testAllCapturesCached(t *testing.T) {
 				"cap1": "another expression",
 			},
 			capCache,
-			types.NMState{},
+			types.NMState("some state"),
 		)
 		assert.NoError(t, err)
 
