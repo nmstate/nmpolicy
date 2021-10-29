@@ -21,12 +21,14 @@ package lexer
 
 import "github.com/nmstate/nmpolicy/nmpolicy/types"
 
-type Lexer struct{}
-
-func New() Lexer {
-	return Lexer{}
+type Lexer struct {
+	expression types.Expression
 }
 
-func (l Lexer) Lex(expression types.Expression) ([]Token, error) {
+func New(expression types.Expression) *Lexer {
+	return &Lexer{expression: expression}
+}
+
+func (l *Lexer) Lex() ([]Token, error) {
 	return nil, nil
 }

@@ -22,44 +22,15 @@ package capture
 import (
 	"fmt"
 
-	"github.com/nmstate/nmpolicy/nmpolicy/internal/ast"
-	"github.com/nmstate/nmpolicy/nmpolicy/internal/lexer"
 	"github.com/nmstate/nmpolicy/nmpolicy/types"
 )
 
-type CapsExpressions = map[types.CaptureID]types.Expression
-type CapsState = map[types.CaptureID]types.CaptureState
-
-type Capture struct {
-	astPool  AstPooler
-	lexer    Lexer
-	parser   Parser
-	resolver Resolver
-}
-
-type AstPooler interface {
-	Add(id types.CaptureID, ast ast.Node)
-	Range() ast.Pool
-}
-
-type Lexer interface {
-	Lex(expression types.Expression) ([]lexer.Token, error)
-}
-
-type Parser interface {
-	Parse([]lexer.Token) (ast.Node, error)
-}
-
-type Resolver interface {
-	Resolve(astPool AstPooler, state types.NMState) (CapsState, error)
-}
-
-func New(astPool AstPooler, leXer Lexer, parser Parser, resolver Resolver) Capture {
+func New(astPool AstPooler, lexerFactory LexerFactory, parserFactory ParserFactory, resolverFactory ResolverFactory) Capture {
 	return Capture{
-		astPool:  astPool,
-		lexer:    leXer,
-		parser:   parser,
-		resolver: resolver,
+		astPool:         astPool,
+		lexerFactory:    lexerFactory,
+		parserFactory:   parserFactory,
+		resolverFactory: resolverFactory,
 	}
 }
 
@@ -72,12 +43,12 @@ func (c Capture) Resolve(capturesExpr CapsExpressions, capturesCache CapsState, 
 	capturesState := newCapturesState(capturesCache)
 
 	for capID, capExpr := range capturesExpr {
-		tokens, err := c.lexer.Lex(capExpr)
+		tokens, err := c.lexerFactory(capExpr).Lex()
 		if err != nil {
 			return nil, fmt.Errorf("failed to resolve capture expression, err: %v", err)
 		}
 
-		astRoot, err := c.parser.Parse(tokens)
+		astRoot, err := c.parserFactory(tokens).Parse()
 		if err != nil {
 			return nil, fmt.Errorf("failed to resolve capture expression, err: %v", err)
 		}
@@ -85,7 +56,7 @@ func (c Capture) Resolve(capturesExpr CapsExpressions, capturesCache CapsState, 
 		c.astPool.Add(capID, astRoot)
 	}
 
-	resolvedCapsState, err := c.resolver.Resolve(c.astPool, state)
+	resolvedCapsState, err := c.resolverFactory(state, c.astPool).Resolve()
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve capture expression, err: %v", err)
 	}

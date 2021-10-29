@@ -24,12 +24,18 @@ import (
 	"github.com/nmstate/nmpolicy/nmpolicy/types"
 )
 
-type Resolver struct{}
-
-func New() Resolver {
-	return Resolver{}
+type Resolver struct {
+	state   types.NMState
+	astPool capture.AstPooler
 }
 
-func (r Resolver) Resolve(astPool capture.AstPooler, state types.NMState) (map[types.CaptureID]types.CaptureState, error) {
+func New(state types.NMState, astPool capture.AstPooler) Resolver {
+	return Resolver{
+		state:   state,
+		astPool: astPool,
+	}
+}
+
+func (r Resolver) Resolve() (map[types.CaptureID]types.CaptureState, error) {
 	return nil, nil
 }

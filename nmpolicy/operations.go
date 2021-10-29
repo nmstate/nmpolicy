@@ -50,7 +50,7 @@ func GenerateState(nmpolicy types.PolicySpec, currentState types.NMState, cache 
 	if nmpolicy.DesiredState != nil {
 		desiredState = append(desiredState, nmpolicy.DesiredState...)
 
-		capResolver := capture.New(ast.NewPool(), lexer.New(), parser.New(), resolver.New())
+		capResolver := capture.New(ast.NewPool(), lexerFactory, parserFactory, resolverFactory)
 		var err error
 		capturesState, err = capResolver.Resolve(nmpolicy.Capture, cache.Capture, currentState)
 		if err != nil {
@@ -68,4 +68,16 @@ func GenerateState(nmpolicy types.PolicySpec, currentState types.NMState, cache 
 			TimeStamp: time.Now().UTC(),
 		},
 	}, nil
+}
+
+func lexerFactory(expression types.Expression) capture.Lexer {
+	return lexer.New(expression)
+}
+
+func parserFactory(tokens []lexer.Token) capture.Parser {
+	return parser.New(tokens)
+}
+
+func resolverFactory(state types.NMState, astPool capture.AstPooler) capture.Resolver {
+	return resolver.New(state, astPool)
 }

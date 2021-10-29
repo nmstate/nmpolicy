@@ -24,12 +24,14 @@ import (
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/lexer"
 )
 
-type Parser struct{}
-
-func New() Parser {
-	return Parser{}
+type Parser struct {
+	tokens []lexer.Token
 }
 
-func (p Parser) Parse(tokens []lexer.Token) (ast.Node, error) {
+func New(tokens []lexer.Token) Parser {
+	return Parser{tokens: tokens}
+}
+
+func (p Parser) Parse() (ast.Node, error) {
 	return ast.Node{}, nil
 }

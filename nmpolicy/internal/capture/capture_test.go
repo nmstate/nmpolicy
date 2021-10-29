@@ -47,7 +47,10 @@ func TestBasicPolicy(t *testing.T) {
 
 func testNoExpressions(t *testing.T) {
 	t.Run("resolve with no expression", func(t *testing.T) {
-		capCtrl := capture.New(ast.NewPool(), lexerStub{}, parserStub{}, resolverStub{})
+		capCtrl := capture.New(ast.NewPool(),
+			lexerFactory(lexerStub{}),
+			parserFactory(parserStub{}),
+			resolverFactory(resolverStub{}))
 		resolvedCaps, err := capCtrl.Resolve(
 			capture.CapsExpressions{},
 			map[types.CaptureID]types.CaptureState{"cap0": {State: []byte("some captured state")}},
@@ -61,7 +64,10 @@ func testNoExpressions(t *testing.T) {
 
 func testNoCacheAndState(t *testing.T) {
 	t.Run("resolve with no cache and state", func(t *testing.T) {
-		capCtrl := capture.New(ast.NewPool(), lexerStub{}, parserStub{}, resolverStub{})
+		capCtrl := capture.New(ast.NewPool(),
+			lexerFactory(lexerStub{}),
+			parserFactory(parserStub{}),
+			resolverFactory(resolverStub{}))
 		resolvedCaps, err := capCtrl.Resolve(
 			map[types.CaptureID]types.Expression{"cap0": "my expression"},
 			capture.CapsState{},
@@ -80,7 +86,10 @@ func testAllCapturesCached(t *testing.T) {
 			"cap1": {State: []byte("another captured state")},
 		}
 
-		capCtrl := capture.New(ast.NewPool(), lexerStub{}, parserStub{}, resolverStub{})
+		capCtrl := capture.New(ast.NewPool(),
+			lexerFactory(lexerStub{}),
+			parserFactory(parserStub{}),
+			resolverFactory(resolverStub{}))
 		resolvedCaps, err := capCtrl.Resolve(
 			map[types.CaptureID]types.Expression{
 				"cap0": "my expression",
@@ -99,7 +108,10 @@ func testResolvingExpressions(t *testing.T) {
 	t.Run("resolve expressions", func(t *testing.T) {
 		const capID = "cap0"
 
-		capCtrl := capture.New(ast.NewPool(), lexerStub{}, parserStub{}, resolverStub{})
+		capCtrl := capture.New(ast.NewPool(),
+			lexerFactory(lexerStub{}),
+			parserFactory(parserStub{}),
+			resolverFactory(resolverStub{}))
 		resolvedCaps, err := capCtrl.Resolve(
 			map[types.CaptureID]types.Expression{capID: "my expression"},
 			capture.CapsState{},
@@ -117,7 +129,10 @@ func testExpressionsWithPartialCache(t *testing.T) {
 		const capID1 = "cap1"
 
 		capCache := map[types.CaptureID]types.CaptureState{capID0: {State: []byte("some captured state")}}
-		capCtrl := capture.New(ast.NewPool(), lexerStub{}, parserStub{}, resolverStub{})
+		capCtrl := capture.New(ast.NewPool(),
+			lexerFactory(lexerStub{}),
+			parserFactory(parserStub{}),
+			resolverFactory(resolverStub{}))
 
 		resolvedCaps, err := capCtrl.Resolve(
 			map[types.CaptureID]types.Expression{
@@ -137,7 +152,10 @@ func testExpressionsWithPartialCache(t *testing.T) {
 
 func testLexFailure(t *testing.T) {
 	t.Run("resolve fails due to lexing", func(t *testing.T) {
-		capCtrl := capture.New(ast.NewPool(), lexerStub{failLex: true}, parserStub{}, resolverStub{})
+		capCtrl := capture.New(ast.NewPool(),
+			lexerFactory(lexerStub{failLex: true}),
+			parserFactory(parserStub{}),
+			resolverFactory(resolverStub{}))
 		_, err := capCtrl.Resolve(
 			map[types.CaptureID]types.Expression{"cap0": "my expression"},
 			capture.CapsState{},
@@ -149,7 +167,10 @@ func testLexFailure(t *testing.T) {
 
 func testParseFailure(t *testing.T) {
 	t.Run("resolve fails due to parsing", func(t *testing.T) {
-		capCtrl := capture.New(ast.NewPool(), lexerStub{}, parserStub{failParse: true}, resolverStub{})
+		capCtrl := capture.New(ast.NewPool(),
+			lexerFactory(lexerStub{failLex: true}),
+			parserFactory(parserStub{}),
+			resolverFactory(resolverStub{}))
 		_, err := capCtrl.Resolve(
 			map[types.CaptureID]types.Expression{"cap0": "my expression"},
 			capture.CapsState{},
@@ -161,7 +182,10 @@ func testParseFailure(t *testing.T) {
 
 func testResolveFailure(t *testing.T) {
 	t.Run("resolve fails due to resolving", func(t *testing.T) {
-		capCtrl := capture.New(ast.NewPool(), lexerStub{}, parserStub{}, resolverStub{failResolve: true})
+		capCtrl := capture.New(ast.NewPool(),
+			lexerFactory(lexerStub{failLex: true}),
+			parserFactory(parserStub{}),
+			resolverFactory(resolverStub{failResolve: true}))
 		_, err := capCtrl.Resolve(
 			map[types.CaptureID]types.Expression{"cap0": "my expression"},
 			capture.CapsState{},
@@ -172,38 +196,64 @@ func testResolveFailure(t *testing.T) {
 }
 
 type lexerStub struct {
-	failLex bool
+	failLex    bool
+	expression types.Expression
 }
 
-func (l lexerStub) Lex(_ types.Expression) ([]lexer.Token, error) {
+func (l lexerStub) Lex() ([]lexer.Token, error) {
 	if l.failLex {
 		return nil, fmt.Errorf("lex failed")
 	}
 	return nil, nil
 }
 
-type parserStub struct {
-	failParse bool
+func lexerFactory(stub lexerStub) capture.LexerFactory {
+	return func(expression types.Expression) capture.Lexer {
+		stub.expression = expression
+		return &stub
+	}
 }
 
-func (p parserStub) Parse(_ []lexer.Token) (ast.Node, error) {
+type parserStub struct {
+	failParse bool
+	tokens    []lexer.Token
+}
+
+func (p parserStub) Parse() (ast.Node, error) {
 	if p.failParse {
 		return ast.Node{}, fmt.Errorf("parse failed")
 	}
 	return ast.Node{}, nil
 }
 
-type resolverStub struct {
-	failResolve bool
+func parserFactory(stub parserStub) capture.ParserFactory {
+	return func(tokens []lexer.Token) capture.Parser {
+		stub.tokens = tokens
+		return &stub
+	}
 }
 
-func (r resolverStub) Resolve(astPool capture.AstPooler, state types.NMState) (map[types.CaptureID]types.CaptureState, error) {
+type resolverStub struct {
+	failResolve bool
+	state       types.NMState
+	astPool     capture.AstPooler
+}
+
+func resolverFactory(stub resolverStub) capture.ResolverFactory {
+	return func(state types.NMState, astPool capture.AstPooler) capture.Resolver {
+		stub.state = state
+		stub.astPool = astPool
+		return &stub
+	}
+}
+
+func (r resolverStub) Resolve() (map[types.CaptureID]types.CaptureState, error) {
 	if r.failResolve {
 		return nil, fmt.Errorf("resolve failed")
 	}
 
 	capsState := capture.CapsState{}
-	for id := range astPool.Range() {
+	for id := range r.astPool.Range() {
 		capsState[id] = types.CaptureState{}
 	}
 
