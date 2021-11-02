@@ -55,12 +55,22 @@ func GenerateState(nmpolicy types.PolicySpec, currentState []byte, cache types.C
 		// TODO: Resolve/expend the desired state.
 	}
 
+	timestamp := time.Now().UTC()
+	timestampCapturesState(capturesState, timestamp)
 	return types.GeneratedState{
 		Cache:        types.CachedState{Capture: capturesState},
 		DesiredState: desiredState,
 		MetaInfo: types.MetaInfo{
 			Version:   "0",
-			TimeStamp: time.Now().UTC(),
+			TimeStamp: timestamp,
 		},
 	}, nil
+}
+
+func timestampCapturesState(capturesState map[string]types.CaptureState, timeStamp time.Time) {
+	for _, captureState := range capturesState {
+		if captureState.MetaInfo.TimeStamp.IsZero() {
+			captureState.MetaInfo.TimeStamp = timeStamp
+		}
+	}
 }

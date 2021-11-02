@@ -76,8 +76,9 @@ func testPolicyWithCachedCapturesAndNoDesiredStateRef(t *testing.T) {
 			DesiredState: stateData,
 		}
 
+		captureTime := time.Now().Add(-5 * time.Minute).UTC()
 		cacheState := types.CachedState{
-			Capture: map[string]types.CaptureState{capID0: {State: []byte("some captured state")}},
+			Capture: map[string]types.CaptureState{capID0: {State: []byte("some captured state"), MetaInfo: types.MetaInfo{TimeStamp: captureTime}}},
 		}
 		s, err := nmpolicy.GenerateState(
 			policySpec,
@@ -90,6 +91,7 @@ func testPolicyWithCachedCapturesAndNoDesiredStateRef(t *testing.T) {
 			DesiredState: stateData,
 			MetaInfo:     types.MetaInfo{Version: "0"},
 		}
+		assert.NotEqual(t, s.MetaInfo.TimeStamp, expectedState.Cache.Capture[capID0].MetaInfo.TimeStamp)
 		assert.Equal(t, expectedState, resetTimeStamp(s))
 	})
 }
