@@ -50,7 +50,7 @@ while true; do
     shift
 done
 
-if [ -z "${OPT_BUILD}" ] && [ -z "${OPT_LINT}" ] && [ -z "${OPT_UTEST}" ] && [ -z "${OPT_ITEST}" ] && [ -z "${OPT_HEADERS}"]; then
+if [ -z "${OPT_BUILD}" ] && [ -z "${OPT_LINT}" ] && [ -z "${OPT_UTEST}" ] && [ -z "${OPT_ITEST}" ] && [ -z "${OPT_HEADERS}" ]; then
     OPT_BUILD=1
     OPT_LINT=1
     OPT_UTEST=1
