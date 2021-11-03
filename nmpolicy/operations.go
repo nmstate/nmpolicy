@@ -38,7 +38,7 @@ import (
 // - Meta Info: Extended information about the generated state (e.g. the policy version).
 //
 // On failure, an error is returned.
-func GenerateState(nmpolicy types.PolicySpec, currentState []byte, cache types.CachedState) (types.GeneratedState, error) {
+func GenerateState(nmpolicy types.PolicySpec, currentState []byte, cache map[string]types.CaptureState) (types.GeneratedState, error) {
 	var capturesState map[string]types.CaptureState
 	var desiredState []byte
 
@@ -47,7 +47,7 @@ func GenerateState(nmpolicy types.PolicySpec, currentState []byte, cache types.C
 
 		capResolver := capture.New(lexer.New(), parser.New(), resolver.New())
 		var err error
-		capturesState, err = capResolver.Resolve(nmpolicy.Capture, cache.Capture, currentState)
+		capturesState, err = capResolver.Resolve(nmpolicy.Capture, cache, currentState)
 		if err != nil {
 			return types.GeneratedState{}, fmt.Errorf("failed to generate state, err: %v", err)
 		}
@@ -58,7 +58,7 @@ func GenerateState(nmpolicy types.PolicySpec, currentState []byte, cache types.C
 	timestamp := time.Now().UTC()
 	timestampCapturesState(capturesState, timestamp)
 	return types.GeneratedState{
-		Cache:        types.CachedState{Capture: capturesState},
+		Cache:        capturesState,
 		DesiredState: desiredState,
 		MetaInfo: types.MetaInfo{
 			Version:   "0",

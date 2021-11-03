@@ -22,12 +22,8 @@ type PolicySpec struct {
 	DesiredState []byte
 }
 
-type CachedState struct {
-	Capture map[string]CaptureState
-}
-
 type GeneratedState struct {
-	Cache        CachedState
+	Cache        map[string]CaptureState
 	DesiredState []byte
 	MetaInfo     MetaInfo
 }
@@ -42,4 +38,4 @@ type MetaInfo struct {
 	TimeStamp time.Time
 }
 
-func NoCache() CachedState { return CachedState{} }
+func NoCache() map[string]CaptureState { return map[string]CaptureState{} }
