@@ -68,9 +68,10 @@ func GenerateState(nmpolicy types.PolicySpec, currentState []byte, cache types.C
 }
 
 func timestampCapturesState(capturesState map[string]types.CaptureState, timeStamp time.Time) {
-	for _, captureState := range capturesState {
+	for captureID, captureState := range capturesState {
 		if captureState.MetaInfo.TimeStamp.IsZero() {
 			captureState.MetaInfo.TimeStamp = timeStamp
+			capturesState[captureID] = captureState
 		}
 	}
 }
