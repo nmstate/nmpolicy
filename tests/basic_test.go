@@ -149,12 +149,10 @@ interfaces:
 			},
 			DesiredState: stateData,
 		}
-
-		cacheState := types.CachedState{}
 		obtained, err := nmpolicy.GenerateState(
 			policySpec,
 			stateData,
-			cacheState)
+			types.CachedState{})
 		assert.NoError(t, err)
 
 		expected := types.GeneratedState{
@@ -202,14 +200,25 @@ routes:
 `)
 
 		const capID0 = "cap0"
+		const capID1 = "cap1"
 		policySpec := types.PolicySpec{
 			Capture: map[string]string{
 				capID0: `routes.running.destination=="0.0.0.0/0"`,
+				capID1: `routes.running.destination=="1.1.1.1/0"`,
 			},
 			DesiredState: stateData,
 		}
-
-		cacheState := types.CachedState{}
+		cacheState := types.CachedState{
+			Capture: map[string]types.CaptureState{
+				capID1: {
+					State: []byte("{}"),
+					MetaInfo: types.MetaInfo{
+						Version:   "333",
+						TimeStamp: time.Now(),
+					},
+				},
+			},
+		}
 		beforeGenerate := time.Now()
 		obtained, err := nmpolicy.GenerateState(
 			policySpec,
@@ -217,6 +226,7 @@ routes:
 			cacheState)
 		assert.NoError(t, err)
 		assert.Equal(t, obtained.MetaInfo.TimeStamp, obtained.Cache.Capture[capID0].MetaInfo.TimeStamp)
+		assert.Equal(t, cacheState.Capture[capID1].MetaInfo, obtained.Cache.Capture[capID1].MetaInfo)
 		assert.Greater(t, obtained.MetaInfo.TimeStamp.Sub(beforeGenerate), time.Duration(0))
 		assert.Greater(t, obtained.Cache.Capture[capID0].MetaInfo.TimeStamp.Sub(beforeGenerate), time.Duration(0))
 	})
