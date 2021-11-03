@@ -35,8 +35,6 @@ jobs:
           CGO_ENABLED: 0
         with:
           version: v1.42.1
-      - name: license headers 
-        run: ./scripts/make.sh --headers=check
   build:
     name: build
     runs-on: ubuntu-latest

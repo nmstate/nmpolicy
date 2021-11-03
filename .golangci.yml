@@ -40,6 +40,11 @@ linters-settings:
       - wrapperFunc
   gocyclo:
     min-complexity: 15
+  goheader:
+    values:
+      regexp: 
+        year-regexp: 2\d\d\d
+    template-path: header.tpl
   goimports:
     local-prefixes: github.com/nmstate/nmpolicy
   gomnd:
@@ -78,6 +83,7 @@ linters:
     - gocritic
     - gocyclo
     - gofmt
+    - goheader
     - goimports
     - gomnd
     - goprintffuncname
