@@ -59,7 +59,7 @@ func GenerateState(nmpolicy types.PolicySpec, currentState []byte, cache types.C
 	timestampCapturesState(capturesState, timestamp)
 	return types.GeneratedState{
 		Cache:        types.CachedState{Capture: capturesState},
-		DesiredState: desiredState,
+		DesiredState: dummy(desiredState),
 		MetaInfo: types.MetaInfo{
 			Version:   "0",
 			TimeStamp: timestamp,

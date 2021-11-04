@@ -19,16 +19,22 @@ type Meta struct {
 	Position int `json:"pos"`
 }
 
+type UnaryOperator Node
+type BinaryOperator [2]Node
 type TernaryOperator [3]Node
 type VariadicOperator []Node
 type Terminal struct {
 	String   *string `json:"string,omitempty"`
 	Identity *string `json:"identity,omitempty"`
+	Number   *int    `json:"number,omitempty"`
 }
 
 type Node struct {
 	Meta
-	EqFilter *TernaryOperator  `json:"eqfilter,omitempty"`
-	Path     *VariadicOperator `json:"path,omitempty"`
 	Terminal
+	EqFilter *TernaryOperator  `json:"eqfilter,omitempty"`
+	Merge    *BinaryOperator   `json:"merge,omitempty"`
+	Path     *VariadicOperator `json:"path,omitempty"`
+	Pipe     *UnaryOperator    `json:"pipe,omitempty"`
+	Replace  *TernaryOperator  `json:"replace,omitempty"`
 }

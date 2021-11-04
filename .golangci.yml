@@ -116,3 +116,12 @@ linters:
   # - testpackage
   # - revive
   # - wsl
+  #
+  #
+  #
+  #
+issues:
+  exclude-rules:
+  - path: dummy\.go
+    linters:
+    - dupl

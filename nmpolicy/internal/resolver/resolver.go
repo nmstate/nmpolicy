@@ -42,6 +42,10 @@ func (r Resolver) Resolve(astPool map[string]ast.Node, state []byte) (map[string
 	}
 	resolvedASTs := make(map[string]types.CaptureState)
 	for captureName, ast := range astPool {
+		if dummyCaptureState := dummy(ast); dummyCaptureState != nil {
+			resolvedASTs[captureName] = *dummyCaptureState
+			continue
+		}
 		resolvedAST, err := r.resolveAST(ast, currentState)
 		if err != nil {
 			return nil, wrapWithResolveError(err)

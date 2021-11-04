@@ -19,8 +19,6 @@ import (
 	"testing"
 	"time"
 
-	"sigs.k8s.io/yaml"
-
 	assert "github.com/stretchr/testify/require"
 
 	"github.com/nmstate/nmpolicy/nmpolicy"
@@ -32,7 +30,6 @@ func TestBasicPolicy(t *testing.T) {
 		testEmptyPolicy(t)
 		testPolicyWithOnlyDesiredState(t)
 		testPolicyWithCachedCaptureAndDesiredStateWithoutRef(t)
-		testPolicyWithFilterCaptureAndDesiredStateWithoutRef(t)
 		testGenerateUniqueTimestamps(t)
 	})
 }
@@ -98,96 +95,6 @@ func testPolicyWithCachedCaptureAndDesiredStateWithoutRef(t *testing.T) {
 	})
 }
 
-func testPolicyWithFilterCaptureAndDesiredStateWithoutRef(t *testing.T) {
-	t.Run("with a eqfilter capture expression and desired state that has no ref", func(t *testing.T) {
-		stateData := []byte(`
-routes:
-  running:
-  - destination: 0.0.0.0/0
-    next-hop-address: 192.168.100.1
-    next-hop-interface: eth1
-    table-id: 254
-  - destination: 1.1.1.0/24
-    next-hop-address: 192.168.100.1
-    next-hop-interface: eth1
-    table-id: 254
-  config:
-  - destination: 0.0.0.0/0
-    next-hop-address: 192.168.100.1
-    next-hop-interface: eth1
-    table-id: 254
-  - destination: 1.1.1.0/24
-    next-hop-address: 192.168.100.1
-    next-hop-interface: eth1
-    table-id: 254
-interfaces:
-  - name: eth1
-    type: ethernet
-    state: up
-    ipv4:
-      address:
-      - ip: 10.244.0.1
-        prefix-length: 24
-      - ip: 169.254.1.0
-        prefix-length: 16
-      dhcp: false
-      enabled: true
-  - name: eth2
-    type: ethernet
-    state: down
-    ipv4:
-      address:
-      - ip: 1.2.3.4
-        prefix-length: 24
-      dhcp: false
-      enabled: false
-`)
-		const capID0 = "cap0"
-		policySpec := types.PolicySpec{
-			Capture: map[string]string{
-				capID0: `routes.running.destination=="0.0.0.0/0"`,
-			},
-			DesiredState: stateData,
-		}
-		obtained, err := nmpolicy.GenerateState(
-			policySpec,
-			stateData,
-			types.CachedState{})
-		assert.NoError(t, err)
-
-		expected := types.GeneratedState{
-			MetaInfo: types.MetaInfo{
-				Version: "0",
-			},
-			DesiredState: stateData,
-			Cache: types.CachedState{
-				Capture: map[string]types.CaptureState{
-					capID0: {
-						State: []byte(`
-routes:
-  running:
-  - destination: 0.0.0.0/0
-    next-hop-address: 192.168.100.1
-    next-hop-interface: eth1
-    table-id: 254
-`),
-					},
-				},
-			},
-		}
-
-		obtained = resetTimeStamp(obtained)
-
-		obtained, err = formatYAMLs(obtained)
-		assert.NoError(t, err)
-
-		expected, err = formatYAMLs(expected)
-		assert.NoError(t, err)
-
-		assert.Equal(t, expected, obtained)
-	})
-}
-
 func testGenerateUniqueTimestamps(t *testing.T) {
 	t.Run("with eq filter and no desired state should set unique timestamps", func(t *testing.T) {
 		stateData := []byte(`
@@ -230,40 +137,4 @@ routes:
 		assert.Greater(t, obtained.MetaInfo.TimeStamp.Sub(beforeGenerate), time.Duration(0))
 		assert.Greater(t, obtained.Cache.Capture[capID0].MetaInfo.TimeStamp.Sub(beforeGenerate), time.Duration(0))
 	})
-}
-
-func resetTimeStamp(generatedState types.GeneratedState) types.GeneratedState {
-	generatedState.MetaInfo.TimeStamp = time.Time{}
-	for captureID, captureState := range generatedState.Cache.Capture {
-		captureState.MetaInfo.TimeStamp = time.Time{}
-		generatedState.Cache.Capture[captureID] = captureState
-	}
-	return generatedState
-}
-
-func formatYAMLs(generatedState types.GeneratedState) (types.GeneratedState, error) {
-	for captureID, captureState := range generatedState.Cache.Capture {
-		formatedYAML, err := formatYAML(captureState.State)
-		if err != nil {
-			return types.GeneratedState{}, err
-		}
-		captureState.State = formatedYAML
-		generatedState.Cache.Capture[captureID] = captureState
-	}
-	return generatedState, nil
-}
-
-func formatYAML(unformatedYAML []byte) ([]byte, error) {
-	unmarshaled := map[string]interface{}{}
-
-	err := yaml.Unmarshal(unformatedYAML, &unmarshaled)
-	if err != nil {
-		return nil, err
-	}
-
-	marshaled, err := yaml.Marshal(unmarshaled)
-	if err != nil {
-		return nil, err
-	}
-	return marshaled, nil
 }
