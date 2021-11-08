@@ -17,6 +17,7 @@
 package parser_test
 
 import (
+	"fmt"
 	"testing"
 
 	assert "github.com/stretchr/testify/require"
@@ -41,7 +42,7 @@ func testParseFailures(t *testing.T) {
 				eof(),
 			),
 		),
-		expectError(`invalid path: missing identity after dot`,
+		expectError(`invalid path: missing identity or number after dot`,
 			fromTokens(
 				identity("routes"),
 				dot(),
@@ -55,7 +56,7 @@ func testParseFailures(t *testing.T) {
 				eof(),
 			),
 		),
-		expectError(`invalid path: missing identity after dot`,
+		expectError(`invalid path: missing identity or number after dot`,
 			fromTokens(
 				identity("routes"),
 				dot(),
@@ -79,7 +80,7 @@ func testParseFailures(t *testing.T) {
 				eof(),
 			),
 		),
-		expectError(`invalid equality filter: right hand argument is not a string`,
+		expectError(`invalid equality filter: right hand argument is not a string or identity`,
 			fromTokens(
 				identity("routes"),
 				dot(),
@@ -87,11 +88,7 @@ func testParseFailures(t *testing.T) {
 				dot(),
 				identity("destination"),
 				eqfilter(),
-				identity("this"),
-				dot(),
-				identity("is"),
-				dot(),
-				identity("wrong"),
+				eqfilter(),
 				eof(),
 			),
 		),
@@ -142,6 +139,51 @@ eqfilter:
 				identity("destination"),
 				eqfilter(),
 				str("0.0.0.0/0"),
+				eof(),
+			),
+		),
+		expectAST(t, `
+pos: 33
+eqfilter:
+- pos: 0
+  identity: currentState
+- pos: 0 
+  path: 
+  - pos: 0 
+    identity: routes
+  - pos: 7
+    identity: running
+  - pos: 15
+    identity: next-hop-interface
+- pos: 35
+  path:
+  - pos: 35 
+    identity: capture
+  - pos: 43
+    identity: default-gw
+  - pos: 54
+    identity: routes
+  - pos: 61
+    number: 0
+  - pos: 63
+    identity: next-hop-interface
+`,
+			fromTokens(
+				identity("routes"),
+				dot(),
+				identity("running"),
+				dot(),
+				identity("next-hop-interface"),
+				eqfilter(),
+				identity("capture"),
+				dot(),
+				identity("default-gw"),
+				dot(),
+				identity("routes"),
+				dot(),
+				number(0),
+				dot(),
+				identity("next-hop-interface"),
 				eof(),
 			),
 		),
@@ -267,6 +309,10 @@ func identity(literal string) lexer.Token {
 
 func str(literal string) lexer.Token {
 	return lexer.Token{Type: lexer.STRING, Literal: literal}
+}
+
+func number(literal int) lexer.Token {
+	return lexer.Token{Type: lexer.NUMBER, Literal: fmt.Sprintf("%d", literal)}
 }
 
 func dot() lexer.Token {

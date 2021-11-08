@@ -25,6 +25,7 @@ type VariadicOperator []Node
 type Terminal struct {
 	String   *string `json:"string,omitempty"`
 	Identity *string `json:"identity,omitempty"`
+	Number   *int    `json:"number,omitempty"`
 }
 
 type Node struct {
