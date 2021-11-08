@@ -25,56 +25,88 @@ import (
 	"github.com/nmstate/nmpolicy/nmpolicy/types"
 )
 
-type Resolver struct{}
-
-func New() Resolver {
-	return Resolver{}
+type Resolver struct {
+	currentState   map[string]interface{}
+	capturedStates map[string]map[string]interface{}
+	captureASTPool map[string]ast.Node
 }
 
-func (r Resolver) Resolve(astPool map[string]ast.Node, state []byte) (map[string]types.CaptureState, error) {
-	currentState := make(map[string]interface{})
-	err := yaml.Unmarshal(state, &currentState)
+func New() *Resolver {
+	return &Resolver{
+		currentState:   map[string]interface{}{},
+		capturedStates: map[string]map[string]interface{}{},
+		captureASTPool: map[string]ast.Node{},
+	}
+}
+
+func (r *Resolver) Resolve(captureASTPool map[string]ast.Node, currentState []byte) (map[string]types.CaptureState, error) {
+	r.captureASTPool = captureASTPool
+	err := yaml.Unmarshal(currentState, &r.currentState)
 	if err != nil {
 		return nil, wrapWithResolveError(err)
 	}
-	resolvedASTs := make(map[string]types.CaptureState)
-	for captureName, ast := range astPool {
-		resolvedAST, err := r.resolveAST(ast, currentState)
+
+	capturedStates := map[string]types.CaptureState{}
+	for captureEntryName := range r.captureASTPool {
+		capturedStateEntry, err := r.resolveCaptureEntryName(captureEntryName)
 		if err != nil {
 			return nil, wrapWithResolveError(err)
 		}
-		rawAST, err := yaml.Marshal(resolvedAST)
+		marshaledCapturedStateEntry, err := yaml.Marshal(capturedStateEntry)
 		if err != nil {
 			return nil, wrapWithResolveError(err)
 		}
-		resolvedASTs[captureName] = types.CaptureState{State: rawAST, MetaInfo: types.MetaInfo{}}
+		capturedStates[captureEntryName] = types.CaptureState{
+			State:    marshaledCapturedStateEntry,
+			MetaInfo: types.MetaInfo{},
+		}
 	}
-	return resolvedASTs, nil
+	return capturedStates, nil
 }
 
-func (r Resolver) resolveAST(captureAST ast.Node, currentState map[string]interface{}) (map[string]interface{}, error) {
-	if captureAST.EqFilter != nil {
-		inputSource, err := r.resolveInputSource(captureAST.EqFilter[0], currentState)
-		if err != nil {
-			return nil, err
-		}
-
-		path, err := r.resolvePath(captureAST.EqFilter[1])
-		if err != nil {
-			return nil, err
-		}
-		filteredValue, err := r.resolveFilteredValue(captureAST.EqFilter[2])
-		if err != nil {
-			return nil, err
-		}
-
-		filteredState, err := filter(inputSource, *path, *filteredValue)
-		if err != nil {
-			return nil, wrapWithEqFilterError(err)
-		}
-		return filteredState, nil
+func (r *Resolver) resolveCaptureEntryName(captureEntryName string) (map[string]interface{}, error) {
+	capturedStateEntry, ok := r.capturedStates[captureEntryName]
+	if ok {
+		return capturedStateEntry, nil
 	}
-	return nil, fmt.Errorf("root node has unsupported operation : %v", captureAST)
+	captureASTEntry, ok := r.captureASTPool[captureEntryName]
+	if !ok {
+		return nil, fmt.Errorf("capture entry '%s' not found", captureEntryName)
+	}
+	capturedStateEntry, err := r.resolveCaptureASTEntry(captureASTEntry)
+	if err != nil {
+		return nil, err
+	}
+	r.capturedStates[captureEntryName] = capturedStateEntry
+	return capturedStateEntry, nil
+}
+
+func (r Resolver) resolveCaptureASTEntry(captureASTEntry ast.Node) (map[string]interface{}, error) {
+	if captureASTEntry.EqFilter != nil {
+		return r.resolveEqFilter(captureASTEntry.EqFilter)
+	}
+	return nil, fmt.Errorf("root node has unsupported operation : %v", captureASTEntry)
+}
+
+func (r Resolver) resolveEqFilter(operator *ast.TernaryOperator) (map[string]interface{}, error) {
+	inputSource, err := r.resolveInputSource((*operator)[0], r.currentState)
+	if err != nil {
+		return nil, err
+	}
+
+	path, err := r.resolvePath((*operator)[1])
+	if err != nil {
+		return nil, err
+	}
+	filteredValue, err := r.resolveFilteredValue((*operator)[2])
+	if err != nil {
+		return nil, err
+	}
+	filteredState, err := filter(inputSource, *path, *filteredValue)
+	if err != nil {
+		return nil, wrapWithEqFilterError(err)
+	}
+	return filteredState, nil
 }
 
 func (r Resolver) resolveInputSource(inputSourceNode ast.Node, currentState map[string]interface{}) (map[string]interface{}, error) {
@@ -95,7 +127,7 @@ func (r Resolver) resolvePath(pathNode ast.Node) (*ast.VariadicOperator, error) 
 
 func (r Resolver) resolveFilteredValue(filteredValueNode ast.Node) (*ast.Node, error) {
 	if filteredValueNode.String == nil {
-		return nil, fmt.Errorf("not supported filtered value %v. Only string is supported", filteredValueNode)
+		return nil, fmt.Errorf("not supported filtered path value %v. Only capture references are supported", filteredValueNode)
 	}
 	return &filteredValueNode, nil
 }
