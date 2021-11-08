@@ -16,28 +16,58 @@
 
 package parser
 
-import "fmt"
+import (
+	"strings"
+)
 
-type InvalidExpressionError struct {
-	msg string
+type parserError struct {
+	prefix string
+	inner  error
+	msg    string
 }
 
-func (e *InvalidExpressionError) Error() string {
-	return fmt.Sprintf("invalid expression: %s", e.msg)
+func (p parserError) Unwrap() error {
+	return p.inner
 }
 
-type InvalidPathError struct {
-	msg string
+func (p parserError) Error() string {
+	errorMsg := strings.Builder{}
+	errorMsg.WriteString(p.prefix)
+	errorMsg.WriteString(": ")
+	if p.inner != nil {
+		errorMsg.WriteString(p.inner.Error())
+	} else {
+		errorMsg.WriteString(p.msg)
+	}
+	return errorMsg.String()
 }
 
-func (e *InvalidPathError) Error() string {
-	return fmt.Sprintf("invalid path: %s", e.msg)
+const invalidPathErrorPrefix = "invalid path"
+
+func wrapWithInvalidPathError(err error) *parserError {
+	return &parserError{
+		prefix: invalidPathErrorPrefix,
+		inner:  err,
+	}
 }
 
-type InvalidEqualityFilter struct {
-	msg string
+func invalidPathError(msg string) *parserError {
+	return &parserError{
+		prefix: invalidPathErrorPrefix,
+		msg:    msg,
+	}
 }
 
-func (e *InvalidEqualityFilter) Error() string {
-	return fmt.Sprintf("invalid equality filter: %s", e.msg)
+func invalidEqualityFilterError(msg string) *parserError {
+	return &parserError{
+		prefix: "invalid equality filter",
+		msg:    msg,
+	}
+}
+
+func invalidExpressionError(msg string) *parserError {
+	return &parserError{
+		prefix: "invalid expression",
+		msg:    msg,
+	}
 }
