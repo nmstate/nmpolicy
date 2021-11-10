@@ -68,7 +68,11 @@ func (r Resolver) resolveAST(captureAST ast.Node, currentState map[string]interf
 			return nil, err
 		}
 
-		return filter(inputSource, *path, *filteredValue)
+		filteredState, err := filter(inputSource, *path, *filteredValue)
+		if err != nil {
+			return nil, wrapWithEqFilterError(err)
+		}
+		return filteredState, nil
 	}
 	return nil, fmt.Errorf("root node has unsupported operation : %v", captureAST)
 }

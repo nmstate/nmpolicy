@@ -88,7 +88,7 @@ func runTest(t *testing.T, testToRun test) {
 			assert.Equal(t, expectedState, actualState)
 		}
 	} else {
-		assert.Error(t, err)
+		assert.EqualError(t, err, testToRun.err)
 	}
 }
 
@@ -235,7 +235,10 @@ eqfilter:
 - pos: 7
   string: 10.244.0.1
 `},
-			err: "invalid type on path",
+			err: "resolve error: eqfilter error: failed applying operation on the path: " +
+				"error comparing the expected and obtained values : " +
+				"the value [map[ip:10.244.0.1 prefix-length:24] map[ip:169.254.1.0 prefix-length:16]] of type []interface {} " +
+				"not supported,curretly only string values are supported",
 		}
 		runTest(t, testToRun)
 	})
@@ -259,7 +262,9 @@ eqfilter:
 - pos: 6
   string: eth0
 `},
-			err: "invalid path",
+			err: "resolve error: eqfilter error: failed applying operation on the path: cannot find key name-invalid-path in " +
+				"map[ipv4:map[address:[map[ip:10.244.0.1 prefix-length:24] " +
+				"map[ip:169.254.1.0 prefix-length:16]] dhcp:false enabled:true] name:eth1 state:up type:ethernet]",
 		}
 		runTest(t, testToRun)
 	})
