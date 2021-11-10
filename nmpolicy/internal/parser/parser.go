@@ -35,7 +35,7 @@ func New() *Parser {
 }
 
 func (p *Parser) Parse(tokens []lexer.Token) (ast.Node, error) {
-	p.tokens = tokens
+	p.reset(tokens)
 	node, err := p.parse()
 	if err != nil {
 		return ast.Node{}, err
@@ -163,4 +163,9 @@ func (p *Parser) parseEqFilter() (*ast.Node, error) {
 		return nil, &InvalidEqualityFilter{"right hand argument is not a string"}
 	}
 	return operator, nil
+}
+
+func (p *Parser) reset(tokens []lexer.Token) {
+	*p = *New()
+	p.tokens = tokens
 }
