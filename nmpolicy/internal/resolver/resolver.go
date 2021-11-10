@@ -91,18 +91,18 @@ func (r Resolver) resolveCaptureASTEntry(captureASTEntry ast.Node) (map[string]i
 func (r Resolver) resolveEqFilter(operator *ast.TernaryOperator) (map[string]interface{}, error) {
 	inputSource, err := r.resolveInputSource((*operator)[0], r.currentState)
 	if err != nil {
-		return nil, err
+		return nil, wrapWithEqFilterError(err)
 	}
 
 	path, err := r.resolvePath((*operator)[1])
 	if err != nil {
-		return nil, err
+		return nil, wrapWithEqFilterError(err)
 	}
 	filteredValue, err := r.resolveFilteredValue((*operator)[2])
 	if err != nil {
-		return nil, err
+		return nil, wrapWithEqFilterError(err)
 	}
-	filteredState, err := filter(inputSource, *path, *filteredValue)
+	filteredState, err := filter(inputSource, path.steps, *filteredValue)
 	if err != nil {
 		return nil, wrapWithEqFilterError(err)
 	}
@@ -117,17 +117,61 @@ func (r Resolver) resolveInputSource(inputSourceNode ast.Node, currentState map[
 	return nil, fmt.Errorf("not supported input source %v. Only the current state is supported", inputSourceNode)
 }
 
-func (r Resolver) resolvePath(pathNode ast.Node) (*ast.VariadicOperator, error) {
-	if pathNode.Path == nil {
-		return nil, fmt.Errorf("invalid path type %T", pathNode)
+func (r Resolver) resolveFilteredValue(filteredValueNode ast.Node) (*ast.Node, error) {
+	if filteredValueNode.String != nil {
+		return &filteredValueNode, nil
+	} else if filteredValueNode.Path != nil {
+		resolvedCaptureEntryPath, err := r.resolveCaptureEntryPath(filteredValueNode)
+		if err != nil {
+			return nil, err
+		}
+		terminal, err := newTerminalFromInterface(resolvedCaptureEntryPath)
+		if err != nil {
+			return nil, err
+		}
+		return &ast.Node{
+			Terminal: *terminal,
+		}, nil
+	} else {
+		return nil, fmt.Errorf("not supported filtered value. Only string or paths are supported")
 	}
-
-	return pathNode.Path, nil
 }
 
-func (r Resolver) resolveFilteredValue(filteredValueNode ast.Node) (*ast.Node, error) {
-	if filteredValueNode.String == nil {
-		return nil, fmt.Errorf("not supported filtered path value %v. Only capture references are supported", filteredValueNode)
+func (r Resolver) resolveCaptureEntryPath(pathNode ast.Node) (interface{}, error) {
+	resolvedPath, err := r.resolvePath(pathNode)
+	if err != nil {
+		return nil, err
 	}
-	return &filteredValueNode, nil
+	if resolvedPath.captureEntryName == "" {
+		return nil, fmt.Errorf("not supported filtered value path. Only paths with a capture entry reference are supported")
+	}
+	capturedStateEntry, err := r.resolveCaptureEntryName(resolvedPath.captureEntryName)
+	if err != nil {
+		return nil, err
+	}
+	return resolvedPath.walkState(capturedStateEntry)
+}
+
+func (r Resolver) resolvePath(pathNode ast.Node) (*captureEntryNameAndSteps, error) {
+	if pathNode.Path == nil {
+		return nil, fmt.Errorf("invalid path type %T", pathNode)
+	} else if len(*pathNode.Path) == 0 {
+		return nil, fmt.Errorf("empty path length")
+	} else if (*pathNode.Path)[0].Identity == nil {
+		return nil, fmt.Errorf("path first step has to be an identity")
+	}
+	resolvedPath := captureEntryNameAndSteps{
+		steps: *pathNode.Path,
+	}
+	if *resolvedPath.steps[0].Identity == "capture" {
+		const captureRefSize = 2
+		if len(resolvedPath.steps) < captureRefSize || resolvedPath.steps[1].Identity == nil {
+			return nil, fmt.Errorf("path capture ref is missing capture entry name")
+		}
+		resolvedPath.captureEntryName = *resolvedPath.steps[1].Identity
+		if len(resolvedPath.steps) > captureRefSize {
+			resolvedPath.steps = resolvedPath.steps[2:len(resolvedPath.steps)]
+		}
+	}
+	return &resolvedPath, nil
 }
