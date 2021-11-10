@@ -101,9 +101,8 @@ func testPolicyWithCachedCaptureAndDesiredStateWithoutRef(t *testing.T) {
 	})
 }
 
-func testPolicyWithFilterCaptureAndDesiredStateWithoutRef(t *testing.T) {
-	t.Run("with a eqfilter capture expression and desired state that has no ref", func(t *testing.T) {
-		stateData := []byte(`routes:
+var mainCurrentState = []byte(`
+routes:
   running:
   - destination: 0.0.0.0/0
     next-hop-address: 192.168.100.1
@@ -113,17 +112,54 @@ func testPolicyWithFilterCaptureAndDesiredStateWithoutRef(t *testing.T) {
     next-hop-address: 192.168.100.1
     next-hop-interface: eth1
     table-id: 254
+  - destination: 2.2.2.0/24
+    next-hop-address: 192.168.200.1
+    next-hop-interface: eth2
+    table-id: 254
+  config:
+  - destination: 0.0.0.0/0
+    next-hop-address: 192.168.100.1
+    next-hop-interface: eth1
+    table-id: 254
+  - destination: 1.1.1.0/24
+    next-hop-address: 192.168.100.1
+    next-hop-interface: eth1
+    table-id: 254
+interfaces:
+  - name: eth1
+    type: ethernet
+    state: up
+    ipv4:
+      address:
+      - ip: 10.244.0.1
+        prefix-length: 24
+      - ip: 169.254.1.0
+        prefix-length: 16
+      dhcp: false
+      enabled: true
+  - name: eth2
+    type: ethernet
+    state: up
+    ipv4:
+      address:
+      - ip: 1.2.3.4
+        prefix-length: 24
+      dhcp: false
+      enabled: true
 `)
-		const capID0 = "cap0"
+
+func testPolicyWithFilterCaptureAndDesiredStateWithoutRef(t *testing.T) {
+	t.Run("with a eqfilter capture expression and desired state that has no ref", func(t *testing.T) {
 		policySpec := types.PolicySpec{
 			Capture: map[string]string{
-				capID0: `routes.running.destination=="0.0.0.0/0"`,
+				"default-gw":        `routes.running.destination=="0.0.0.0/0"`,
+				"base-iface-routes": `routes.running.next-hop-interface==capture.default-gw.routes.running.0.next-hop-interface`,
 			},
-			DesiredState: stateData,
+			DesiredState: mainCurrentState,
 		}
 		obtained, err := nmpolicy.GenerateState(
 			policySpec,
-			stateData,
+			mainCurrentState,
 			types.CachedState{})
 		assert.NoError(t, err)
 
@@ -131,13 +167,28 @@ func testPolicyWithFilterCaptureAndDesiredStateWithoutRef(t *testing.T) {
 			MetaInfo: types.MetaInfo{
 				Version: "0",
 			},
-			DesiredState: stateData,
+			DesiredState: mainCurrentState,
 			Cache: types.CachedState{
 				Capture: map[string]types.CaptureState{
-					capID0: {
-						State: []byte(`routes:
+					"default-gw": {
+						State: []byte(`
+routes:
   running:
   - destination: 0.0.0.0/0
+    next-hop-address: 192.168.100.1
+    next-hop-interface: eth1
+    table-id: 254
+`),
+					},
+					"base-iface-routes": {
+						State: []byte(`
+routes:  
+  running:
+  - destination: 0.0.0.0/0
+    next-hop-address: 192.168.100.1
+    next-hop-interface: eth1
+    table-id: 254
+  - destination: 1.1.1.0/24
     next-hop-address: 192.168.100.1
     next-hop-interface: eth1
     table-id: 254
@@ -220,6 +271,11 @@ func formatYAMLs(generatedState types.GeneratedState) (types.GeneratedState, err
 		captureState.State = formatedYAML
 		generatedState.Cache.Capture[captureID] = captureState
 	}
+	formatedDesiredState, err := formatYAML(generatedState.DesiredState)
+	if err != nil {
+		return generatedState, nil
+	}
+	generatedState.DesiredState = formatedDesiredState
 	return generatedState, nil
 }
 
