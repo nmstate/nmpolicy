@@ -26,7 +26,7 @@ func filter(inputState map[string]interface{}, path ast.VariadicOperator, expect
 	filtered, err := applyFuncOnPath(inputState, path, expectedNode, mapContainsValue, true)
 
 	if err != nil {
-		return nil, filterError("error applying operation on the path : %v", err)
+		return nil, fmt.Errorf("failed applying operation on the path: %v", err)
 	}
 
 	if filtered == nil {
@@ -35,7 +35,7 @@ func filter(inputState map[string]interface{}, path ast.VariadicOperator, expect
 
 	filteredMap, ok := filtered.(map[string]interface{})
 	if !ok {
-		return nil, filterError("error converting filtering result to a map")
+		return nil, fmt.Errorf("failed converting filtering result to a map")
 	}
 	return filteredMap, nil
 }
@@ -56,11 +56,11 @@ func isEqual(obtainedValue interface{}, desiredValue ast.Node) (bool, error) {
 func mapContainsValue(mapToFilter map[string]interface{}, filterKey string, expectedNode ast.Node) (interface{}, error) {
 	obtainedValue, ok := mapToFilter[filterKey]
 	if !ok {
-		return nil, filterError("cannot find key %s in %v", filterKey, obtainedValue)
+		return nil, fmt.Errorf("cannot find key %s in %v", filterKey, mapToFilter)
 	}
 	valueIsEqual, err := isEqual(obtainedValue, expectedNode)
 	if err != nil {
-		return nil, filterError("error comparing the expected and obtained values : %v", err)
+		return nil, fmt.Errorf("error comparing the expected and obtained values : %v", err)
 	}
 	if valueIsEqual {
 		return mapToFilter, nil
