@@ -30,6 +30,7 @@ import (
 func TestParser(t *testing.T) {
 	testParseFailures(t)
 	testParseSuccess(t)
+	testParserReuse(t)
 }
 
 func testParseFailures(t *testing.T) {
@@ -149,18 +150,75 @@ eqfilter:
 	runTest(t, tests)
 }
 
+func testParserReuse(t *testing.T) {
+	p := parser.New()
+	testToRun1 := expectAST(t, `
+pos: 26
+eqfilter: 
+- pos: 0
+  identity: currentState
+- pos: 0
+  path: 
+  - pos: 0
+    identity: routes
+  - pos: 7
+    identity: running
+  - pos: 15
+    identity: destination
+- pos: 28 
+  string: 0.0.0.0/0`,
+		fromTokens(
+			identity("routes"),
+			dot(),
+			identity("running"),
+			dot(),
+			identity("destination"),
+			eqfilter(),
+			str("0.0.0.0/0"),
+			eof(),
+		),
+	)
+	testToRun2 := expectAST(t, `
+pos: 14
+eqfilter: 
+- pos: 0
+  identity: currentState
+- pos: 0
+  path: 
+  - pos: 0
+    identity: routes
+  - pos: 7
+    identity: running
+- pos: 16
+  string: foo`,
+		fromTokens(
+			identity("routes"),
+			dot(),
+			identity("running"),
+			eqfilter(),
+			str("foo"),
+			eof(),
+		),
+	)
+	runTestWithParser(t, testToRun1, p)
+	runTestWithParser(t, testToRun2, p)
+}
+
 func runTest(t *testing.T, tests []test) {
 	for _, tt := range tests {
 		t.Run(description(tt), func(t *testing.T) {
-			p := parser.New()
-			obtainedAST, obtainedErr := p.Parse(tt.tokens)
-			if tt.expected.err != "" {
-				assert.EqualError(t, obtainedErr, tt.expected.err)
-			} else {
-				assert.NoError(t, obtainedErr)
-				assert.Equal(t, *tt.expected.ast, obtainedAST)
-			}
+			runTestWithParser(t, tt, parser.New())
 		})
+	}
+}
+
+func runTestWithParser(t *testing.T, testToRun test, p *parser.Parser) {
+	obtainedAST, obtainedErr := p.Parse(testToRun.tokens)
+	if testToRun.expected.err != "" {
+		assert.EqualError(t, obtainedErr, testToRun.expected.err)
+	} else {
+		assert.NoError(t, obtainedErr)
+		assert.Equal(t, *testToRun.expected.ast, obtainedAST)
 	}
 }
 
