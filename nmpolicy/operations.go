@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/capture"
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/expander"
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/lexer"
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/parser"
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/resolver"
@@ -53,7 +54,11 @@ func GenerateState(nmpolicy types.PolicySpec, currentState []byte, cache types.C
 			return types.GeneratedState{}, fmt.Errorf("failed to generate state, err: %v", err)
 		}
 
-		// TODO: Resolve/expend the desired state.
+		stateExpander := expander.New(capture.CaptureEntry{CaptureCache: capturesState})
+		desiredState, err = stateExpander.Expand(desiredState)
+		if err != nil {
+			return types.GeneratedState{}, fmt.Errorf("failed to generate state, err: %v", err)
+		}
 	}
 
 	timestamp := time.Now().UTC()

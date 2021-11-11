@@ -54,7 +54,8 @@ func testPolicyWithOnlyDesiredState(t *testing.T) {
 	// When a basic input with only the desired state is provided,
 	// the policy just passes it as is to the output with no modifications.
 	t.Run("with only desired state", func(t *testing.T) {
-		stateData := []byte(`this is not a legal yaml format!`)
+		stateData := []byte(`this is not a legal yaml format!
+`)
 		policySpec := types.PolicySpec{
 			DesiredState: stateData,
 		}
@@ -72,7 +73,8 @@ func testPolicyWithOnlyDesiredState(t *testing.T) {
 
 func testPolicyWithCachedCaptureAndDesiredStateWithoutRef(t *testing.T) {
 	t.Run("with all captures cached and desired state that has no ref", func(t *testing.T) {
-		stateData := []byte(`this is not a legal yaml format!`)
+		stateData := []byte(`this is not a legal yaml format!
+`)
 		const capID0 = "cap0"
 		policySpec := types.PolicySpec{
 			Capture: map[string]string{
@@ -101,8 +103,7 @@ func testPolicyWithCachedCaptureAndDesiredStateWithoutRef(t *testing.T) {
 
 func testPolicyWithFilterCaptureAndDesiredStateWithoutRef(t *testing.T) {
 	t.Run("with a eqfilter capture expression and desired state that has no ref", func(t *testing.T) {
-		stateData := []byte(`
-routes:
+		stateData := []byte(`routes:
   running:
   - destination: 0.0.0.0/0
     next-hop-address: 192.168.100.1
@@ -112,36 +113,6 @@ routes:
     next-hop-address: 192.168.100.1
     next-hop-interface: eth1
     table-id: 254
-  config:
-  - destination: 0.0.0.0/0
-    next-hop-address: 192.168.100.1
-    next-hop-interface: eth1
-    table-id: 254
-  - destination: 1.1.1.0/24
-    next-hop-address: 192.168.100.1
-    next-hop-interface: eth1
-    table-id: 254
-interfaces:
-  - name: eth1
-    type: ethernet
-    state: up
-    ipv4:
-      address:
-      - ip: 10.244.0.1
-        prefix-length: 24
-      - ip: 169.254.1.0
-        prefix-length: 16
-      dhcp: false
-      enabled: true
-  - name: eth2
-    type: ethernet
-    state: down
-    ipv4:
-      address:
-      - ip: 1.2.3.4
-        prefix-length: 24
-      dhcp: false
-      enabled: false
 `)
 		const capID0 = "cap0"
 		policySpec := types.PolicySpec{
@@ -164,8 +135,7 @@ interfaces:
 			Cache: types.CachedState{
 				Capture: map[string]types.CaptureState{
 					capID0: {
-						State: []byte(`
-routes:
+						State: []byte(`routes:
   running:
   - destination: 0.0.0.0/0
     next-hop-address: 192.168.100.1
@@ -191,8 +161,7 @@ routes:
 
 func testGenerateUniqueTimestamps(t *testing.T) {
 	t.Run("with eq filter and no desired state should set unique timestamps", func(t *testing.T) {
-		stateData := []byte(`
-routes:
+		stateData := []byte(`routes:
   running:
   - destination: 0.0.0.0/0
     next-hop-address: 192.168.100.1
