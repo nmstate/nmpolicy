@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package resolver
+package resolver_test
 
 import (
 	"testing"
@@ -23,6 +23,7 @@ import (
 	yaml "sigs.k8s.io/yaml"
 
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/ast"
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/resolver"
 )
 
 var sourceYAML string = `
@@ -85,10 +86,7 @@ func runTest(t *testing.T, testToRun test) {
 
 	capturedStates, err := unmarshalCapturedState(testToRun.capturedStates)
 	assert.NoError(t, err)
-	resolver := New()
-	resolver.capturedStates = capturedStates
-
-	resultStates, err := resolver.Resolve(astPool, []byte(sourceYAML))
+	resultStates, err := resolver.New().Resolve(astPool, []byte(sourceYAML), capturedStates)
 	if testToRun.err == "" {
 		assert.NoError(t, err)
 		expectedState := make(map[string]interface{})

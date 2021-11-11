@@ -253,7 +253,7 @@ func runTest(t *testing.T, tests []test) {
 	}
 }
 
-func runTestWithParser(t *testing.T, testToRun test, p *parser.Parser) {
+func runTestWithParser(t *testing.T, testToRun test, p parser.Parser) {
 	obtainedAST, obtainedErr := p.Parse(testToRun.tokens)
 	if testToRun.expected.err != "" {
 		assert.EqualError(t, obtainedErr, testToRun.expected.err)

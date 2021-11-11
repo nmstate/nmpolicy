@@ -20,12 +20,11 @@ import (
 	"testing"
 	"time"
 
-	"sigs.k8s.io/yaml"
-
 	assert "github.com/stretchr/testify/require"
 
 	"github.com/nmstate/nmpolicy/nmpolicy"
 	"github.com/nmstate/nmpolicy/nmpolicy/types"
+	"github.com/nmstate/nmpolicy/nmpolicy/types/typestest"
 )
 
 func TestBasicPolicy(t *testing.T) {
@@ -84,8 +83,12 @@ func testPolicyWithCachedCaptureAndDesiredStateWithoutRef(t *testing.T) {
 		}
 
 		cacheState := types.CachedState{
-			Capture: map[string]types.CaptureState{capID0: {State: []byte("some captured state")}},
+			Capture: map[string]types.CaptureState{capID0: {State: []byte("name: some captured state")}},
 		}
+		var err error
+		cacheState.Capture, err = formatCapturedStates(cacheState.Capture)
+		assert.NoError(t, err)
+
 		s, err := nmpolicy.GenerateState(
 			policySpec,
 			nil,
@@ -200,10 +203,10 @@ routes:
 
 		obtained = resetTimeStamp(obtained)
 
-		obtained, err = formatYAMLs(obtained)
+		obtained, err = formatGenerateState(obtained)
 		assert.NoError(t, err)
 
-		expected, err = formatYAMLs(expected)
+		expected, err = formatGenerateState(expected)
 		assert.NoError(t, err)
 
 		assert.Equal(t, expected, obtained)
@@ -262,34 +265,28 @@ func resetTimeStamp(generatedState types.GeneratedState) types.GeneratedState {
 	return generatedState
 }
 
-func formatYAMLs(generatedState types.GeneratedState) (types.GeneratedState, error) {
-	for captureID, captureState := range generatedState.Cache.Capture {
-		formatedYAML, err := formatYAML(captureState.State)
-		if err != nil {
-			return types.GeneratedState{}, err
-		}
-		captureState.State = formatedYAML
-		generatedState.Cache.Capture[captureID] = captureState
-	}
-	formatedDesiredState, err := formatYAML(generatedState.DesiredState)
+func formatGenerateState(generatedState types.GeneratedState) (types.GeneratedState, error) {
+	var err error
+	generatedState.Cache.Capture, err = formatCapturedStates(generatedState.Cache.Capture)
 	if err != nil {
-		return generatedState, nil
+		return generatedState, err
+	}
+	formatedDesiredState, err := typestest.FormatYAML(generatedState.DesiredState)
+	if err != nil {
+		return generatedState, err
 	}
 	generatedState.DesiredState = formatedDesiredState
 	return generatedState, nil
 }
 
-func formatYAML(unformatedYAML []byte) ([]byte, error) {
-	unmarshaled := map[string]interface{}{}
-
-	err := yaml.Unmarshal(unformatedYAML, &unmarshaled)
-	if err != nil {
-		return nil, err
+func formatCapturedStates(capturedStates map[string]types.CaptureState) (map[string]types.CaptureState, error) {
+	for captureID, captureState := range capturedStates {
+		formatedYAML, err := typestest.FormatYAML(captureState.State)
+		if err != nil {
+			return nil, err
+		}
+		captureState.State = formatedYAML
+		capturedStates[captureID] = captureState
 	}
-
-	marshaled, err := yaml.Marshal(unmarshaled)
-	if err != nil {
-		return nil, err
-	}
-	return marshaled, nil
+	return capturedStates, nil
 }
