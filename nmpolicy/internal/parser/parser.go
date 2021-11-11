@@ -25,18 +25,27 @@ import (
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/lexer"
 )
 
-type Parser struct {
+type Parser struct{}
+
+type parser struct {
 	tokens          []lexer.Token
 	currentTokenIdx int
 	lastNode        *ast.Node
 }
 
-func New() *Parser {
-	return &Parser{}
+func New() Parser {
+	return Parser{}
 }
 
-func (p *Parser) Parse(tokens []lexer.Token) (ast.Node, error) {
-	p.reset(tokens)
+func newParser(tokens []lexer.Token) *parser {
+	return &parser{tokens: tokens}
+}
+
+func (Parser) Parse(tokens []lexer.Token) (ast.Node, error) {
+	return newParser(tokens).Parse()
+}
+
+func (p *parser) Parse() (ast.Node, error) {
 	node, err := p.parse()
 	if err != nil {
 		return ast.Node{}, err
@@ -44,7 +53,7 @@ func (p *Parser) Parse(tokens []lexer.Token) (ast.Node, error) {
 	return node, nil
 }
 
-func (p *Parser) parse() (ast.Node, error) {
+func (p *parser) parse() (ast.Node, error) {
 	for {
 		if p.currentToken() == nil {
 			return ast.Node{}, nil
@@ -70,7 +79,7 @@ func (p *Parser) parse() (ast.Node, error) {
 	return *p.lastNode, nil
 }
 
-func (p *Parser) nextToken() {
+func (p *parser) nextToken() {
 	if len(p.tokens) == 0 {
 		return
 	}
@@ -81,7 +90,7 @@ func (p *Parser) nextToken() {
 	}
 }
 
-func (p *Parser) prevToken() {
+func (p *parser) prevToken() {
 	if len(p.tokens) == 0 {
 		return
 	}
@@ -93,11 +102,11 @@ func (p *Parser) prevToken() {
 	}
 }
 
-func (p *Parser) currentToken() *lexer.Token {
+func (p *parser) currentToken() *lexer.Token {
 	return &p.tokens[p.currentTokenIdx]
 }
 
-func (p *Parser) parseIdentity() error {
+func (p *parser) parseIdentity() error {
 	p.lastNode = &ast.Node{
 		Meta:     ast.Meta{Position: p.currentToken().Position},
 		Terminal: ast.Terminal{Identity: &p.currentToken().Literal},
@@ -105,7 +114,7 @@ func (p *Parser) parseIdentity() error {
 	return nil
 }
 
-func (p *Parser) parseString() error {
+func (p *parser) parseString() error {
 	p.lastNode = &ast.Node{
 		Meta:     ast.Meta{Position: p.currentToken().Position},
 		Terminal: ast.Terminal{String: &p.currentToken().Literal},
@@ -113,7 +122,7 @@ func (p *Parser) parseString() error {
 	return nil
 }
 
-func (p *Parser) parseNumber() error {
+func (p *parser) parseNumber() error {
 	number, err := strconv.Atoi(p.currentToken().Literal)
 	if err != nil {
 		return err
@@ -125,7 +134,7 @@ func (p *Parser) parseNumber() error {
 	return nil
 }
 
-func (p *Parser) parsePath() error {
+func (p *parser) parsePath() error {
 	if err := p.parseIdentity(); err != nil {
 		return err
 	}
@@ -162,7 +171,7 @@ func (p *Parser) parsePath() error {
 	return nil
 }
 
-func (p *Parser) parseEqFilter() error {
+func (p *parser) parseEqFilter() error {
 	operator := &ast.Node{
 		Meta:     ast.Meta{Position: p.currentToken().Position},
 		EqFilter: &ast.TernaryOperator{},
@@ -194,9 +203,4 @@ func (p *Parser) parseEqFilter() error {
 	}
 	p.lastNode = operator
 	return nil
-}
-
-func (p *Parser) reset(tokens []lexer.Token) {
-	*p = *New()
-	p.tokens = tokens
 }
