@@ -64,6 +64,10 @@ func (r *Resolver) Resolve(captureASTPool map[string]ast.Node, currentState []by
 	return capturedStates, nil
 }
 
+func (r *Resolver) ResolveCaptureEntryPath(captureEntryPath ast.Node) (interface{}, error) {
+	return r.resolveCaptureEntryPath(captureEntryPath)
+}
+
 func (r *Resolver) resolveCaptureEntryName(captureEntryName string) (map[string]interface{}, error) {
 	capturedStateEntry, ok := r.capturedStates[captureEntryName]
 	if ok {
