@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/expression"
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/lexer/scanner"
 )
 
@@ -35,17 +36,17 @@ func New() *lexer {
 
 // Lex scans the input for the next token.
 // It returns a Token struct with position, type, and the literal value.
-func (l *lexer) Lex(expression string) (Result, error) {
-	l.scn = scanner.New(strings.NewReader(expression))
+func (l *lexer) Lex(expr string) (Result, error) {
+	l.scn = scanner.New(strings.NewReader(expr))
 	// keep looping until we return a token
 	result := Result{
-		Expression: expression,
+		Expression: expr,
 		Tokens:     []Token{},
 	}
 	for {
 		token, err := l.lex()
 		if err != nil {
-			return result, err
+			return result, expression.WrapError(err, l.scn.Position()).Decorate(result.Expression)
 		}
 		if token == nil {
 			continue

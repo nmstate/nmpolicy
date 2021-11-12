@@ -127,40 +127,64 @@ func testFailures(t *testing.T) {
 	t.Run("failures", func(t *testing.T) {
 		runTest(t, []test{
 			{"foo=bar", expected{
-				err: "invalid EQFILTER operation format (b is not equal char)",
+				err: `invalid EQFILTER operation format (b is not equal char), pos=4
+| foo=bar
+| ....^`,
 			}},
 			{" foo 1foo ", expected{
-				err: "invalid number format (f is not a digit)",
+				err: `invalid number format (f is not a digit), pos=6
+|  foo 1foo 
+| ......^`,
 			}},
 			{" foo -foo ", expected{
-				err: "illegal rune -",
+				err: `illegal rune -, pos=5
+|  foo -foo 
+| .....^`,
 			}},
 			{` "bar1" "foo dar`, expected{
-				err: `invalid string format (missing " terminator)`,
+				err: `invalid string format (missing " terminator), pos=15
+|  "bar1" "foo dar
+| ...............^`,
 			}},
 			{` "bar1" 'foo dar`, expected{
-				err: "invalid string format (missing ' terminator)",
+				err: `invalid string format (missing ' terminator), pos=15
+|  "bar1" 'foo dar
+| ...............^`,
 			}},
 			{"155 -44", expected{
-				err: "illegal rune -",
+				err: `illegal rune -, pos=4
+| 155 -44
+| ....^`,
 			}},
 			{"255 1,3", expected{
-				err: "invalid number format (, is not a digit)",
+				err: `invalid number format (, is not a digit), pos=5
+| 255 1,3
+| .....^`,
 			}},
 			{"355 1e3", expected{
-				err: "invalid number format (e is not a digit)",
+				err: `invalid number format (e is not a digit), pos=5
+| 355 1e3
+| .....^`,
 			}},
 			{"455 0xEA", expected{
-				err: "invalid number format (x is not a digit)",
+				err: `invalid number format (x is not a digit), pos=5
+| 455 0xEA
+| .....^`,
 			}},
 			{"555 2,3-4", expected{
-				err: "invalid number format (, is not a digit)",
+				err: `invalid number format (, is not a digit), pos=5
+| 555 2,3-4
+| .....^`,
 			}},
 			{"655 3333_444_333", expected{
-				err: "invalid number format (_ is not a digit)",
+				err: `invalid number format (_ is not a digit), pos=8
+| 655 3333_444_333
+| ........^`,
 			}},
 			{"755 33 44 -.3", expected{
-				err: "illegal rune -",
+				err: `illegal rune -, pos=10
+| 755 33 44 -.3
+| ..........^`,
 			}},
 		})
 	})
