@@ -31,15 +31,15 @@ func New() Resolver {
 	return Resolver{}
 }
 
-func (r Resolver) Resolve(astPool map[string]ast.Node, state []byte) (map[string]types.CaptureState, error) {
+func (r Resolver) Resolve(astPool map[string]ast.Root, state []byte) (map[string]types.CaptureState, error) {
 	currentState := make(map[string]interface{})
 	err := yaml.Unmarshal(state, &currentState)
 	if err != nil {
 		return nil, wrapWithResolveError(err)
 	}
 	resolvedASTs := make(map[string]types.CaptureState)
-	for captureName, ast := range astPool {
-		resolvedAST, err := r.resolveAST(ast, currentState)
+	for captureName, astRoot := range astPool {
+		resolvedAST, err := r.resolveAST(astRoot.Node, currentState)
 		if err != nil {
 			return nil, wrapWithResolveError(err)
 		}

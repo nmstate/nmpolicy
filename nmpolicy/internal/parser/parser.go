@@ -34,13 +34,15 @@ func New() *Parser {
 	return &Parser{}
 }
 
-func (p *Parser) Parse(tokens []lexer.Token) (ast.Node, error) {
-	p.tokens = tokens
+func (p *Parser) Parse(lexerResult lexer.Result) (ast.Root, error) {
+	p.tokens = lexerResult.Tokens
+	root := ast.Root{Expression: lexerResult.Expression}
 	node, err := p.parse()
 	if err != nil {
-		return ast.Node{}, err
+		return root, err
 	}
-	return node, nil
+	root.Node = node
+	return root, nil
 }
 
 func (p *Parser) parse() (ast.Node, error) {

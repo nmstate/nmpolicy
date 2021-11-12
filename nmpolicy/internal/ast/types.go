@@ -27,6 +27,11 @@ type Terminal struct {
 	Identity *string `json:"identity,omitempty"`
 }
 
+type Root struct {
+	Expression string
+	Node       Node
+}
+
 type Node struct {
 	Meta
 	EqFilter *TernaryOperator  `json:"eqfilter,omitempty"`

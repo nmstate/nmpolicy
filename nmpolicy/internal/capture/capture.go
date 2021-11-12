@@ -31,15 +31,15 @@ type Capture struct {
 }
 
 type Lexer interface {
-	Lex(expression string) ([]lexer.Token, error)
+	Lex(expression string) (lexer.Result, error)
 }
 
 type Parser interface {
-	Parse([]lexer.Token) (ast.Node, error)
+	Parse(lexer.Result) (ast.Root, error)
 }
 
 type Resolver interface {
-	Resolve(astPool map[string]ast.Node, state []byte) (map[string]types.CaptureState, error)
+	Resolve(astPool map[string]ast.Root, state []byte) (map[string]types.CaptureState, error)
 }
 
 func New(leXer Lexer, parser Parser, resolver Resolver) Capture {
@@ -61,14 +61,14 @@ func (c Capture) Resolve(
 	capturesState := filterCacheBasedOnExprCaptures(capturesCache, capturesExpr)
 	capturesExpr = filterOutExprBasedOnCachedCaptures(capturesExpr, capturesCache)
 
-	astPool := map[string]ast.Node{}
+	astPool := map[string]ast.Root{}
 	for capID, capExpr := range capturesExpr {
-		tokens, err := c.lexer.Lex(capExpr)
+		lexerResult, err := c.lexer.Lex(capExpr)
 		if err != nil {
 			return nil, fmt.Errorf("failed to resolve capture expression, err: %v", err)
 		}
 
-		astRoot, err := c.parser.Parse(tokens)
+		astRoot, err := c.parser.Parse(lexerResult)
 		if err != nil {
 			return nil, fmt.Errorf("failed to resolve capture expression, err: %v", err)
 		}

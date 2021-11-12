@@ -270,12 +270,13 @@ func testLinuxBridgeAtDefaultGwScenario(t *testing.T) {
 func runTest(t *testing.T, tests []test) {
 	for _, tt := range tests {
 		t.Run(tt.expression, func(t *testing.T) {
-			obtainedTokens, obtainedErr := lexer.New().Lex(tt.expression)
+			obtainedResult, obtainedErr := lexer.New().Lex(tt.expression)
 			if tt.expected.err != "" {
 				assert.EqualError(t, obtainedErr, tt.expected.err)
 			} else {
 				assert.NoError(t, obtainedErr)
-				assert.Equal(t, tt.expected.tokens, obtainedTokens)
+				assert.Equal(t, tt.expected.tokens, obtainedResult.Tokens)
+				assert.Equal(t, tt.expression, obtainedResult.Expression)
 			}
 		})
 	}

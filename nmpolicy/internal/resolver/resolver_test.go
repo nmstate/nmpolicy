@@ -270,15 +270,15 @@ eqfilter:
 	})
 }
 
-func getAstPool(astYamls map[string]string) (map[string]ast.Node, error) {
-	captureASTs := make(map[string]ast.Node)
+func getAstPool(astYamls map[string]string) (map[string]ast.Root, error) {
+	captureASTs := make(map[string]ast.Root)
 	for captureName, astYaml := range astYamls {
 		obtainedAST := &ast.Node{}
 		err := yaml.Unmarshal([]byte(astYaml), obtainedAST)
 		if err != nil {
 			return nil, err
 		}
-		captureASTs[captureName] = *obtainedAST
+		captureASTs[captureName] = ast.Root{Node: *obtainedAST}
 	}
 
 	return captureASTs, nil

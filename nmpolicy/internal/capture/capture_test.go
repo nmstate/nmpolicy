@@ -200,29 +200,29 @@ type lexerStub struct {
 	failLex bool
 }
 
-func (l lexerStub) Lex(_ string) ([]lexer.Token, error) {
+func (l lexerStub) Lex(_ string) (lexer.Result, error) {
 	if l.failLex {
-		return nil, fmt.Errorf("lex failed")
+		return lexer.Result{}, fmt.Errorf("lex failed")
 	}
-	return nil, nil
+	return lexer.Result{}, nil
 }
 
 type parserStub struct {
 	failParse bool
 }
 
-func (p parserStub) Parse(_ []lexer.Token) (ast.Node, error) {
+func (p parserStub) Parse(_ lexer.Result) (ast.Root, error) {
 	if p.failParse {
-		return ast.Node{}, fmt.Errorf("parse failed")
+		return ast.Root{}, fmt.Errorf("parse failed")
 	}
-	return ast.Node{}, nil
+	return ast.Root{}, nil
 }
 
 type resolverStub struct {
 	failResolve bool
 }
 
-func (r resolverStub) Resolve(astPool map[string]ast.Node, state []byte) (map[string]types.CaptureState, error) {
+func (r resolverStub) Resolve(astPool map[string]ast.Root, state []byte) (map[string]types.CaptureState, error) {
 	if r.failResolve {
 		return nil, fmt.Errorf("resolve failed")
 	}

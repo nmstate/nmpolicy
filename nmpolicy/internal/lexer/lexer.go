@@ -35,24 +35,27 @@ func New() *lexer {
 
 // Lex scans the input for the next token.
 // It returns a Token struct with position, type, and the literal value.
-func (l *lexer) Lex(expression string) ([]Token, error) {
+func (l *lexer) Lex(expression string) (Result, error) {
 	l.scn = scanner.New(strings.NewReader(expression))
 	// keep looping until we return a token
-	tokens := []Token{}
+	result := Result{
+		Expression: expression,
+		Tokens:     []Token{},
+	}
 	for {
 		token, err := l.lex()
 		if err != nil {
-			return nil, err
+			return result, err
 		}
 		if token == nil {
 			continue
 		}
-		tokens = append(tokens, *token)
+		result.Tokens = append(result.Tokens, *token)
 		if token.Type == EOF {
 			break
 		}
 	}
-	return tokens, nil
+	return result, nil
 }
 
 func (l *lexer) lex() (*Token, error) {

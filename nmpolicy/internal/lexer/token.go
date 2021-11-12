@@ -56,6 +56,11 @@ func (t TokenType) String() string {
 	return tokens[t]
 }
 
+type Result struct {
+	Expression string
+	Tokens     []Token
+}
+
 type Token struct {
 	Position int
 	Type     TokenType
