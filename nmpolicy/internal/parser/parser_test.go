@@ -64,30 +64,6 @@ func testParseFailures(t *testing.T) {
 				eof(),
 			),
 		),
-	}
-	runTest(t, tests)
-}
-
-func testParseSuccess(t *testing.T) {
-	var tests = []test{
-		expectAST(t, `
-pos: 0
-path:
-- pos: 0
-  identity: routes
-- pos: 7
-  identity: running
-- pos: 15
-  identity: destination`,
-			fromTokens(
-				identity("routes"),
-				dot(),
-				identity("running"),
-				dot(),
-				identity("destination"),
-				eof(),
-			),
-		),
 		expectError(`invalid equality filter: missing left hand argument`,
 			fromTokens(
 				eqfilter(),
@@ -119,7 +95,30 @@ path:
 				eof(),
 			),
 		),
+	}
+	runTest(t, tests)
+}
 
+func testParseSuccess(t *testing.T) {
+	var tests = []test{
+		expectAST(t, `
+pos: 0
+path:
+- pos: 0
+  identity: routes
+- pos: 7
+  identity: running
+- pos: 15
+  identity: destination`,
+			fromTokens(
+				identity("routes"),
+				dot(),
+				identity("running"),
+				dot(),
+				identity("destination"),
+				eof(),
+			),
+		),
 		expectAST(t, `
 pos: 26
 eqfilter: 
