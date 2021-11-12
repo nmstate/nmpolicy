@@ -33,7 +33,7 @@ func TestBasicPolicy(t *testing.T) {
 		testEmptyPolicy(t)
 		testPolicyWithOnlyDesiredState(t)
 		testPolicyWithCachedCaptureAndDesiredStateWithoutRef(t)
-		testPolicyWithFilterCaptureAndDesiredStateWithoutRef(t)
+		testPolicyWithFilterCaptureAndDesiredStateCaptureEntryRef(t)
 		testGenerateUniqueTimestamps(t)
 	})
 }
@@ -148,14 +148,51 @@ interfaces:
       enabled: true
 `)
 
-func testPolicyWithFilterCaptureAndDesiredStateWithoutRef(t *testing.T) {
+var mainDesiredState = []byte(`
+interfaces:
+- name: br1
+  description: Linux bridge with base interface as a port
+  type: linux-bridge
+  state: up
+  ipv4: "{{ capture.base-iface.interfaces.0.ipv4 }}"
+  bridge:
+    options:
+      stp:
+        enabled: false
+    port:
+    - name: "{{ capture.base-iface.interfaces.0.name }}"
+`)
+
+var mainExpectedDesiredState = []byte(`
+interfaces:
+- name: br1
+  description: Linux bridge with base interface as a port
+  type: linux-bridge
+  state: up
+  ipv4:
+    address:
+    - ip: 10.244.0.1
+      prefix-length: 24
+    - ip: 169.254.1.0
+      prefix-length: 16
+    dhcp: false
+    enabled: true
+  bridge:
+    options:
+      stp:
+        enabled: false
+    port:
+    - name: eth1
+`)
+
+func testPolicyWithFilterCaptureAndDesiredStateCaptureEntryRef(t *testing.T) {
 	t.Run("with a eqfilter capture expression and desired state that has no ref", func(t *testing.T) {
 		policySpec := types.PolicySpec{
 			Capture: map[string]string{
-				"default-gw":        `routes.running.destination=="0.0.0.0/0"`,
-				"base-iface-routes": `routes.running.next-hop-interface==capture.default-gw.routes.running.0.next-hop-interface`,
+				"default-gw": `routes.running.destination=="0.0.0.0/0"`,
+				"base-iface": `interfaces.name==capture.default-gw.routes.running.0.next-hop-interface`,
 			},
-			DesiredState: mainCurrentState,
+			DesiredState: mainDesiredState,
 		}
 		obtained, err := nmpolicy.GenerateState(
 			policySpec,
@@ -167,7 +204,7 @@ func testPolicyWithFilterCaptureAndDesiredStateWithoutRef(t *testing.T) {
 			MetaInfo: types.MetaInfo{
 				Version: "0",
 			},
-			DesiredState: mainCurrentState,
+			DesiredState: mainExpectedDesiredState,
 			Cache: types.CachedState{
 				Capture: map[string]types.CaptureState{
 					"default-gw": {
@@ -180,18 +217,20 @@ routes:
     table-id: 254
 `),
 					},
-					"base-iface-routes": {
+					"base-iface": {
 						State: []byte(`
-routes:  
-  running:
-  - destination: 0.0.0.0/0
-    next-hop-address: 192.168.100.1
-    next-hop-interface: eth1
-    table-id: 254
-  - destination: 1.1.1.0/24
-    next-hop-address: 192.168.100.1
-    next-hop-interface: eth1
-    table-id: 254
+interfaces:
+- name: eth1
+  type: ethernet
+  state: up
+  ipv4:
+    address:
+    - ip: 10.244.0.1
+      prefix-length: 24
+    - ip: 169.254.1.0
+      prefix-length: 16
+    dhcp: false
+    enabled: true
 `),
 					},
 				},
