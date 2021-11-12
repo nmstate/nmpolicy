@@ -153,13 +153,13 @@ func runTest(t *testing.T, tests []test) {
 	for _, tt := range tests {
 		t.Run(description(tt), func(t *testing.T) {
 			p := parser.New()
-			obtainedRoot, obtainedErr := p.Parse(lexer.Result{Expression: "my expression", Tokens: tt.tokens})
+			obtainedRoot, obtainedErr := p.Parse(lexer.Result{Expression: tt.expression, Tokens: tt.tokens})
 			if tt.expected.err != "" {
 				assert.EqualError(t, obtainedErr, tt.expected.err)
 			} else {
 				assert.NoError(t, obtainedErr)
 				assert.Equal(t, *tt.expected.ast, obtainedRoot.Node)
-				assert.Equal(t, "my expression", obtainedRoot.Expression)
+				assert.Equal(t, tt.expression, obtainedRoot.Expression)
 			}
 		})
 	}

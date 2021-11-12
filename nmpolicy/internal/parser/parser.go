@@ -20,7 +20,7 @@ import (
 	"fmt"
 
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/ast"
-
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/expression"
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/lexer"
 )
 
@@ -39,7 +39,7 @@ func (p *Parser) Parse(lexerResult lexer.Result) (ast.Root, error) {
 	root := ast.Root{Expression: lexerResult.Expression}
 	node, err := p.parse()
 	if err != nil {
-		return root, err
+		return root, expression.WrapError(err, p.currentToken().Position).Decorate(root.Expression)
 	}
 	root.Node = node
 	return root, nil
