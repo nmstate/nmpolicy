@@ -85,10 +85,10 @@ func runTest(t *testing.T, testToRun test) {
 
 	capturedStates, err := unmarshalCapturedState(testToRun.capturedStates)
 	assert.NoError(t, err)
-	resolver := New()
+	resolver := newResolver(astPool)
 	resolver.capturedStates = capturedStates
 
-	resultStates, err := resolver.Resolve(astPool, []byte(sourceYAML))
+	resultStates, err := resolver.Resolve([]byte(sourceYAML))
 	if testToRun.err == "" {
 		assert.NoError(t, err)
 		expectedState := make(map[string]interface{})

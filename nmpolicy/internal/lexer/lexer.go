@@ -24,19 +24,30 @@ import (
 )
 
 // Lexer struct is used to tokenize values returned by a reader.
+type Lexer struct{}
+
 type lexer struct {
 	scn *scanner.Scanner
 }
 
 // NewLexer construct a Lexer using reader as the input.
-func New() *lexer {
-	return &lexer{}
+func New() Lexer {
+	return Lexer{}
+}
+
+func newLexer(expression string) *lexer {
+	return &lexer{scn: scanner.New(strings.NewReader(expression))}
 }
 
 // Lex scans the input for the next token.
 // It returns a Token struct with position, type, and the literal value.
-func (l *lexer) Lex(expression string) ([]Token, error) {
-	l.scn = scanner.New(strings.NewReader(expression))
+func (Lexer) Lex(expression string) ([]Token, error) {
+	return newLexer(expression).Lex()
+}
+
+// Lex scans the input for the next token.
+// It returns a Token struct with position, type, and the literal value.
+func (l *lexer) Lex() ([]Token, error) {
 	// keep looping until we return a token
 	tokens := []Token{}
 	for {
