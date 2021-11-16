@@ -42,8 +42,8 @@ func TestBasicPolicy(t *testing.T) {
 
 func testNoExpressions(t *testing.T) {
 	t.Run("resolve with no expression", func(t *testing.T) {
-		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{})
-		result, err := capCtrl.Resolve(
+		captureResolver := capture.NewResolver(lexerStub{}, parserStub{}, resolverStub{})
+		result, err := captureResolver.Resolve(
 			map[string]string{},
 			map[string]types.CapturedState{"cap0": {State: []byte("some captured state")}},
 			[]byte("some state"),
@@ -56,8 +56,8 @@ func testNoExpressions(t *testing.T) {
 
 func testNoCacheAndState(t *testing.T) {
 	t.Run("resolve with no cache and state", func(t *testing.T) {
-		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{})
-		result, err := capCtrl.Resolve(
+		captureResolver := capture.NewResolver(lexerStub{}, parserStub{}, resolverStub{})
+		result, err := captureResolver.Resolve(
 			map[string]string{"cap0": "my expression"},
 			map[string]types.CapturedState{},
 			[]byte{},
@@ -75,8 +75,8 @@ func testAllCapturesCached(t *testing.T) {
 			"cap1": {State: []byte("another captured state")},
 		}
 
-		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{})
-		result, err := capCtrl.Resolve(
+		captureResolver := capture.NewResolver(lexerStub{}, parserStub{}, resolverStub{})
+		result, err := captureResolver.Resolve(
 			map[string]string{
 				"cap0": "my expression",
 				"cap1": "another expression",
@@ -94,8 +94,8 @@ func testResolvingExpressions(t *testing.T) {
 	t.Run("resolve expressions", func(t *testing.T) {
 		const capID = "cap0"
 
-		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{})
-		result, err := capCtrl.Resolve(
+		captureResolver := capture.NewResolver(lexerStub{}, parserStub{}, resolverStub{})
+		result, err := captureResolver.Resolve(
 			map[string]string{capID: "my expression"},
 			map[string]types.CapturedState{},
 			[]byte("some state"),
@@ -112,9 +112,9 @@ func testExpressionsWithPartialCache(t *testing.T) {
 		const capID1 = "cap1"
 
 		capCache := map[string]types.CapturedState{capID0: {State: []byte("some captured state")}}
-		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{})
+		captureResolver := capture.NewResolver(lexerStub{}, parserStub{}, resolverStub{})
 
-		result, err := capCtrl.Resolve(
+		result, err := captureResolver.Resolve(
 			map[string]string{
 				capID0: "my expression",
 				capID1: "another expression",
@@ -139,9 +139,9 @@ func testExpressionsWithOverCache(t *testing.T) {
 			capID0: {State: []byte("some captured state")},
 			capID1: {State: []byte("another captured state")},
 		}
-		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{})
+		captureResolver := capture.NewResolver(lexerStub{}, parserStub{}, resolverStub{})
 
-		result, err := capCtrl.Resolve(
+		result, err := captureResolver.Resolve(
 			map[string]string{
 				capID0: "my expression",
 			},
@@ -159,8 +159,8 @@ func testExpressionsWithOverCache(t *testing.T) {
 
 func testLexFailure(t *testing.T) {
 	t.Run("resolve fails due to lexing", func(t *testing.T) {
-		capCtrl := capture.New(lexerStub{failLex: true}, parserStub{}, resolverStub{})
-		_, err := capCtrl.Resolve(
+		captureResolver := capture.NewResolver(lexerStub{failLex: true}, parserStub{}, resolverStub{})
+		_, err := captureResolver.Resolve(
 			map[string]string{"cap0": "my expression"},
 			map[string]types.CapturedState{},
 			[]byte("some state"),
@@ -171,8 +171,8 @@ func testLexFailure(t *testing.T) {
 
 func testParseFailure(t *testing.T) {
 	t.Run("resolve fails due to parsing", func(t *testing.T) {
-		capCtrl := capture.New(lexerStub{}, parserStub{failParse: true}, resolverStub{})
-		_, err := capCtrl.Resolve(
+		captureResolver := capture.NewResolver(lexerStub{}, parserStub{failParse: true}, resolverStub{})
+		_, err := captureResolver.Resolve(
 			map[string]string{"cap0": "my expression"},
 			map[string]types.CapturedState{},
 			[]byte("some state"),
@@ -183,8 +183,8 @@ func testParseFailure(t *testing.T) {
 
 func testResolveFailure(t *testing.T) {
 	t.Run("resolve fails due to resolving", func(t *testing.T) {
-		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{failResolve: true})
-		_, err := capCtrl.Resolve(
+		captureResolver := capture.NewResolver(lexerStub{}, parserStub{}, resolverStub{failResolve: true})
+		_, err := captureResolver.Resolve(
 			map[string]string{"cap0": "my expression"},
 			map[string]types.CapturedState{},
 			[]byte("some state"),

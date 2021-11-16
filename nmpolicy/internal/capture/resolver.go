@@ -25,7 +25,7 @@ import (
 	"github.com/nmstate/nmpolicy/nmpolicy/types"
 )
 
-type Capture struct {
+type CaptureResolver struct {
 	lexer    Lexer
 	parser   Parser
 	resolver Resolver
@@ -44,15 +44,15 @@ type Resolver interface {
 	ResolveCaptureEntryPath(captureEntryPathAST ast.Node, capturdStates map[string]map[string]interface{}) (interface{}, error)
 }
 
-func New(l Lexer, p Parser, r Resolver) Capture {
-	return Capture{
+func NewResolver(l Lexer, p Parser, r Resolver) CaptureResolver {
+	return CaptureResolver{
 		lexer:    l,
 		parser:   p,
 		resolver: r,
 	}
 }
 
-func (c Capture) Resolve(
+func (c CaptureResolver) Resolve(
 	capturesExpr map[string]string,
 	capturesCache map[string]types.CapturedState,
 	state []byte) (Result, error) {
