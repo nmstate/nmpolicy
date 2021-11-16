@@ -45,7 +45,7 @@ func testNoExpressions(t *testing.T) {
 		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{})
 		result, err := capCtrl.Resolve(
 			map[string]string{},
-			map[string]types.CaptureState{"cap0": {State: []byte("some captured state")}},
+			map[string]types.CapturedState{"cap0": {State: []byte("some captured state")}},
 			[]byte("some state"),
 		)
 		assert.NoError(t, err)
@@ -59,7 +59,7 @@ func testNoCacheAndState(t *testing.T) {
 		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{})
 		result, err := capCtrl.Resolve(
 			map[string]string{"cap0": "my expression"},
-			map[string]types.CaptureState{},
+			map[string]types.CapturedState{},
 			[]byte{},
 		)
 		assert.NoError(t, err)
@@ -70,7 +70,7 @@ func testNoCacheAndState(t *testing.T) {
 
 func testAllCapturesCached(t *testing.T) {
 	t.Run("resolve with all captures cached", func(t *testing.T) {
-		capCache := map[string]types.CaptureState{
+		capCache := map[string]types.CapturedState{
 			"cap0": {State: []byte("some captured state")},
 			"cap1": {State: []byte("another captured state")},
 		}
@@ -97,12 +97,12 @@ func testResolvingExpressions(t *testing.T) {
 		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{})
 		result, err := capCtrl.Resolve(
 			map[string]string{capID: "my expression"},
-			map[string]types.CaptureState{},
+			map[string]types.CapturedState{},
 			[]byte("some state"),
 		)
 		assert.NoError(t, err)
 
-		assert.Equal(t, map[string]types.CaptureState{capID: {State: []byte("resolver: parser: lexer: my expression")}}, result.CapturedStates())
+		assert.Equal(t, map[string]types.CapturedState{capID: {State: []byte("resolver: parser: lexer: my expression")}}, result.CapturedStates())
 	})
 }
 
@@ -111,7 +111,7 @@ func testExpressionsWithPartialCache(t *testing.T) {
 		const capID0 = "cap0"
 		const capID1 = "cap1"
 
-		capCache := map[string]types.CaptureState{capID0: {State: []byte("some captured state")}}
+		capCache := map[string]types.CapturedState{capID0: {State: []byte("some captured state")}}
 		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{})
 
 		result, err := capCtrl.Resolve(
@@ -125,7 +125,7 @@ func testExpressionsWithPartialCache(t *testing.T) {
 		assert.NoError(t, err)
 
 		expectedCaps := capCache
-		expectedCaps[capID1] = types.CaptureState{State: []byte("resolver: parser: lexer: another expression")}
+		expectedCaps[capID1] = types.CapturedState{State: []byte("resolver: parser: lexer: another expression")}
 		assert.Equal(t, expectedCaps, result.CapturedStates())
 	})
 }
@@ -135,7 +135,7 @@ func testExpressionsWithOverCache(t *testing.T) {
 		const capID0 = "cap0"
 		const capID1 = "cap1"
 
-		capCache := map[string]types.CaptureState{
+		capCache := map[string]types.CapturedState{
 			capID0: {State: []byte("some captured state")},
 			capID1: {State: []byte("another captured state")},
 		}
@@ -150,7 +150,7 @@ func testExpressionsWithOverCache(t *testing.T) {
 		)
 		assert.NoError(t, err)
 
-		expectedCaps := map[string]types.CaptureState{
+		expectedCaps := map[string]types.CapturedState{
 			capID0: {State: []byte("some captured state")},
 		}
 		assert.Equal(t, expectedCaps, result.CapturedStates())
@@ -162,7 +162,7 @@ func testLexFailure(t *testing.T) {
 		capCtrl := capture.New(lexerStub{failLex: true}, parserStub{}, resolverStub{})
 		_, err := capCtrl.Resolve(
 			map[string]string{"cap0": "my expression"},
-			map[string]types.CaptureState{},
+			map[string]types.CapturedState{},
 			[]byte("some state"),
 		)
 		assert.Error(t, err)
@@ -174,7 +174,7 @@ func testParseFailure(t *testing.T) {
 		capCtrl := capture.New(lexerStub{}, parserStub{failParse: true}, resolverStub{})
 		_, err := capCtrl.Resolve(
 			map[string]string{"cap0": "my expression"},
-			map[string]types.CaptureState{},
+			map[string]types.CapturedState{},
 			[]byte("some state"),
 		)
 		assert.Error(t, err)
@@ -186,7 +186,7 @@ func testResolveFailure(t *testing.T) {
 		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{failResolve: true})
 		_, err := capCtrl.Resolve(
 			map[string]string{"cap0": "my expression"},
-			map[string]types.CaptureState{},
+			map[string]types.CapturedState{},
 			[]byte("some state"),
 		)
 		assert.Error(t, err)

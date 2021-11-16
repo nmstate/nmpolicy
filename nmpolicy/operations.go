@@ -41,7 +41,7 @@ import (
 //
 // On failure, an error is returned.
 func GenerateState(nmpolicy types.PolicySpec, currentState []byte, cache types.CachedState) (types.GeneratedState, error) {
-	var capturesState map[string]types.CaptureState
+	var capturesState map[string]types.CapturedState
 	var desiredState []byte
 
 	if nmpolicy.DesiredState != nil {
@@ -73,7 +73,7 @@ func GenerateState(nmpolicy types.PolicySpec, currentState []byte, cache types.C
 	}, nil
 }
 
-func timestampCapturesState(capturesState map[string]types.CaptureState, timeStamp time.Time) {
+func timestampCapturesState(capturesState map[string]types.CapturedState, timeStamp time.Time) {
 	for captureID, captureState := range capturesState {
 		if captureState.MetaInfo.TimeStamp.IsZero() {
 			captureState.MetaInfo.TimeStamp = timeStamp

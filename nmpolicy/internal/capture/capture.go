@@ -54,7 +54,7 @@ func New(l Lexer, p Parser, r Resolver) Capture {
 
 func (c Capture) Resolve(
 	capturesExpr map[string]string,
-	capturesCache map[string]types.CaptureState,
+	capturesCache map[string]types.CapturedState,
 	state []byte) (Result, error) {
 	if len(capturesExpr) == 0 || len(state) == 0 && len(capturesCache) == 0 {
 		return Result{}, nil
@@ -89,21 +89,21 @@ func (c Capture) Resolve(
 	return NewResult(c.lexer, c.parser, c.resolver, resolverResult), nil
 }
 
-func filterOutExprBasedOnCachedCaptures(capturesExpr map[string]string, capturesCache map[string]types.CaptureState) map[string]string {
+func filterOutExprBasedOnCachedCaptures(capturesExpr map[string]string, capturesCache map[string]types.CapturedState) map[string]string {
 	for capID := range capturesCache {
 		delete(capturesExpr, capID)
 	}
 	return capturesExpr
 }
 
-func filterCacheBasedOnExprCaptures(capsState map[string]types.CaptureState, capsExpr map[string]string) map[string]types.CaptureState {
-	caps := map[string]types.CaptureState{}
+func filterCacheBasedOnExprCaptures(capsState map[string]types.CapturedState, capsExpr map[string]string) map[string]types.CapturedState {
+	caps := map[string]types.CapturedState{}
 
 	for capID := range capsExpr {
 		if capState, ok := capsState[capID]; ok {
 			state := append([]byte{}, capState.State...)
 
-			caps[capID] = types.CaptureState{
+			caps[capID] = types.CapturedState{
 				State:    state,
 				MetaInfo: capState.MetaInfo,
 			}

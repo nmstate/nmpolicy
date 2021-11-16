@@ -84,7 +84,7 @@ func testPolicyWithCachedCaptureAndDesiredStateWithoutRef(t *testing.T) {
 		}
 
 		cacheState := types.CachedState{
-			Capture: map[string]types.CaptureState{capID0: {State: []byte("some captured state")}},
+			Capture: map[string]types.CapturedState{capID0: {State: []byte("some captured state")}},
 		}
 		s, err := nmpolicy.GenerateState(
 			policySpec,
@@ -206,7 +206,7 @@ func testPolicyWithFilterCaptureAndDesiredStateCaptureEntryRef(t *testing.T) {
 			},
 			DesiredState: mainExpectedDesiredState,
 			Cache: types.CachedState{
-				Capture: map[string]types.CaptureState{
+				Capture: map[string]types.CapturedState{
 					"default-gw": {
 						State: []byte(`
 routes:
@@ -269,7 +269,7 @@ func testGenerateUniqueTimestamps(t *testing.T) {
 			DesiredState: stateData,
 		}
 		cacheState := types.CachedState{
-			Capture: map[string]types.CaptureState{
+			Capture: map[string]types.CapturedState{
 				capID1: {
 					State: []byte("{}"),
 					MetaInfo: types.MetaInfo{

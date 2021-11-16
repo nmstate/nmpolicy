@@ -73,7 +73,7 @@ func (r *resolver) Resolve(currentState []byte) (Result, error) {
 	}
 
 	result := Result{
-		Marshaled:   map[string]types.CaptureState{},
+		Marshaled:   map[string]types.CapturedState{},
 		Unmarshaled: map[string]map[string]interface{}{},
 	}
 	for captureEntryName := range r.captureASTPool {
@@ -85,7 +85,7 @@ func (r *resolver) Resolve(currentState []byte) (Result, error) {
 		if err != nil {
 			return Result{}, wrapWithResolveError(err)
 		}
-		result.Marshaled[captureEntryName] = types.CaptureState{
+		result.Marshaled[captureEntryName] = types.CapturedState{
 			State:    marshaledCapturedStateEntry,
 			MetaInfo: types.MetaInfo{},
 		}

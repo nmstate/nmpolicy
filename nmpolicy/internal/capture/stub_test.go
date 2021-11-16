@@ -58,9 +58,9 @@ func (r resolverStub) Resolve(astPool map[string]ast.Node, state []byte) (resolv
 		return resolver.Result{}, fmt.Errorf("resolve failed")
 	}
 
-	capsState := map[string]types.CaptureState{}
+	capsState := map[string]types.CapturedState{}
 	for id, entry := range astPool {
-		capsState[id] = types.CaptureState{State: []byte(fmt.Sprintf("resolver: %s", *entry.String))}
+		capsState[id] = types.CapturedState{State: []byte(fmt.Sprintf("resolver: %s", *entry.String))}
 	}
 
 	return resolver.Result{Marshaled: capsState}, nil

@@ -20,5 +20,5 @@ import "github.com/nmstate/nmpolicy/nmpolicy/types"
 
 type Result struct {
 	Unmarshaled map[string]map[string]interface{}
-	Marshaled   map[string]types.CaptureState
+	Marshaled   map[string]types.CapturedState
 }

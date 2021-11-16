@@ -24,7 +24,7 @@ type PolicySpec struct {
 }
 
 type CachedState struct {
-	Capture map[string]CaptureState
+	Capture map[string]CapturedState
 }
 
 type GeneratedState struct {
@@ -33,7 +33,7 @@ type GeneratedState struct {
 	MetaInfo     MetaInfo
 }
 
-type CaptureState struct {
+type CapturedState struct {
 	State    []byte
 	MetaInfo MetaInfo
 }

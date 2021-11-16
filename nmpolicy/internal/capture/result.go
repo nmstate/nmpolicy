@@ -58,6 +58,6 @@ func (r Result) ResolveCaptureEntryPath(captureEntryPathExpression string) (inte
 	return resolvedCaptureEntryPath, nil
 }
 
-func (r Result) CapturedStates() map[string]types.CaptureState {
+func (r Result) CapturedStates() map[string]types.CapturedState {
 	return r.resolverResult.Marshaled
 }
