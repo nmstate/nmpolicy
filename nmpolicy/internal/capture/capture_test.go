@@ -106,7 +106,7 @@ func testResolvingExpressions(t *testing.T) {
 		)
 		assert.NoError(t, err)
 
-		assert.Equal(t, map[string]types.CaptureState{capID: {}}, result.CapturedStates())
+		assert.Equal(t, map[string]types.CaptureState{capID: {State: []byte("resolver: parser: lexer: my expression")}}, result.CapturedStates())
 	})
 }
 
@@ -129,7 +129,7 @@ func testExpressionsWithPartialCache(t *testing.T) {
 		assert.NoError(t, err)
 
 		expectedCaps := capCache
-		expectedCaps[capID1] = types.CaptureState{}
+		expectedCaps[capID1] = types.CaptureState{State: []byte("resolver: parser: lexer: another expression")}
 		assert.Equal(t, expectedCaps, result.CapturedStates())
 	})
 }
@@ -201,22 +201,24 @@ type lexerStub struct {
 	failLex bool
 }
 
-func (l lexerStub) Lex(_ string) ([]lexer.Token, error) {
+func (l lexerStub) Lex(expression string) ([]lexer.Token, error) {
 	if l.failLex {
 		return nil, fmt.Errorf("lex failed")
 	}
-	return nil, nil
+	literal := fmt.Sprintf("lexer: %s", expression)
+	return []lexer.Token{{Literal: literal}}, nil
 }
 
 type parserStub struct {
 	failParse bool
 }
 
-func (p parserStub) Parse(_ []lexer.Token) (ast.Node, error) {
+func (p parserStub) Parse(tokens []lexer.Token) (ast.Node, error) {
 	if p.failParse {
 		return ast.Node{}, fmt.Errorf("parse failed")
 	}
-	return ast.Node{}, nil
+	literal := fmt.Sprintf("parser: %s", tokens[0].Literal)
+	return ast.Node{Terminal: ast.Terminal{String: &literal}}, nil
 }
 
 type resolverStub struct {
@@ -229,9 +231,17 @@ func (r resolverStub) Resolve(astPool map[string]ast.Node, state []byte) (resolv
 	}
 
 	capsState := map[string]types.CaptureState{}
-	for id := range astPool {
-		capsState[id] = types.CaptureState{}
+	for id, entry := range astPool {
+		capsState[id] = types.CaptureState{State: []byte(fmt.Sprintf("resolver: %s", *entry.String))}
 	}
 
 	return resolver.Result{Marshaled: capsState}, nil
+}
+
+func (r resolverStub) ResolveCaptureEntryPath(captureEntryPathAST ast.Node,
+	capturedStates map[string]map[string]interface{}) (interface{}, error) {
+	if r.failResolve {
+		return nil, fmt.Errorf("resolve capture entry path failed")
+	}
+	return fmt.Sprintf("resolver: %s", *captureEntryPathAST.String), nil
 }

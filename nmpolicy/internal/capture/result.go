@@ -17,17 +17,45 @@
 package capture
 
 import (
+	"fmt"
+
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/resolver"
 	"github.com/nmstate/nmpolicy/nmpolicy/types"
 )
 
 type Result struct {
+	lexer          Lexer
+	parser         Parser
+	resolver       Resolver
 	resolverResult resolver.Result
 }
 
-func (r Result) ResolveCaptureEntryPath(
-	capturePath string) (interface{}, error) {
-	return nil, nil
+func NewResult(l Lexer, p Parser, r Resolver, resolverResult resolver.Result) Result {
+	return Result{
+		lexer:          l,
+		parser:         p,
+		resolver:       r,
+		resolverResult: resolverResult,
+	}
+}
+
+func (r Result) ResolveCaptureEntryPath(captureEntryPathExpression string) (interface{}, error) {
+	captureEntryPathTokens, err := r.lexer.Lex(captureEntryPathExpression)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve capture entry path expression: %v", err)
+	}
+
+	captureEntryPathAST, err := r.parser.Parse(captureEntryPathTokens)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve capture entry path expression: %v", err)
+	}
+
+	resolvedCaptureEntryPath, err := r.resolver.ResolveCaptureEntryPath(captureEntryPathAST, r.resolverResult.Unmarshaled)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve capture entry path expression: %v", err)
+	}
+
+	return resolvedCaptureEntryPath, nil
 }
 
 func (r Result) CapturedStates() map[string]types.CaptureState {

@@ -41,6 +41,7 @@ type Parser interface {
 
 type Resolver interface {
 	Resolve(astPool map[string]ast.Node, state []byte) (resolver.Result, error)
+	ResolveCaptureEntryPath(captureEntryPathAST ast.Node, capturdStates map[string]map[string]interface{}) (interface{}, error)
 }
 
 func New(l Lexer, p Parser, r Resolver) Capture {
@@ -85,9 +86,7 @@ func (c Capture) Resolve(
 	for capID, capState := range capturesState {
 		resolverResult.Marshaled[capID] = capState
 	}
-	return Result{
-		resolverResult: resolverResult,
-	}, nil
+	return NewResult(c.lexer, c.parser, c.resolver, resolverResult), nil
 }
 
 func filterOutExprBasedOnCachedCaptures(capturesExpr map[string]string, capturesCache map[string]types.CaptureState) map[string]string {

@@ -38,15 +38,32 @@ func New() Resolver {
 }
 
 func (Resolver) Resolve(captureASTPool map[string]ast.Node, currentState []byte) (Result, error) {
-	return newResolver(captureASTPool).Resolve(currentState)
+	return newWithCaptureASTPool(captureASTPool).Resolve(currentState)
 }
 
-func newResolver(captureASTPool map[string]ast.Node) *resolver {
+func (Resolver) ResolveCaptureEntryPath(captureEntryPathAST ast.Node,
+	capturedStates map[string]map[string]interface{}) (interface{}, error) {
+	return newWithCapturedStates(capturedStates).ResolveCaptureEntryPath(captureEntryPathAST)
+}
+
+func newEmpty() *resolver {
 	return &resolver{
 		currentState:   map[string]interface{}{},
 		capturedStates: map[string]map[string]interface{}{},
-		captureASTPool: captureASTPool,
+		captureASTPool: map[string]ast.Node{},
 	}
+}
+
+func newWithCaptureASTPool(captureASTPool map[string]ast.Node) *resolver {
+	r := newEmpty()
+	r.captureASTPool = captureASTPool
+	return r
+}
+
+func newWithCapturedStates(capturedStates map[string]map[string]interface{}) *resolver {
+	r := newEmpty()
+	r.capturedStates = capturedStates
+	return r
 }
 
 func (r *resolver) Resolve(currentState []byte) (Result, error) {

@@ -85,7 +85,7 @@ func runTest(t *testing.T, testToRun test) {
 
 	capturedStates, err := unmarshalCapturedState(testToRun.capturedStates)
 	assert.NoError(t, err)
-	resolver := newResolver(astPool)
+	resolver := newWithCaptureASTPool(astPool)
 	resolver.capturedStates = capturedStates
 
 	obtainedResult, err := resolver.Resolve([]byte(sourceYAML))
