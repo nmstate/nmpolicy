@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package expander
+package state
 
 import (
 	"fmt"
@@ -23,7 +23,7 @@ import (
 	yaml "sigs.k8s.io/yaml"
 )
 
-type StateExpander struct {
+type Expander struct {
 	capResolver CapturePathResolver
 }
 
@@ -31,11 +31,11 @@ type CapturePathResolver interface {
 	ResolveCaptureEntryPath(capturePath string) (interface{}, error)
 }
 
-func New(capResolver CapturePathResolver) StateExpander {
-	return StateExpander{capResolver: capResolver}
+func NewExpander(capResolver CapturePathResolver) Expander {
+	return Expander{capResolver: capResolver}
 }
 
-func (c StateExpander) Expand(marshaledDesiredState []byte) ([]byte, error) {
+func (c Expander) Expand(marshaledDesiredState []byte) ([]byte, error) {
 	desiredState, err := unmarshalState(marshaledDesiredState)
 	if err != nil {
 		return nil, fmt.Errorf("expand error: %v", err)
@@ -63,7 +63,7 @@ func unmarshalState(desrideState []byte) (interface{}, error) {
 	return unmarshaledState, nil
 }
 
-func (c StateExpander) expandState(state interface{}) (interface{}, error) {
+func (c Expander) expandState(state interface{}) (interface{}, error) {
 	switch stateValue := state.(type) {
 	case nil:
 		return state, nil
@@ -79,7 +79,7 @@ func (c StateExpander) expandState(state interface{}) (interface{}, error) {
 	}
 }
 
-func (c StateExpander) exapndSlice(sliceState []interface{}) ([]interface{}, error) {
+func (c Expander) exapndSlice(sliceState []interface{}) ([]interface{}, error) {
 	for i, value := range sliceState {
 		expandedValue, err := c.expandState(value)
 		if err != nil {
@@ -90,7 +90,7 @@ func (c StateExpander) exapndSlice(sliceState []interface{}) ([]interface{}, err
 	return sliceState, nil
 }
 
-func (c StateExpander) expandMap(mapState map[string]interface{}) (map[string]interface{}, error) {
+func (c Expander) expandMap(mapState map[string]interface{}) (map[string]interface{}, error) {
 	for key, value := range mapState {
 		expandedValue, err := c.expandState(value)
 		mapState[key] = expandedValue
@@ -101,7 +101,7 @@ func (c StateExpander) expandMap(mapState map[string]interface{}) (map[string]in
 	return mapState, nil
 }
 
-func (c StateExpander) expandString(stringState string) (interface{}, error) {
+func (c Expander) expandString(stringState string) (interface{}, error) {
 	re := regexp.MustCompile(`^{{ (.*) }}$`)
 	submatch := re.FindStringSubmatch(stringState)
 

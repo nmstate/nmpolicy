@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package expander
+package state
 
 import (
 	"fmt"
@@ -80,7 +80,7 @@ routes:
 		pathResults: map[string]interface{}{"capture.base-iface.interfaces[0].ipv4": "1.2.3.4", "capture.base-iface.interfaces[0].name": "eth1",
 			"capture.bridge-routes-takeover.running": unmarshaledRoutes},
 	}
-	expandedState, err := New(capturerStub).Expand([]byte(desiredState))
+	expandedState, err := NewExpander(capturerStub).Expand([]byte(desiredState))
 	assert.NoError(t, err)
 	verifyResult(t, expectedExandedState, expandedState)
 }
@@ -108,7 +108,7 @@ func TestExpanderCaptureIsTopLevel(t *testing.T) {
 	capturerStub := pathCapturerStub{failResolve: false,
 		pathResults: map[string]interface{}{"capture.base-iface": unmarshaledInterfaces},
 	}
-	expandedState, err := New(capturerStub).Expand([]byte(desiredState))
+	expandedState, err := NewExpander(capturerStub).Expand([]byte(desiredState))
 	assert.NoError(t, err)
 	verifyResult(t, expectedExandedState, expandedState)
 }
@@ -118,7 +118,7 @@ func TestExpanderResolveCaptureFails(t *testing.T) {
 "{{ capture.enabled-iface }}"
 `
 	capturerStub := pathCapturerStub{failResolve: true}
-	expandedState, err := New(capturerStub).Expand([]byte(desiredState))
+	expandedState, err := NewExpander(capturerStub).Expand([]byte(desiredState))
 
 	assert.Error(t, err)
 	assert.Nil(t, expandedState)
