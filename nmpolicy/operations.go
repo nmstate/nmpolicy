@@ -40,19 +40,19 @@ import (
 // - Meta Info: Extended information about the generated state (e.g. the policy version).
 //
 // On failure, an error is returned.
-func GenerateState(nmpolicy types.PolicySpec, currentState []byte, cache types.CachedState) (types.GeneratedState, error) {
-	var capturesState map[string]types.CapturedState
+func GenerateState(policySpec types.PolicySpec, currentState []byte, cachedState types.CachedState) (types.GeneratedState, error) {
+	var capturedStates map[string]types.CapturedState
 	var desiredState []byte
 
-	if nmpolicy.DesiredState != nil {
-		desiredState = append(desiredState, nmpolicy.DesiredState...)
+	if policySpec.DesiredState != nil {
+		desiredState = append(desiredState, policySpec.DesiredState...)
 
-		capResolver := capture.NewResolver(lexer.New(), parser.New(), resolver.New())
-		resolverResult, err := capResolver.Resolve(nmpolicy.Capture, cache.CapturedStates, currentState)
+		captureResolver := capture.NewResolver(lexer.New(), parser.New(), resolver.New())
+		resolverResult, err := captureResolver.Resolve(policySpec.Capture, cachedState.CapturedStates, currentState)
 		if err != nil {
 			return types.GeneratedState{}, fmt.Errorf("failed to generate state, err: %v", err)
 		}
-		capturesState = resolverResult.CapturedStates()
+		capturedStates = resolverResult.CapturedStates()
 
 		stateExpander := expander.New(resolverResult)
 		desiredState, err = stateExpander.Expand(desiredState)
@@ -62,9 +62,9 @@ func GenerateState(nmpolicy types.PolicySpec, currentState []byte, cache types.C
 	}
 
 	timestamp := time.Now().UTC()
-	timestampCapturesState(capturesState, timestamp)
+	timestampCapturedStates(capturedStates, timestamp)
 	return types.GeneratedState{
-		Cache:        types.CachedState{CapturedStates: capturesState},
+		Cache:        types.CachedState{CapturedStates: capturedStates},
 		DesiredState: desiredState,
 		MetaInfo: types.MetaInfo{
 			Version:   "0",
@@ -73,11 +73,11 @@ func GenerateState(nmpolicy types.PolicySpec, currentState []byte, cache types.C
 	}, nil
 }
 
-func timestampCapturesState(capturesState map[string]types.CapturedState, timeStamp time.Time) {
-	for captureID, captureState := range capturesState {
-		if captureState.MetaInfo.TimeStamp.IsZero() {
-			captureState.MetaInfo.TimeStamp = timeStamp
-			capturesState[captureID] = captureState
+func timestampCapturedStates(capturedStates map[string]types.CapturedState, timeStamp time.Time) {
+	for captureEntryName, capturedState := range capturedStates {
+		if capturedState.MetaInfo.TimeStamp.IsZero() {
+			capturedState.MetaInfo.TimeStamp = timeStamp
+			capturedStates[captureEntryName] = capturedState
 		}
 	}
 }
