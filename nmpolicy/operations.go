@@ -48,7 +48,7 @@ func GenerateState(nmpolicy types.PolicySpec, currentState []byte, cache types.C
 		desiredState = append(desiredState, nmpolicy.DesiredState...)
 
 		capResolver := capture.NewResolver(lexer.New(), parser.New(), resolver.New())
-		resolverResult, err := capResolver.Resolve(nmpolicy.Capture, cache.Capture, currentState)
+		resolverResult, err := capResolver.Resolve(nmpolicy.Capture, cache.CapturedStates, currentState)
 		if err != nil {
 			return types.GeneratedState{}, fmt.Errorf("failed to generate state, err: %v", err)
 		}
@@ -64,7 +64,7 @@ func GenerateState(nmpolicy types.PolicySpec, currentState []byte, cache types.C
 	timestamp := time.Now().UTC()
 	timestampCapturesState(capturesState, timestamp)
 	return types.GeneratedState{
-		Cache:        types.CachedState{Capture: capturesState},
+		Cache:        types.CachedState{CapturedStates: capturesState},
 		DesiredState: desiredState,
 		MetaInfo: types.MetaInfo{
 			Version:   "0",

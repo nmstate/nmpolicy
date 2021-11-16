@@ -24,7 +24,7 @@ type PolicySpec struct {
 }
 
 type CachedState struct {
-	Capture map[string]CapturedState
+	CapturedStates map[string]CapturedState
 }
 
 type GeneratedState struct {

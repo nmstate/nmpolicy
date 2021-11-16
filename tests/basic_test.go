@@ -84,7 +84,7 @@ func testPolicyWithCachedCaptureAndDesiredStateWithoutRef(t *testing.T) {
 		}
 
 		cacheState := types.CachedState{
-			Capture: map[string]types.CapturedState{capID0: {State: []byte("some captured state")}},
+			CapturedStates: map[string]types.CapturedState{capID0: {State: []byte("some captured state")}},
 		}
 		s, err := nmpolicy.GenerateState(
 			policySpec,
@@ -206,7 +206,7 @@ func testPolicyWithFilterCaptureAndDesiredStateCaptureEntryRef(t *testing.T) {
 			},
 			DesiredState: mainExpectedDesiredState,
 			Cache: types.CachedState{
-				Capture: map[string]types.CapturedState{
+				CapturedStates: map[string]types.CapturedState{
 					"default-gw": {
 						State: []byte(`
 routes:
@@ -269,7 +269,7 @@ func testGenerateUniqueTimestamps(t *testing.T) {
 			DesiredState: stateData,
 		}
 		cacheState := types.CachedState{
-			Capture: map[string]types.CapturedState{
+			CapturedStates: map[string]types.CapturedState{
 				capID1: {
 					State: []byte("{}"),
 					MetaInfo: types.MetaInfo{
@@ -285,30 +285,30 @@ func testGenerateUniqueTimestamps(t *testing.T) {
 			stateData,
 			cacheState)
 		assert.NoError(t, err)
-		assert.Equal(t, obtained.MetaInfo.TimeStamp, obtained.Cache.Capture[capID0].MetaInfo.TimeStamp)
-		assert.Equal(t, cacheState.Capture[capID1].MetaInfo, obtained.Cache.Capture[capID1].MetaInfo)
+		assert.Equal(t, obtained.MetaInfo.TimeStamp, obtained.Cache.CapturedStates[capID0].MetaInfo.TimeStamp)
+		assert.Equal(t, cacheState.CapturedStates[capID1].MetaInfo, obtained.Cache.CapturedStates[capID1].MetaInfo)
 		assert.Greater(t, obtained.MetaInfo.TimeStamp.Sub(beforeGenerate), time.Duration(0))
-		assert.Greater(t, obtained.Cache.Capture[capID0].MetaInfo.TimeStamp.Sub(beforeGenerate), time.Duration(0))
+		assert.Greater(t, obtained.Cache.CapturedStates[capID0].MetaInfo.TimeStamp.Sub(beforeGenerate), time.Duration(0))
 	})
 }
 
 func resetTimeStamp(generatedState types.GeneratedState) types.GeneratedState {
 	generatedState.MetaInfo.TimeStamp = time.Time{}
-	for captureID, captureState := range generatedState.Cache.Capture {
+	for captureID, captureState := range generatedState.Cache.CapturedStates {
 		captureState.MetaInfo.TimeStamp = time.Time{}
-		generatedState.Cache.Capture[captureID] = captureState
+		generatedState.Cache.CapturedStates[captureID] = captureState
 	}
 	return generatedState
 }
 
 func formatYAMLs(generatedState types.GeneratedState) (types.GeneratedState, error) {
-	for captureID, captureState := range generatedState.Cache.Capture {
+	for captureID, captureState := range generatedState.Cache.CapturedStates {
 		formatedYAML, err := formatYAML(captureState.State)
 		if err != nil {
 			return types.GeneratedState{}, err
 		}
 		captureState.State = formatedYAML
-		generatedState.Cache.Capture[captureID] = captureState
+		generatedState.Cache.CapturedStates[captureID] = captureState
 	}
 	formatedDesiredState, err := formatYAML(generatedState.DesiredState)
 	if err != nil {
