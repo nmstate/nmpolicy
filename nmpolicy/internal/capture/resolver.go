@@ -53,61 +53,63 @@ func NewResolver(l Lexer, p Parser, r Resolver) CaptureResolver {
 }
 
 func (c CaptureResolver) Resolve(
-	capturesExpr map[string]string,
-	capturesCache map[string]types.CapturedState,
+	captureExpressions map[string]string,
+	capturedStatesCache map[string]types.CapturedState,
 	state []byte) (Result, error) {
-	if len(capturesExpr) == 0 || len(state) == 0 && len(capturesCache) == 0 {
+	if len(captureExpressions) == 0 || len(state) == 0 && len(capturedStatesCache) == 0 {
 		return Result{}, nil
 	}
 
-	capturesState := filterCacheBasedOnExprCaptures(capturesCache, capturesExpr)
-	capturesExpr = filterOutExprBasedOnCachedCaptures(capturesExpr, capturesCache)
+	capturedStates := filterCacheBasedOnExprCaptures(capturedStatesCache, captureExpressions)
+	captureExpressions = filterOutExprBasedOnCachedCaptures(captureExpressions, capturedStatesCache)
 
-	astPool := map[string]ast.Node{}
-	for capID, capExpr := range capturesExpr {
-		tokens, err := c.lexer.Lex(capExpr)
+	captureASTPool := map[string]ast.Node{}
+	for captureEntryName, captureEntryExpression := range captureExpressions {
+		captureEntryTokens, err := c.lexer.Lex(captureEntryExpression)
 		if err != nil {
 			return Result{}, fmt.Errorf("failed to resolve capture expression, err: %v", err)
 		}
 
-		astRoot, err := c.parser.Parse(tokens)
+		captureEntryAST, err := c.parser.Parse(captureEntryTokens)
 		if err != nil {
 			return Result{}, fmt.Errorf("failed to resolve capture expression, err: %v", err)
 		}
 
-		astPool[capID] = astRoot
+		captureASTPool[captureEntryName] = captureEntryAST
 	}
 
-	resolverResult, err := c.resolver.Resolve(astPool, state)
+	resolverResult, err := c.resolver.Resolve(captureASTPool, state)
 	if err != nil {
 		return Result{}, fmt.Errorf("failed to resolve capture expression, err: %v", err)
 	}
 
-	for capID, capState := range capturesState {
-		resolverResult.Marshaled[capID] = capState
+	for captureEntryName, capturedState := range capturedStates {
+		resolverResult.Marshaled[captureEntryName] = capturedState
 	}
 	return NewResult(c.lexer, c.parser, c.resolver, resolverResult), nil
 }
 
-func filterOutExprBasedOnCachedCaptures(capturesExpr map[string]string, capturesCache map[string]types.CapturedState) map[string]string {
-	for capID := range capturesCache {
-		delete(capturesExpr, capID)
+func filterOutExprBasedOnCachedCaptures(captureExpressions map[string]string,
+	capturedStates map[string]types.CapturedState) map[string]string {
+	for captureEntryName := range capturedStates {
+		delete(captureExpressions, captureEntryName)
 	}
-	return capturesExpr
+	return captureExpressions
 }
 
-func filterCacheBasedOnExprCaptures(capsState map[string]types.CapturedState, capsExpr map[string]string) map[string]types.CapturedState {
-	caps := map[string]types.CapturedState{}
+func filterCacheBasedOnExprCaptures(capturedStates map[string]types.CapturedState,
+	captureExpressions map[string]string) map[string]types.CapturedState {
+	filteredCapturedStates := map[string]types.CapturedState{}
 
-	for capID := range capsExpr {
-		if capState, ok := capsState[capID]; ok {
-			state := append([]byte{}, capState.State...)
+	for captureEntryName := range captureExpressions {
+		if capturedState, ok := capturedStates[captureEntryName]; ok {
+			state := append([]byte{}, capturedState.State...)
 
-			caps[capID] = types.CapturedState{
+			filteredCapturedStates[captureEntryName] = types.CapturedState{
 				State:    state,
-				MetaInfo: capState.MetaInfo,
+				MetaInfo: capturedState.MetaInfo,
 			}
 		}
 	}
-	return caps
+	return filteredCapturedStates
 }

@@ -92,68 +92,70 @@ func testAllCapturesCached(t *testing.T) {
 
 func testResolvingExpressions(t *testing.T) {
 	t.Run("resolve expressions", func(t *testing.T) {
-		const capID = "cap0"
+		const captureEntryName = "cap0"
 
 		captureResolver := capture.NewResolver(lexerStub{}, parserStub{}, resolverStub{})
 		result, err := captureResolver.Resolve(
-			map[string]string{capID: "my expression"},
+			map[string]string{captureEntryName: "my expression"},
 			map[string]types.CapturedState{},
 			[]byte("some state"),
 		)
 		assert.NoError(t, err)
 
-		assert.Equal(t, map[string]types.CapturedState{capID: {State: []byte("resolver: parser: lexer: my expression")}}, result.CapturedStates())
+		assert.Equal(t, map[string]types.CapturedState{
+			captureEntryName: {State: []byte("resolver: parser: lexer: my expression")},
+		}, result.CapturedStates())
 	})
 }
 
 func testExpressionsWithPartialCache(t *testing.T) {
 	t.Run("resolve with expressions and partial cache", func(t *testing.T) {
-		const capID0 = "cap0"
-		const capID1 = "cap1"
+		const captureEntryName0 = "cap0"
+		const captureEntryName1 = "cap1"
 
-		capCache := map[string]types.CapturedState{capID0: {State: []byte("some captured state")}}
+		capturedStatesCache := map[string]types.CapturedState{captureEntryName0: {State: []byte("some captured state")}}
 		captureResolver := capture.NewResolver(lexerStub{}, parserStub{}, resolverStub{})
 
 		result, err := captureResolver.Resolve(
 			map[string]string{
-				capID0: "my expression",
-				capID1: "another expression",
+				captureEntryName0: "my expression",
+				captureEntryName1: "another expression",
 			},
-			capCache,
+			capturedStatesCache,
 			[]byte("some state"),
 		)
 		assert.NoError(t, err)
 
-		expectedCaps := capCache
-		expectedCaps[capID1] = types.CapturedState{State: []byte("resolver: parser: lexer: another expression")}
-		assert.Equal(t, expectedCaps, result.CapturedStates())
+		expectedCapturedStates := capturedStatesCache
+		expectedCapturedStates[captureEntryName1] = types.CapturedState{State: []byte("resolver: parser: lexer: another expression")}
+		assert.Equal(t, expectedCapturedStates, result.CapturedStates())
 	})
 }
 
 func testExpressionsWithOverCache(t *testing.T) {
 	t.Run("resolve with cache that is not included in the expressions", func(t *testing.T) {
-		const capID0 = "cap0"
-		const capID1 = "cap1"
+		const captureEntryName0 = "cap0"
+		const captureEntryName1 = "cap1"
 
-		capCache := map[string]types.CapturedState{
-			capID0: {State: []byte("some captured state")},
-			capID1: {State: []byte("another captured state")},
+		capturedStatesCache := map[string]types.CapturedState{
+			captureEntryName0: {State: []byte("some captured state")},
+			captureEntryName1: {State: []byte("another captured state")},
 		}
 		captureResolver := capture.NewResolver(lexerStub{}, parserStub{}, resolverStub{})
 
 		result, err := captureResolver.Resolve(
 			map[string]string{
-				capID0: "my expression",
+				captureEntryName0: "my expression",
 			},
-			capCache,
+			capturedStatesCache,
 			[]byte("some state"),
 		)
 		assert.NoError(t, err)
 
-		expectedCaps := map[string]types.CapturedState{
-			capID0: {State: []byte("some captured state")},
+		expectedCapturedStates := map[string]types.CapturedState{
+			captureEntryName0: {State: []byte("some captured state")},
 		}
-		assert.Equal(t, expectedCaps, result.CapturedStates())
+		assert.Equal(t, expectedCapturedStates, result.CapturedStates())
 	})
 }
 
