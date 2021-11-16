@@ -17,15 +17,11 @@
 package capture_test
 
 import (
-	"fmt"
 	"testing"
 
 	assert "github.com/stretchr/testify/require"
 
-	"github.com/nmstate/nmpolicy/nmpolicy/internal/ast"
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/capture"
-	"github.com/nmstate/nmpolicy/nmpolicy/internal/lexer"
-	"github.com/nmstate/nmpolicy/nmpolicy/internal/resolver"
 	"github.com/nmstate/nmpolicy/nmpolicy/types"
 )
 
@@ -195,53 +191,4 @@ func testResolveFailure(t *testing.T) {
 		)
 		assert.Error(t, err)
 	})
-}
-
-type lexerStub struct {
-	failLex bool
-}
-
-func (l lexerStub) Lex(expression string) ([]lexer.Token, error) {
-	if l.failLex {
-		return nil, fmt.Errorf("lex failed")
-	}
-	literal := fmt.Sprintf("lexer: %s", expression)
-	return []lexer.Token{{Literal: literal}}, nil
-}
-
-type parserStub struct {
-	failParse bool
-}
-
-func (p parserStub) Parse(tokens []lexer.Token) (ast.Node, error) {
-	if p.failParse {
-		return ast.Node{}, fmt.Errorf("parse failed")
-	}
-	literal := fmt.Sprintf("parser: %s", tokens[0].Literal)
-	return ast.Node{Terminal: ast.Terminal{String: &literal}}, nil
-}
-
-type resolverStub struct {
-	failResolve bool
-}
-
-func (r resolverStub) Resolve(astPool map[string]ast.Node, state []byte) (resolver.Result, error) {
-	if r.failResolve {
-		return resolver.Result{}, fmt.Errorf("resolve failed")
-	}
-
-	capsState := map[string]types.CaptureState{}
-	for id, entry := range astPool {
-		capsState[id] = types.CaptureState{State: []byte(fmt.Sprintf("resolver: %s", *entry.String))}
-	}
-
-	return resolver.Result{Marshaled: capsState}, nil
-}
-
-func (r resolverStub) ResolveCaptureEntryPath(captureEntryPathAST ast.Node,
-	capturedStates map[string]map[string]interface{}) (interface{}, error) {
-	if r.failResolve {
-		return nil, fmt.Errorf("resolve capture entry path failed")
-	}
-	return fmt.Sprintf("resolver: %s", *captureEntryPathAST.String), nil
 }
