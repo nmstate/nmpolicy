@@ -24,15 +24,15 @@ import (
 )
 
 type Expander struct {
-	capResolver CapturePathResolver
+	captureEntryPathResolver CaptureEntryPathResolver
 }
 
-type CapturePathResolver interface {
+type CaptureEntryPathResolver interface {
 	ResolveCaptureEntryPath(capturePath string) (interface{}, error)
 }
 
-func NewExpander(capResolver CapturePathResolver) Expander {
-	return Expander{capResolver: capResolver}
+func NewExpander(captureEntryPathResolver CaptureEntryPathResolver) Expander {
+	return Expander{captureEntryPathResolver: captureEntryPathResolver}
 }
 
 func (c Expander) Expand(marshaledDesiredState []byte) ([]byte, error) {
@@ -115,7 +115,7 @@ func (c Expander) expandString(stringState string) (interface{}, error) {
 	}
 
 	capturePath := submatch[1]
-	resolvedPath, err := c.capResolver.ResolveCaptureEntryPath(capturePath)
+	resolvedPath, err := c.captureEntryPathResolver.ResolveCaptureEntryPath(capturePath)
 
 	if err != nil {
 		return nil, err
