@@ -21,6 +21,7 @@ import (
 
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/ast"
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/lexer"
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/resolver"
 	"github.com/nmstate/nmpolicy/nmpolicy/types"
 )
 
@@ -39,23 +40,23 @@ type Parser interface {
 }
 
 type Resolver interface {
-	Resolve(astPool map[string]ast.Node, state []byte) (map[string]types.CaptureState, error)
+	Resolve(astPool map[string]ast.Node, state []byte) (resolver.Result, error)
 }
 
-func New(leXer Lexer, parser Parser, resolver Resolver) Capture {
+func New(l Lexer, p Parser, r Resolver) Capture {
 	return Capture{
-		lexer:    leXer,
-		parser:   parser,
-		resolver: resolver,
+		lexer:    l,
+		parser:   p,
+		resolver: r,
 	}
 }
 
 func (c Capture) Resolve(
 	capturesExpr map[string]string,
 	capturesCache map[string]types.CaptureState,
-	state []byte) (map[string]types.CaptureState, error) {
+	state []byte) (Result, error) {
 	if len(capturesExpr) == 0 || len(state) == 0 && len(capturesCache) == 0 {
-		return nil, nil
+		return Result{}, nil
 	}
 
 	capturesState := filterCacheBasedOnExprCaptures(capturesCache, capturesExpr)
@@ -65,27 +66,28 @@ func (c Capture) Resolve(
 	for capID, capExpr := range capturesExpr {
 		tokens, err := c.lexer.Lex(capExpr)
 		if err != nil {
-			return nil, fmt.Errorf("failed to resolve capture expression, err: %v", err)
+			return Result{}, fmt.Errorf("failed to resolve capture expression, err: %v", err)
 		}
 
 		astRoot, err := c.parser.Parse(tokens)
 		if err != nil {
-			return nil, fmt.Errorf("failed to resolve capture expression, err: %v", err)
+			return Result{}, fmt.Errorf("failed to resolve capture expression, err: %v", err)
 		}
 
 		astPool[capID] = astRoot
 	}
 
-	resolvedCapsState, err := c.resolver.Resolve(astPool, state)
+	resolverResult, err := c.resolver.Resolve(astPool, state)
 	if err != nil {
-		return nil, fmt.Errorf("failed to resolve capture expression, err: %v", err)
+		return Result{}, fmt.Errorf("failed to resolve capture expression, err: %v", err)
 	}
 
-	for capID, capExpr := range resolvedCapsState {
-		capturesState[capID] = capExpr
+	for capID, capState := range capturesState {
+		resolverResult.Marshaled[capID] = capState
 	}
-
-	return capturesState, nil
+	return Result{
+		resolverResult: resolverResult,
+	}, nil
 }
 
 func filterOutExprBasedOnCachedCaptures(capturesExpr map[string]string, capturesCache map[string]types.CaptureState) map[string]string {

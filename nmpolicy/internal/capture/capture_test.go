@@ -25,6 +25,7 @@ import (
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/ast"
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/capture"
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/lexer"
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/resolver"
 	"github.com/nmstate/nmpolicy/nmpolicy/types"
 )
 
@@ -46,28 +47,28 @@ func TestBasicPolicy(t *testing.T) {
 func testNoExpressions(t *testing.T) {
 	t.Run("resolve with no expression", func(t *testing.T) {
 		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{})
-		resolvedCaps, err := capCtrl.Resolve(
+		result, err := capCtrl.Resolve(
 			map[string]string{},
 			map[string]types.CaptureState{"cap0": {State: []byte("some captured state")}},
 			[]byte("some state"),
 		)
 		assert.NoError(t, err)
 
-		assert.Nil(t, resolvedCaps)
+		assert.Nil(t, result.CapturedStates())
 	})
 }
 
 func testNoCacheAndState(t *testing.T) {
 	t.Run("resolve with no cache and state", func(t *testing.T) {
 		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{})
-		resolvedCaps, err := capCtrl.Resolve(
+		result, err := capCtrl.Resolve(
 			map[string]string{"cap0": "my expression"},
 			map[string]types.CaptureState{},
 			[]byte{},
 		)
 		assert.NoError(t, err)
 
-		assert.Nil(t, resolvedCaps)
+		assert.Nil(t, result.CapturedStates())
 	})
 }
 
@@ -79,7 +80,7 @@ func testAllCapturesCached(t *testing.T) {
 		}
 
 		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{})
-		resolvedCaps, err := capCtrl.Resolve(
+		result, err := capCtrl.Resolve(
 			map[string]string{
 				"cap0": "my expression",
 				"cap1": "another expression",
@@ -89,7 +90,7 @@ func testAllCapturesCached(t *testing.T) {
 		)
 		assert.NoError(t, err)
 
-		assert.Equal(t, capCache, resolvedCaps)
+		assert.Equal(t, capCache, result.CapturedStates())
 	})
 }
 
@@ -98,14 +99,14 @@ func testResolvingExpressions(t *testing.T) {
 		const capID = "cap0"
 
 		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{})
-		resolvedCaps, err := capCtrl.Resolve(
+		result, err := capCtrl.Resolve(
 			map[string]string{capID: "my expression"},
 			map[string]types.CaptureState{},
 			[]byte("some state"),
 		)
 		assert.NoError(t, err)
 
-		assert.Equal(t, map[string]types.CaptureState{capID: {}}, resolvedCaps)
+		assert.Equal(t, map[string]types.CaptureState{capID: {}}, result.CapturedStates())
 	})
 }
 
@@ -117,7 +118,7 @@ func testExpressionsWithPartialCache(t *testing.T) {
 		capCache := map[string]types.CaptureState{capID0: {State: []byte("some captured state")}}
 		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{})
 
-		resolvedCaps, err := capCtrl.Resolve(
+		result, err := capCtrl.Resolve(
 			map[string]string{
 				capID0: "my expression",
 				capID1: "another expression",
@@ -129,7 +130,7 @@ func testExpressionsWithPartialCache(t *testing.T) {
 
 		expectedCaps := capCache
 		expectedCaps[capID1] = types.CaptureState{}
-		assert.Equal(t, expectedCaps, resolvedCaps)
+		assert.Equal(t, expectedCaps, result.CapturedStates())
 	})
 }
 
@@ -144,7 +145,7 @@ func testExpressionsWithOverCache(t *testing.T) {
 		}
 		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{})
 
-		resolvedCaps, err := capCtrl.Resolve(
+		result, err := capCtrl.Resolve(
 			map[string]string{
 				capID0: "my expression",
 			},
@@ -156,7 +157,7 @@ func testExpressionsWithOverCache(t *testing.T) {
 		expectedCaps := map[string]types.CaptureState{
 			capID0: {State: []byte("some captured state")},
 		}
-		assert.Equal(t, expectedCaps, resolvedCaps)
+		assert.Equal(t, expectedCaps, result.CapturedStates())
 	})
 }
 
@@ -222,9 +223,9 @@ type resolverStub struct {
 	failResolve bool
 }
 
-func (r resolverStub) Resolve(astPool map[string]ast.Node, state []byte) (map[string]types.CaptureState, error) {
+func (r resolverStub) Resolve(astPool map[string]ast.Node, state []byte) (resolver.Result, error) {
 	if r.failResolve {
-		return nil, fmt.Errorf("resolve failed")
+		return resolver.Result{}, fmt.Errorf("resolve failed")
 	}
 
 	capsState := map[string]types.CaptureState{}
@@ -232,5 +233,5 @@ func (r resolverStub) Resolve(astPool map[string]ast.Node, state []byte) (map[st
 		capsState[id] = types.CaptureState{}
 	}
 
-	return capsState, nil
+	return resolver.Result{Marshaled: capsState}, nil
 }

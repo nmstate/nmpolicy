@@ -16,13 +16,20 @@
 
 package capture
 
-import "github.com/nmstate/nmpolicy/nmpolicy/types"
+import (
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/resolver"
+	"github.com/nmstate/nmpolicy/nmpolicy/types"
+)
 
-type CaptureEntry struct {
-	CaptureCache map[string]types.CaptureState
+type Result struct {
+	resolverResult resolver.Result
 }
 
-func (c CaptureEntry) ResolveCaptureEntryPath(
+func (r Result) ResolveCaptureEntryPath(
 	capturePath string) (interface{}, error) {
 	return nil, nil
+}
+
+func (r Result) CapturedStates() map[string]types.CaptureState {
+	return r.resolverResult.Marshaled
 }

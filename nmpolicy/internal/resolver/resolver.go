@@ -37,7 +37,7 @@ func New() Resolver {
 	return Resolver{}
 }
 
-func (Resolver) Resolve(captureASTPool map[string]ast.Node, currentState []byte) (map[string]types.CaptureState, error) {
+func (Resolver) Resolve(captureASTPool map[string]ast.Node, currentState []byte) (Result, error) {
 	return newResolver(captureASTPool).Resolve(currentState)
 }
 
@@ -49,28 +49,32 @@ func newResolver(captureASTPool map[string]ast.Node) *resolver {
 	}
 }
 
-func (r *resolver) Resolve(currentState []byte) (map[string]types.CaptureState, error) {
+func (r *resolver) Resolve(currentState []byte) (Result, error) {
 	err := yaml.Unmarshal(currentState, &r.currentState)
 	if err != nil {
-		return nil, wrapWithResolveError(err)
+		return Result{}, wrapWithResolveError(err)
 	}
 
-	capturedStates := map[string]types.CaptureState{}
+	result := Result{
+		Marshaled:   map[string]types.CaptureState{},
+		Unmarshaled: map[string]map[string]interface{}{},
+	}
 	for captureEntryName := range r.captureASTPool {
 		capturedStateEntry, err := r.resolveCaptureEntryName(captureEntryName)
 		if err != nil {
-			return nil, wrapWithResolveError(err)
+			return Result{}, wrapWithResolveError(err)
 		}
 		marshaledCapturedStateEntry, err := yaml.Marshal(capturedStateEntry)
 		if err != nil {
-			return nil, wrapWithResolveError(err)
+			return Result{}, wrapWithResolveError(err)
 		}
-		capturedStates[captureEntryName] = types.CaptureState{
+		result.Marshaled[captureEntryName] = types.CaptureState{
 			State:    marshaledCapturedStateEntry,
 			MetaInfo: types.MetaInfo{},
 		}
+		result.Unmarshaled[captureEntryName] = capturedStateEntry
 	}
-	return capturedStates, nil
+	return result, nil
 }
 
 func (r *resolver) ResolveCaptureEntryPath(captureEntryPath ast.Node) (interface{}, error) {

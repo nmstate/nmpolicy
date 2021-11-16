@@ -88,15 +88,16 @@ func runTest(t *testing.T, testToRun test) {
 	resolver := newResolver(astPool)
 	resolver.capturedStates = capturedStates
 
-	resultStates, err := resolver.Resolve([]byte(sourceYAML))
+	obtainedResult, err := resolver.Resolve([]byte(sourceYAML))
 	if testToRun.err == "" {
 		assert.NoError(t, err)
 		expectedState := make(map[string]interface{})
 		actualState := make(map[string]interface{})
 		for captureName, expectedYaml := range testToRun.expectedYamls {
 			assert.NoError(t, yaml.Unmarshal([]byte(expectedYaml), &expectedState))
-			assert.NoError(t, yaml.Unmarshal(resultStates[captureName].State, &actualState))
+			assert.NoError(t, yaml.Unmarshal(obtainedResult.Marshaled[captureName].State, &actualState))
 			assert.Equal(t, expectedState, actualState)
+			assert.Equal(t, expectedState, obtainedResult.Unmarshaled[captureName])
 		}
 	} else {
 		assert.EqualError(t, err, testToRun.err)

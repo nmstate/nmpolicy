@@ -48,13 +48,13 @@ func GenerateState(nmpolicy types.PolicySpec, currentState []byte, cache types.C
 		desiredState = append(desiredState, nmpolicy.DesiredState...)
 
 		capResolver := capture.New(lexer.New(), parser.New(), resolver.New())
-		var err error
-		capturesState, err = capResolver.Resolve(nmpolicy.Capture, cache.Capture, currentState)
+		resolverResult, err := capResolver.Resolve(nmpolicy.Capture, cache.Capture, currentState)
 		if err != nil {
 			return types.GeneratedState{}, fmt.Errorf("failed to generate state, err: %v", err)
 		}
+		capturesState = resolverResult.CapturedStates()
 
-		stateExpander := expander.New(capture.CaptureEntry{CaptureCache: capturesState})
+		stateExpander := expander.New(resolverResult)
 		desiredState, err = stateExpander.Expand(desiredState)
 		if err != nil {
 			return types.GeneratedState{}, fmt.Errorf("failed to generate state, err: %v", err)
