@@ -16,13 +16,56 @@
 
 package capture
 
-import "github.com/nmstate/nmpolicy/nmpolicy/types"
+import (
+	"fmt"
+
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/lexer"
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/parser"
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/resolver"
+	"github.com/nmstate/nmpolicy/nmpolicy/types"
+)
 
 type CaptureEntry struct {
-	CaptureCache map[string]types.CaptureState
+	capturedStates map[string]map[string]interface{}
+	lexer          Lexer
+	parser         Parser
+	resolver       Resolver
+}
+
+func NewCaptureEntryWithLexerParserResolver(capturedStates map[string]types.CaptureState,
+	l Lexer, p Parser, r Resolver) (CaptureEntry, error) {
+	unmarshaledCapturedStates, err := unmarshalCapturedStates(capturedStates)
+	if err != nil {
+		return CaptureEntry{}, err
+	}
+	return CaptureEntry{
+		capturedStates: unmarshaledCapturedStates,
+		lexer:          l,
+		parser:         p,
+		resolver:       r,
+	}, nil
+}
+
+func NewCaptureEntry(capturedStates map[string]types.CaptureState) (CaptureEntry, error) {
+	return NewCaptureEntryWithLexerParserResolver(capturedStates, lexer.New(), parser.New(), resolver.New())
 }
 
 func (c CaptureEntry) ResolveCaptureEntryPath(
-	capturePath string) (interface{}, error) {
-	return nil, nil
+	captureEntryPathExpression string) (interface{}, error) {
+	captureEntryPathTokens, err := c.lexer.Lex(captureEntryPathExpression)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve capture entry path expression: %v", err)
+	}
+
+	captureEntryPathAST, err := c.parser.Parse(captureEntryPathTokens)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve capture entry path expression: %v", err)
+	}
+
+	resolvedCaptureEntryPath, err := c.resolver.ResolveCaptureEntryPath(captureEntryPathAST, c.capturedStates)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve capture entry path expression: %v", err)
+	}
+
+	return resolvedCaptureEntryPath, nil
 }

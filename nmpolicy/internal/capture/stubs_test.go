@@ -77,7 +77,7 @@ func (r resolverStub) Resolve(astPool map[string]ast.Node,
 }
 
 func (r resolverStub) ResolveCaptureEntryPath(captureEntryPathAST ast.Node,
-	capturedStates map[string]types.CaptureState) (interface{}, error) {
+	capturedStates map[string]map[string]interface{}) (interface{}, error) {
 	if r.failResolve {
 		return nil, fmt.Errorf("resolve capture entry path failed")
 	}
@@ -86,8 +86,12 @@ func (r resolverStub) ResolveCaptureEntryPath(captureEntryPathAST ast.Node,
 
 func defaultStubCapturedState(expression string) types.CaptureState {
 	return types.CaptureState{
-		State: []byte(fmt.Sprintf("resolver: parser: lexer: %s", expression)),
+		State: []byte(defaultStubValue(expression)),
 	}
+}
+
+func defaultStubValue(expression string) string {
+	return fmt.Sprintf("resolver: parser: lexer: %s", expression)
 }
 
 func marshalCapturedStates(capturedStates map[string]map[string]interface{}) (map[string]types.CaptureState, error) {
