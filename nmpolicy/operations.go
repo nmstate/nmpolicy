@@ -54,7 +54,12 @@ func GenerateState(nmpolicy types.PolicySpec, currentState []byte, cache types.C
 			return types.GeneratedState{}, fmt.Errorf("failed to generate state, err: %v", err)
 		}
 
-		stateExpander := expander.New(capture.CaptureEntry{CaptureCache: capturesState})
+		captureEntryPathResolver, err := capture.NewCaptureEntry(capturesState)
+		if err != nil {
+			return types.GeneratedState{}, fmt.Errorf("failed to generate state, err: %v", err)
+		}
+
+		stateExpander := expander.New(captureEntryPathResolver)
 		desiredState, err = stateExpander.Expand(desiredState)
 		if err != nil {
 			return types.GeneratedState{}, fmt.Errorf("failed to generate state, err: %v", err)

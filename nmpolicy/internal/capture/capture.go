@@ -42,6 +42,7 @@ type Parser interface {
 
 type Resolver interface {
 	Resolve(astPool map[string]ast.Node, state []byte, capturedStates map[string]map[string]interface{}) (map[string]types.CaptureState, error)
+	ResolveCaptureEntryPath(captureEntryPathAST ast.Node, capturedStates map[string]map[string]interface{}) (interface{}, error)
 }
 
 func New(leXer Lexer, parser Parser, resolver Resolver) Capture {
