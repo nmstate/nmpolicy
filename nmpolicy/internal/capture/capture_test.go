@@ -42,8 +42,7 @@ func TestBasicPolicy(t *testing.T) {
 
 func testNoExpressions(t *testing.T) {
 	t.Run("resolve with no expression", func(t *testing.T) {
-		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{})
-		resolvedCaps, err := capCtrl.Resolve(
+		resolvedCaps, err := captureResolverWithDefaultStubs().Resolve(
 			map[string]string{},
 			map[string]types.CaptureState{"cap0": {State: []byte("some captured state")}},
 			[]byte("some state"),
@@ -56,8 +55,7 @@ func testNoExpressions(t *testing.T) {
 
 func testNoCacheAndState(t *testing.T) {
 	t.Run("resolve with no cache and state", func(t *testing.T) {
-		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{})
-		resolvedCaps, err := capCtrl.Resolve(
+		resolvedCaps, err := captureResolverWithDefaultStubs().Resolve(
 			map[string]string{"cap0": "my expression"},
 			map[string]types.CaptureState{},
 			[]byte{},
@@ -75,8 +73,7 @@ func testAllCapturesCached(t *testing.T) {
 			"cap1": {State: formatYAML(t, "name: another captured state")},
 		}
 
-		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{})
-		resolvedCaps, err := capCtrl.Resolve(
+		resolvedCaps, err := captureResolverWithDefaultStubs().Resolve(
 			map[string]string{
 				"cap0": "my expression",
 				"cap1": "another expression",
@@ -93,15 +90,14 @@ func testResolvingExpressions(t *testing.T) {
 	t.Run("resolve expressions", func(t *testing.T) {
 		const capID = "cap0"
 
-		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{})
-		resolvedCaps, err := capCtrl.Resolve(
+		resolvedCaps, err := captureResolverWithDefaultStubs().Resolve(
 			map[string]string{capID: "my expression"},
 			map[string]types.CaptureState{},
 			[]byte("some state"),
 		)
 		assert.NoError(t, err)
 
-		assert.Equal(t, map[string]types.CaptureState{capID: {}}, resolvedCaps)
+		assert.Equal(t, map[string]types.CaptureState{capID: defaultStubCapturedState("my expression")}, resolvedCaps)
 	})
 }
 
@@ -111,9 +107,8 @@ func testExpressionsWithPartialCache(t *testing.T) {
 		const capID1 = "cap1"
 
 		capCache := map[string]types.CaptureState{capID0: {State: formatYAML(t, "name: some captured state")}}
-		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{})
 
-		resolvedCaps, err := capCtrl.Resolve(
+		resolvedCaps, err := captureResolverWithDefaultStubs().Resolve(
 			map[string]string{
 				capID0: "my expression",
 				capID1: "another expression",
@@ -124,7 +119,7 @@ func testExpressionsWithPartialCache(t *testing.T) {
 		assert.NoError(t, err)
 
 		expectedCaps := capCache
-		expectedCaps[capID1] = types.CaptureState{}
+		expectedCaps[capID1] = defaultStubCapturedState("another expression")
 		assert.Equal(t, expectedCaps, resolvedCaps)
 	})
 }
@@ -138,9 +133,8 @@ func testExpressionsWithOverCache(t *testing.T) {
 			capID0: {State: formatYAML(t, "name: some captured state")},
 			capID1: {State: formatYAML(t, "name: another captured state")},
 		}
-		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{})
 
-		resolvedCaps, err := capCtrl.Resolve(
+		resolvedCaps, err := captureResolverWithDefaultStubs().Resolve(
 			map[string]string{
 				capID0: "my expression",
 			},
@@ -190,4 +184,8 @@ func testResolveFailure(t *testing.T) {
 		)
 		assert.Error(t, err)
 	})
+}
+
+func captureResolverWithDefaultStubs() capture.Capture {
+	return capture.New(lexerStub{}, parserStub{}, resolverStub{})
 }
