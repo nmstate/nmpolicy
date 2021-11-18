@@ -46,7 +46,7 @@ jobs:
       with:
         go-version: ${{ env.GO_VERSION }}
     - name: Build cmd
-      run: ./scripts/make.sh --build
+      run: make build
   unit-test:
     name: unit test 
     runs-on: ubuntu-latest
@@ -58,7 +58,7 @@ jobs:
       with:
         go-version: ${{ env.GO_VERSION }}
     - name: Run unit tests
-      run: ./scripts/make.sh --unit-test
+      run: make unit-test
   integration-test:
     name: integration-test
     runs-on: ubuntu-latest
@@ -70,4 +70,4 @@ jobs:
       with:
         go-version: ${{ env.GO_VERSION }}
     - name: Run tests
-      run: ./scripts/make.sh --integration-test
+      run: make integration-test
