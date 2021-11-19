@@ -16,8 +16,14 @@
 
 package main
 
-import "fmt"
+import (
+	"github.com/nmstate/nmpolicy/nmpolicy"
+	"github.com/nmstate/nmpolicy/nmpolicy/types"
+)
 
 func main() {
-	fmt.Println("vim-go")
+	_, err := nmpolicy.GenerateState(types.PolicySpec{}, nil, types.CachedState{})
+	if err != nil {
+		panic(err)
+	}
 }
