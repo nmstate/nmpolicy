@@ -22,7 +22,7 @@ import (
 	assert "github.com/stretchr/testify/require"
 
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/capture"
-	"github.com/nmstate/nmpolicy/nmpolicy/types"
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/types"
 )
 
 func TestCaptureEntry(t *testing.T) {
@@ -37,7 +37,7 @@ func TestCaptureEntry(t *testing.T) {
 
 func testResolveCaptureEntryPathSuccess(t *testing.T) {
 	t.Run("ResolveCaptureEntryPath success", func(t *testing.T) {
-		capturedStates := map[string]types.CaptureState{}
+		capturedStates := types.CapturedStates{}
 		captureEntryResolver, err := captureEntryResolverWithDefaultStubs(capturedStates)
 		assert.NoError(t, err)
 		obtainedValue, err := captureEntryResolver.ResolveCaptureEntryPath("my expression")
@@ -48,7 +48,7 @@ func testResolveCaptureEntryPathSuccess(t *testing.T) {
 
 func testResolveCaptureEntryPathWithLexFailure(t *testing.T) {
 	t.Run("ResolveCaptureEntryPath lex failure", func(t *testing.T) {
-		capturedStates := map[string]types.CaptureState{}
+		capturedStates := types.CapturedStates{}
 		captureEntryResolver, err := capture.NewCaptureEntryWithLexerParserResolver(capturedStates,
 			lexerStub{failLex: true}, parserStub{}, resolverStub{})
 		assert.NoError(t, err)
@@ -59,7 +59,7 @@ func testResolveCaptureEntryPathWithLexFailure(t *testing.T) {
 
 func testResolveCaptureEntryPathWithParseFailure(t *testing.T) {
 	t.Run("ResolveCaptureEntryPath parser failure", func(t *testing.T) {
-		capturedStates := map[string]types.CaptureState{}
+		capturedStates := types.CapturedStates{}
 		captureEntryResolver, err := capture.NewCaptureEntryWithLexerParserResolver(capturedStates,
 			lexerStub{}, parserStub{failParse: true}, resolverStub{})
 		assert.NoError(t, err)
@@ -70,7 +70,7 @@ func testResolveCaptureEntryPathWithParseFailure(t *testing.T) {
 
 func testResolveCaptureEntryPathWithResolveFailure(t *testing.T) {
 	t.Run("ResolveCaptureEntryPath resolver failure", func(t *testing.T) {
-		capturedStates := map[string]types.CaptureState{}
+		capturedStates := types.CapturedStates{}
 		captureEntryResolver, err := capture.NewCaptureEntryWithLexerParserResolver(capturedStates,
 			lexerStub{}, parserStub{}, resolverStub{failResolve: true})
 		assert.NoError(t, err)
@@ -79,6 +79,6 @@ func testResolveCaptureEntryPathWithResolveFailure(t *testing.T) {
 	})
 }
 
-func captureEntryResolverWithDefaultStubs(capturedStates map[string]types.CaptureState) (capture.CaptureEntry, error) {
+func captureEntryResolverWithDefaultStubs(capturedStates types.CapturedStates) (capture.CaptureEntry, error) {
 	return capture.NewCaptureEntryWithLexerParserResolver(capturedStates, lexerStub{}, parserStub{}, resolverStub{})
 }

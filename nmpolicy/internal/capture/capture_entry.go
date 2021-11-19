@@ -22,31 +22,27 @@ import (
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/lexer"
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/parser"
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/resolver"
-	"github.com/nmstate/nmpolicy/nmpolicy/types"
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/types"
 )
 
 type CaptureEntry struct {
-	capturedStates map[string]map[string]interface{}
+	capturedStates types.CapturedStates
 	lexer          Lexer
 	parser         Parser
 	resolver       Resolver
 }
 
-func NewCaptureEntryWithLexerParserResolver(capturedStates map[string]types.CaptureState,
+func NewCaptureEntryWithLexerParserResolver(capturedStates types.CapturedStates,
 	l Lexer, p Parser, r Resolver) (CaptureEntry, error) {
-	unmarshaledCapturedStates, err := unmarshalCapturedStates(capturedStates)
-	if err != nil {
-		return CaptureEntry{}, err
-	}
 	return CaptureEntry{
-		capturedStates: unmarshaledCapturedStates,
+		capturedStates: capturedStates,
 		lexer:          l,
 		parser:         p,
 		resolver:       r,
 	}, nil
 }
 
-func NewCaptureEntry(capturedStates map[string]types.CaptureState) (CaptureEntry, error) {
+func NewCaptureEntry(capturedStates types.CapturedStates) (CaptureEntry, error) {
 	return NewCaptureEntryWithLexerParserResolver(capturedStates, lexer.New(), parser.New(), resolver.New())
 }
 

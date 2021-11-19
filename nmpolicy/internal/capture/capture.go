@@ -19,11 +19,9 @@ package capture
 import (
 	"fmt"
 
-	"sigs.k8s.io/yaml"
-
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/ast"
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/lexer"
-	"github.com/nmstate/nmpolicy/nmpolicy/types"
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/types"
 )
 
 type Capture struct {
@@ -41,8 +39,8 @@ type Parser interface {
 }
 
 type Resolver interface {
-	Resolve(astPool map[string]ast.Node, state []byte, capturedStates map[string]map[string]interface{}) (map[string]types.CaptureState, error)
-	ResolveCaptureEntryPath(captureEntryPathAST ast.Node, capturedStates map[string]map[string]interface{}) (interface{}, error)
+	Resolve(captureASTPool types.CaptureASTPool, state types.NMState, capturedStates types.CapturedStates) (types.CapturedStates, error)
+	ResolveCaptureEntryPath(captureEntryPathAST ast.Node, capturedStates types.CapturedStates) (interface{}, error)
 }
 
 func New(leXer Lexer, parser Parser, resolver Resolver) Capture {
@@ -54,9 +52,9 @@ func New(leXer Lexer, parser Parser, resolver Resolver) Capture {
 }
 
 func (c Capture) Resolve(
-	capturesExpr map[string]string,
-	capturesCache map[string]types.CaptureState,
-	state []byte) (map[string]types.CaptureState, error) {
+	capturesExpr types.CaptureExpressions,
+	capturesCache types.CapturedStates,
+	state types.NMState) (types.CapturedStates, error) {
 	if len(capturesExpr) == 0 || len(state) == 0 && len(capturesCache) == 0 {
 		return nil, nil
 	}
@@ -64,7 +62,7 @@ func (c Capture) Resolve(
 	capturesState := filterCacheBasedOnExprCaptures(capturesCache, capturesExpr)
 	capturesExpr = filterOutExprBasedOnCachedCaptures(capturesExpr, capturesCache)
 
-	astPool := map[string]ast.Node{}
+	astPool := types.CaptureASTPool{}
 	for capID, capExpr := range capturesExpr {
 		tokens, err := c.lexer.Lex(capExpr)
 		if err != nil {
@@ -79,57 +77,30 @@ func (c Capture) Resolve(
 		astPool[capID] = astRoot
 	}
 
-	unmarshaledCapturedStates, err := unmarshalCapturedStates(capturesState)
+	resolvedCapturedStates, err := c.resolver.Resolve(astPool, state, capturesState)
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve capture expression, err: %v", err)
-	}
-
-	resolvedCapturedStates, err := c.resolver.Resolve(astPool, state, unmarshaledCapturedStates)
-	if err != nil {
-		return nil, fmt.Errorf("failed to resolve capture expression, err: %v", err)
-	}
-
-	//FIXME: Move this to resolver.Resolver when the MetaInfo is at internal type for CapturedStates
-	for captureEntryName, capturedState := range capturesState {
-		resolvedCaptureState := resolvedCapturedStates[captureEntryName]
-		resolvedCaptureState.MetaInfo = capturedState.MetaInfo
-		resolvedCapturedStates[captureEntryName] = resolvedCaptureState
 	}
 
 	return resolvedCapturedStates, nil
 }
 
-func filterOutExprBasedOnCachedCaptures(capturesExpr map[string]string, capturesCache map[string]types.CaptureState) map[string]string {
+func filterOutExprBasedOnCachedCaptures(capturesExpr types.CaptureExpressions,
+	capturesCache types.CapturedStates) types.CaptureExpressions {
 	for capID := range capturesCache {
 		delete(capturesExpr, capID)
 	}
 	return capturesExpr
 }
 
-func filterCacheBasedOnExprCaptures(capsState map[string]types.CaptureState, capsExpr map[string]string) map[string]types.CaptureState {
-	caps := map[string]types.CaptureState{}
+func filterCacheBasedOnExprCaptures(capsState types.CapturedStates,
+	capsExpr types.CaptureExpressions) types.CapturedStates {
+	caps := types.CapturedStates{}
 
 	for capID := range capsExpr {
 		if capState, ok := capsState[capID]; ok {
-			state := append([]byte{}, capState.State...)
-
-			caps[capID] = types.CaptureState{
-				State:    state,
-				MetaInfo: capState.MetaInfo,
-			}
+			caps[capID] = capState
 		}
 	}
 	return caps
-}
-
-func unmarshalCapturedStates(capturedStates map[string]types.CaptureState) (map[string]map[string]interface{}, error) {
-	unmarshaledCapturedStates := map[string]map[string]interface{}{}
-	for captureEntryName, capturedState := range capturedStates {
-		unmarshaledCapturedState := map[string]interface{}{}
-		if err := yaml.Unmarshal(capturedState.State, &unmarshaledCapturedState); err != nil {
-			return nil, err
-		}
-		unmarshaledCapturedStates[captureEntryName] = unmarshaledCapturedState
-	}
-	return unmarshaledCapturedStates, nil
 }
