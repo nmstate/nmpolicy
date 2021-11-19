@@ -15,4 +15,4 @@ unit-test:
 	$(CMD) --unit-test
 
 integration-test:
-	$(CMD) --unit-test
+	$(CMD) --integration-test
