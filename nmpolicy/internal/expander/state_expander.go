@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"regexp"
 
-	yaml "sigs.k8s.io/yaml"
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/types"
 )
 
 type StateExpander struct {
@@ -35,32 +35,12 @@ func New(capResolver CapturePathResolver) StateExpander {
 	return StateExpander{capResolver: capResolver}
 }
 
-func (c StateExpander) Expand(marshaledDesiredState []byte) ([]byte, error) {
-	desiredState, err := unmarshalState(marshaledDesiredState)
+func (c StateExpander) Expand(desiredState types.NMState) (types.NMState, error) {
+	expandedState, err := c.expandState(map[string]interface{}(desiredState))
 	if err != nil {
-		return nil, fmt.Errorf("expand error: %v", err)
+		return nil, fmt.Errorf("failed expanding desired state: %v", err)
 	}
-
-	expandedState, err := c.expandState(desiredState)
-	if err != nil {
-		return nil, fmt.Errorf("expand error: %v", err)
-	}
-
-	marshaledExpandedState, err := yaml.Marshal(expandedState)
-	if err != nil {
-		return nil, fmt.Errorf("expand error: failed marshaling the expanded state : %v", err)
-	}
-	return marshaledExpandedState, nil
-}
-
-func unmarshalState(desrideState []byte) (interface{}, error) {
-	var unmarshaledState interface{}
-	err := yaml.Unmarshal(desrideState, &unmarshaledState)
-	if err != nil {
-		return nil, fmt.Errorf("failed unmarshaling the state %v : %v", desrideState, err)
-	}
-
-	return unmarshaledState, nil
+	return types.NMState(expandedState.(map[string]interface{})), nil
 }
 
 func (c StateExpander) expandState(state interface{}) (interface{}, error) {
@@ -69,7 +49,6 @@ func (c StateExpander) expandState(state interface{}) (interface{}, error) {
 		return state, nil
 	case string:
 		return c.expandString(stateValue)
-
 	case map[string]interface{}:
 		return c.expandMap(stateValue)
 	case []interface{}:
