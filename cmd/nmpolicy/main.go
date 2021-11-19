@@ -22,7 +22,10 @@ import (
 )
 
 func main() {
-	_, err := nmpolicy.GenerateState(types.PolicySpec{}, nil, types.CachedState{})
+	policySpec := types.PolicySpec{}
+	cachedState := types.CachedState{}
+	currentState := []byte{}
+	_, err := nmpolicy.GenerateState(policySpec, currentState, cachedState)
 	if err != nil {
 		panic(err)
 	}
