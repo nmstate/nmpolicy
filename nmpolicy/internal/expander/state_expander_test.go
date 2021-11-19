@@ -14,34 +14,37 @@
  * limitations under the License.
  */
 
-package expander
+package expander_test
 
 import (
 	"fmt"
 	"testing"
 
 	assert "github.com/stretchr/testify/require"
-	yaml "sigs.k8s.io/yaml"
+
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/expander"
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/types"
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/types/typestest"
 )
 
 func TestExpanderCapturesAreMapValues(t *testing.T) {
-	desiredState := `
+	desiredState := typestest.ToNMState(t, `
 interfaces:
 - name: br1
   description: Linux bridge with base interface as a port
   type: linux-bridge
   state: up
-  ipv4: "{{ capture.base-iface.interfaces[0].ipv4 }}"
+  ipv4: "{{ capture.base-iface.interfaces.0.ipv4 }}"
   bridge:
     options:
       stp:
         enabled: false
     port:
-    - name: "{{ capture.base-iface.interfaces[0].name }}"
+    - name: "{{ capture.base-iface.interfaces.0.name }}"
 routes:
   config: "{{ capture.bridge-routes-takeover.running }}"
-`
-	expectedExandedState := `interfaces:
+`)
+	expectedExandedDesiredState := typestest.ToNMState(t, `interfaces:
 - bridge:
     options:
       stp:
@@ -62,9 +65,9 @@ routes:
   - destination: 1.1.1.0/24
     next-hop-address: 192.168.100.1
     next-hop-interface: eth1
-    table-id: 254`
+    table-id: 254`)
 
-	routes := `
+	routes := typestest.ToIface(t, `
   - destination: 0.0.0.0/0
     next-hop-address: 192.168.100.1
     next-hop-interface: eth1
@@ -73,23 +76,24 @@ routes:
     next-hop-address: 192.168.100.1
     next-hop-interface: eth1
     table-id: 254
-`
-	unmarshaledRoutes, err := unmarshalState([]byte(routes))
-	assert.NoError(t, err)
+`)
 	capturerStub := pathCapturerStub{failResolve: false,
-		pathResults: map[string]interface{}{"capture.base-iface.interfaces[0].ipv4": "1.2.3.4", "capture.base-iface.interfaces[0].name": "eth1",
-			"capture.bridge-routes-takeover.running": unmarshaledRoutes},
+		pathResults: map[string]interface{}{
+			"capture.base-iface.interfaces.0.ipv4":   "1.2.3.4",
+			"capture.base-iface.interfaces.0.name":   "eth1",
+			"capture.bridge-routes-takeover.running": routes},
 	}
-	expandedState, err := New(capturerStub).Expand([]byte(desiredState))
+
+	expandedDesiredState, err := expander.New(capturerStub).Expand(desiredState)
 	assert.NoError(t, err)
-	verifyResult(t, expectedExandedState, expandedState)
+	assert.Equal(t, expectedExandedDesiredState, expandedDesiredState)
 }
 
 func TestExpanderCaptureIsTopLevel(t *testing.T) {
-	desiredState := `
-"{{ capture.base-iface }}"
-`
-	expectedExandedState := `interfaces:
+	desiredState := typestest.ToNMState(t, `
+interfaces: "{{ capture.base-iface }}"
+`)
+	interfaces := typestest.ToIface(t, `
   - name: eth1
     type: ethernet
     state: up
@@ -100,36 +104,31 @@ func TestExpanderCaptureIsTopLevel(t *testing.T) {
       - ip: 169.254.1.0
         prefix-length: 16
       dhcp: false
-      enabled: true`
+      enabled: true`)
 
-	unmarshaledInterfaces, err := unmarshalState([]byte(expectedExandedState))
-	assert.NoError(t, err)
+	expectedExandedDesiredState := types.NMState{
+		"interfaces": interfaces,
+	}
 
 	capturerStub := pathCapturerStub{failResolve: false,
-		pathResults: map[string]interface{}{"capture.base-iface": unmarshaledInterfaces},
+		pathResults: map[string]interface{}{"capture.base-iface": interfaces},
 	}
-	expandedState, err := New(capturerStub).Expand([]byte(desiredState))
+
+	expandedDesiredState, err := expander.New(capturerStub).Expand(desiredState)
 	assert.NoError(t, err)
-	verifyResult(t, expectedExandedState, expandedState)
+	assert.Equal(t, expectedExandedDesiredState, expandedDesiredState)
 }
 
 func TestExpanderResolveCaptureFails(t *testing.T) {
-	desiredState := `
-"{{ capture.enabled-iface }}"
-`
+	desiredState := typestest.ToNMState(t, `
+interfaces: "{{ capture.enabled-iface }}"
+`)
+
 	capturerStub := pathCapturerStub{failResolve: true}
-	expandedState, err := New(capturerStub).Expand([]byte(desiredState))
+	expandedState, err := expander.New(capturerStub).Expand(desiredState)
 
 	assert.Error(t, err)
 	assert.Nil(t, expandedState)
-}
-
-func verifyResult(t *testing.T, expectedExandedState string, expandedState []byte) {
-	expectedState := make(map[string]interface{})
-	actualState := make(map[string]interface{})
-	assert.NoError(t, yaml.Unmarshal([]byte(expectedExandedState), &expectedState))
-	assert.NoError(t, yaml.Unmarshal(expandedState, &actualState))
-	assert.Equal(t, expectedState, actualState)
 }
 
 type pathCapturerStub struct {
