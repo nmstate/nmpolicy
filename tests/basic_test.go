@@ -55,14 +55,14 @@ func testPolicyWithOnlyDesiredState(t *testing.T) {
 	// When a basic input with only the desired state is provided,
 	// the policy just passes it as is to the output with no modifications.
 	t.Run("with only desired state", func(t *testing.T) {
-		stateData := []byte(`this is not a legal yaml format!
-`)
+		stateData := []byte("name: test state")
+		stateData, err := typestest.FormatYAML(stateData)
+		assert.NoError(t, err)
 		policySpec := types.PolicySpec{
 			DesiredState: stateData,
 		}
 
 		s, err := nmpolicy.GenerateState(policySpec, nil, types.NoCache())
-
 		assert.NoError(t, err)
 		expectedState := types.GeneratedState{
 			DesiredState: stateData,
@@ -74,8 +74,9 @@ func testPolicyWithOnlyDesiredState(t *testing.T) {
 
 func testPolicyWithCachedCaptureAndDesiredStateWithoutRef(t *testing.T) {
 	t.Run("with all captures cached and desired state that has no ref", func(t *testing.T) {
-		stateData := []byte(`this is not a legal yaml format!
-`)
+		stateData := []byte("name: test state")
+		stateData, err := typestest.FormatYAML(stateData)
+		assert.NoError(t, err)
 		const capID0 = "cap0"
 		policySpec := types.PolicySpec{
 			Capture: map[string]string{
@@ -87,7 +88,6 @@ func testPolicyWithCachedCaptureAndDesiredStateWithoutRef(t *testing.T) {
 		cacheState := types.CachedState{
 			Capture: map[string]types.CaptureState{capID0: {State: []byte("name: some captured state")}},
 		}
-		var err error
 		cacheState.Capture, err = formatCapturedStates(cacheState.Capture)
 		assert.NoError(t, err)
 
