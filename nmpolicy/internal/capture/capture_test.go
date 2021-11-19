@@ -22,7 +22,8 @@ import (
 	assert "github.com/stretchr/testify/require"
 
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/capture"
-	"github.com/nmstate/nmpolicy/nmpolicy/types"
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/types"
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/types/typestest"
 )
 
 func TestBasicPolicy(t *testing.T) {
@@ -43,9 +44,9 @@ func TestBasicPolicy(t *testing.T) {
 func testNoExpressions(t *testing.T) {
 	t.Run("resolve with no expression", func(t *testing.T) {
 		resolvedCaps, err := captureResolverWithDefaultStubs().Resolve(
-			map[string]string{},
-			map[string]types.CaptureState{"cap0": {State: []byte("some captured state")}},
-			[]byte("some state"),
+			types.CaptureExpressions{},
+			types.CapturedStates{"cap0": {State: typestest.ToNMState(t, "name: some captured state")}},
+			typestest.ToNMState(t, "name: some state"),
 		)
 		assert.NoError(t, err)
 
@@ -56,9 +57,9 @@ func testNoExpressions(t *testing.T) {
 func testNoCacheAndState(t *testing.T) {
 	t.Run("resolve with no cache and state", func(t *testing.T) {
 		resolvedCaps, err := captureResolverWithDefaultStubs().Resolve(
-			map[string]string{"cap0": "my expression"},
-			map[string]types.CaptureState{},
-			[]byte{},
+			types.CaptureExpressions{"cap0": "my expression"},
+			types.CapturedStates{},
+			types.NMState{},
 		)
 		assert.NoError(t, err)
 
@@ -68,18 +69,18 @@ func testNoCacheAndState(t *testing.T) {
 
 func testAllCapturesCached(t *testing.T) {
 	t.Run("resolve with all captures cached", func(t *testing.T) {
-		capCache := map[string]types.CaptureState{
-			"cap0": {State: formatYAML(t, "name: some captured state")},
-			"cap1": {State: formatYAML(t, "name: another captured state")},
+		capCache := types.CapturedStates{
+			"cap0": {State: typestest.ToNMState(t, "name: some captured state")},
+			"cap1": {State: typestest.ToNMState(t, "name: another captured state")},
 		}
 
 		resolvedCaps, err := captureResolverWithDefaultStubs().Resolve(
-			map[string]string{
+			types.CaptureExpressions{
 				"cap0": "my expression",
 				"cap1": "another expression",
 			},
 			capCache,
-			[]byte{},
+			types.NMState{},
 		)
 		assert.NoError(t, err)
 		assert.Equal(t, capCache, resolvedCaps)
@@ -91,13 +92,13 @@ func testResolvingExpressions(t *testing.T) {
 		const capID = "cap0"
 
 		resolvedCaps, err := captureResolverWithDefaultStubs().Resolve(
-			map[string]string{capID: "my expression"},
-			map[string]types.CaptureState{},
-			[]byte("some state"),
+			types.CaptureExpressions{capID: "my expression"},
+			types.CapturedStates{},
+			typestest.ToNMState(t, "name: some state"),
 		)
 		assert.NoError(t, err)
 
-		assert.Equal(t, map[string]types.CaptureState{capID: defaultStubCapturedState("my expression")}, resolvedCaps)
+		assert.Equal(t, types.CapturedStates{capID: defaultStubCapturedState(t, "my expression")}, resolvedCaps)
 	})
 }
 
@@ -106,20 +107,20 @@ func testExpressionsWithPartialCache(t *testing.T) {
 		const capID0 = "cap0"
 		const capID1 = "cap1"
 
-		capCache := map[string]types.CaptureState{capID0: {State: formatYAML(t, "name: some captured state")}}
+		capCache := types.CapturedStates{capID0: {State: typestest.ToNMState(t, "name: some captured state")}}
 
 		resolvedCaps, err := captureResolverWithDefaultStubs().Resolve(
-			map[string]string{
+			types.CaptureExpressions{
 				capID0: "my expression",
 				capID1: "another expression",
 			},
 			capCache,
-			[]byte("some state"),
+			typestest.ToNMState(t, "name: some state"),
 		)
 		assert.NoError(t, err)
 
 		expectedCaps := capCache
-		expectedCaps[capID1] = defaultStubCapturedState("another expression")
+		expectedCaps[capID1] = defaultStubCapturedState(t, "another expression")
 		assert.Equal(t, expectedCaps, resolvedCaps)
 	})
 }
@@ -129,22 +130,22 @@ func testExpressionsWithOverCache(t *testing.T) {
 		const capID0 = "cap0"
 		const capID1 = "cap1"
 
-		capCache := map[string]types.CaptureState{
-			capID0: {State: formatYAML(t, "name: some captured state")},
-			capID1: {State: formatYAML(t, "name: another captured state")},
+		capCache := types.CapturedStates{
+			capID0: {State: typestest.ToNMState(t, "name: some captured state")},
+			capID1: {State: typestest.ToNMState(t, "name: another captured state")},
 		}
 
 		resolvedCaps, err := captureResolverWithDefaultStubs().Resolve(
-			map[string]string{
+			types.CaptureExpressions{
 				capID0: "my expression",
 			},
 			capCache,
-			[]byte("some state"),
+			typestest.ToNMState(t, "name: some state"),
 		)
 		assert.NoError(t, err)
 
-		expectedCaps := map[string]types.CaptureState{
-			capID0: {State: formatYAML(t, "name: some captured state")},
+		expectedCaps := types.CapturedStates{
+			capID0: {State: typestest.ToNMState(t, "name: some captured state")},
 		}
 		assert.Equal(t, expectedCaps, resolvedCaps)
 	})
@@ -154,9 +155,9 @@ func testLexFailure(t *testing.T) {
 	t.Run("resolve fails due to lexing", func(t *testing.T) {
 		capCtrl := capture.New(lexerStub{failLex: true}, parserStub{}, resolverStub{})
 		_, err := capCtrl.Resolve(
-			map[string]string{"cap0": "my expression"},
-			map[string]types.CaptureState{},
-			[]byte("some state"),
+			types.CaptureExpressions{"cap0": "my expression"},
+			types.CapturedStates{},
+			typestest.ToNMState(t, "name: some state"),
 		)
 		assert.Error(t, err)
 	})
@@ -166,9 +167,9 @@ func testParseFailure(t *testing.T) {
 	t.Run("resolve fails due to parsing", func(t *testing.T) {
 		capCtrl := capture.New(lexerStub{}, parserStub{failParse: true}, resolverStub{})
 		_, err := capCtrl.Resolve(
-			map[string]string{"cap0": "my expression"},
-			map[string]types.CaptureState{},
-			[]byte("some state"),
+			types.CaptureExpressions{"cap0": "my expression"},
+			types.CapturedStates{},
+			typestest.ToNMState(t, "name: some state"),
 		)
 		assert.Error(t, err)
 	})
@@ -178,9 +179,9 @@ func testResolveFailure(t *testing.T) {
 	t.Run("resolve fails due to resolving", func(t *testing.T) {
 		capCtrl := capture.New(lexerStub{}, parserStub{}, resolverStub{failResolve: true})
 		_, err := capCtrl.Resolve(
-			map[string]string{"cap0": "my expression"},
-			map[string]types.CaptureState{},
-			[]byte("some state"),
+			types.CaptureExpressions{"cap0": "my expression"},
+			types.CapturedStates{},
+			typestest.ToNMState(t, "name: some state"),
 		)
 		assert.Error(t, err)
 	})
