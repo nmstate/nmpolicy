@@ -19,18 +19,16 @@ package resolver
 import (
 	"fmt"
 
-	"sigs.k8s.io/yaml"
-
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/ast"
-	"github.com/nmstate/nmpolicy/nmpolicy/types"
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/types"
 )
 
 type Resolver struct{}
 
 type resolver struct {
-	currentState   map[string]interface{}
-	capturedStates map[string]map[string]interface{}
-	captureASTPool map[string]ast.Node
+	currentState   types.NMState
+	capturedStates types.CapturedStates
+	captureASTPool types.CaptureASTPool
 }
 
 func New() Resolver {
@@ -39,77 +37,67 @@ func New() Resolver {
 
 func newResolver() *resolver {
 	return &resolver{
-		currentState:   map[string]interface{}{},
-		capturedStates: map[string]map[string]interface{}{},
-		captureASTPool: map[string]ast.Node{},
+		currentState:   types.NMState{},
+		capturedStates: types.CapturedStates{},
+		captureASTPool: types.CaptureASTPool{},
 	}
 }
 
-func (Resolver) Resolve(captureASTPool map[string]ast.Node,
-	currentState []byte,
-	capturedStates map[string]map[string]interface{}) (map[string]types.CaptureState, error) {
+func (Resolver) Resolve(captureASTPool types.CaptureASTPool,
+	currentState types.NMState,
+	capturedStates types.CapturedStates) (types.CapturedStates, error) {
 	r := newResolver()
-	err := yaml.Unmarshal(currentState, &r.currentState)
-	if err != nil {
-		return nil, wrapWithResolveError(err)
-	}
+	r.currentState = currentState
 	r.captureASTPool = captureASTPool
-	r.capturedStates = capturedStates
+	if capturedStates != nil {
+		r.capturedStates = capturedStates
+	}
 	return r.resolve()
 }
 
 func (Resolver) ResolveCaptureEntryPath(captureEntryPathAST ast.Node,
-	capturedStates map[string]map[string]interface{}) (interface{}, error) {
+	capturedStates types.CapturedStates) (interface{}, error) {
 	r := newResolver()
 	r.capturedStates = capturedStates
 	return r.resolveCaptureEntryPath(captureEntryPathAST)
 }
 
-func (r *resolver) resolve() (map[string]types.CaptureState, error) {
+func (r *resolver) resolve() (types.CapturedStates, error) {
 	for captureEntryName := range r.captureASTPool {
 		if _, err := r.resolveCaptureEntryName(captureEntryName); err != nil {
 			return nil, wrapWithResolveError(err)
 		}
 	}
-	capturedStates := map[string]types.CaptureState{}
-	for captureEntryName, capturedState := range r.capturedStates {
-		marshaledCapturedState, err := yaml.Marshal(capturedState)
-		if err != nil {
-			return nil, wrapWithResolveError(err)
-		}
-		capturedStates[captureEntryName] = types.CaptureState{
-			State:    marshaledCapturedState,
-			MetaInfo: types.MetaInfo{},
-		}
-	}
-	return capturedStates, nil
+	return r.capturedStates, nil
 }
 
-func (r *resolver) resolveCaptureEntryName(captureEntryName string) (map[string]interface{}, error) {
+func (r *resolver) resolveCaptureEntryName(captureEntryName string) (types.NMState, error) {
 	capturedStateEntry, ok := r.capturedStates[captureEntryName]
 	if ok {
-		return capturedStateEntry, nil
+		return capturedStateEntry.State, nil
 	}
 	captureASTEntry, ok := r.captureASTPool[captureEntryName]
 	if !ok {
 		return nil, fmt.Errorf("capture entry '%s' not found", captureEntryName)
 	}
-	capturedStateEntry, err := r.resolveCaptureASTEntry(captureASTEntry)
+	var err error
+	capturedStateEntry = types.CapturedState{}
+	capturedStateEntry.State, err = r.resolveCaptureASTEntry(captureASTEntry)
 	if err != nil {
 		return nil, err
 	}
 	r.capturedStates[captureEntryName] = capturedStateEntry
-	return capturedStateEntry, nil
+	return capturedStateEntry.State, nil
 }
 
-func (r resolver) resolveCaptureASTEntry(captureASTEntry ast.Node) (map[string]interface{}, error) {
+func (r resolver) resolveCaptureASTEntry(captureASTEntry ast.Node) (types.NMState, error) {
 	if captureASTEntry.EqFilter != nil {
 		return r.resolveEqFilter(captureASTEntry.EqFilter)
 	}
 	return nil, fmt.Errorf("root node has unsupported operation : %v", captureASTEntry)
 }
 
-func (r resolver) resolveEqFilter(operator *ast.TernaryOperator) (map[string]interface{}, error) {
+func (r resolver) resolveEqFilter(operator *ast.TernaryOperator) (types.NMState, error) {
 	inputSource, err := r.resolveInputSource((*operator)[0], r.currentState)
 	if err != nil {
 		return nil, wrapWithEqFilterError(err)
@@ -131,7 +119,7 @@ func (r resolver) resolveEqFilter(operator *ast.TernaryOperator) (map[string]int
 }
 
 func (r resolver) resolveInputSource(inputSourceNode ast.Node,
-	currentState map[string]interface{}) (map[string]interface{}, error) {
+	currentState types.NMState) (types.NMState, error) {
 	if ast.CurrentStateIdentity().DeepEqual(inputSourceNode.Terminal) {
 		return currentState, nil
 	}

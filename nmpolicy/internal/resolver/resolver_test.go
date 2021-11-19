@@ -20,10 +20,9 @@ import (
 	"testing"
 
 	assert "github.com/stretchr/testify/require"
-	yaml "sigs.k8s.io/yaml"
 
-	"github.com/nmstate/nmpolicy/nmpolicy/internal/ast"
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/resolver"
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/types/typestest"
 )
 
 var sourceYAML string = `
@@ -74,28 +73,21 @@ interfaces:
 `
 
 type test struct {
-	astYamls       map[string]string
-	expectedYamls  map[string]string
-	capturedStates map[string]string
-	err            string
+	captureASTPool         string
+	capturedStatesCache    string
+	expectedCapturedStates string
+	err                    string
 }
 
 func runTest(t *testing.T, testToRun test) {
-	astPool, err := getAstPool(testToRun.astYamls)
-	assert.NoError(t, err)
-
-	capturedStates, err := unmarshalCapturedState(testToRun.capturedStates)
-	assert.NoError(t, err)
-	resultStates, err := resolver.New().Resolve(astPool, []byte(sourceYAML), capturedStates)
+	captureASTPool := typestest.ToCaptureASTPool(t, testToRun.captureASTPool)
+	currentState := typestest.ToNMState(t, sourceYAML)
+	capturedStatesCache := typestest.ToCapturedStates(t, testToRun.capturedStatesCache)
+	obtaintedCapturedStates, err := resolver.New().Resolve(captureASTPool, currentState, capturedStatesCache)
 	if testToRun.err == "" {
 		assert.NoError(t, err)
-		expectedState := make(map[string]interface{})
-		actualState := make(map[string]interface{})
-		for captureName, expectedYaml := range testToRun.expectedYamls {
-			assert.NoError(t, yaml.Unmarshal([]byte(expectedYaml), &expectedState))
-			assert.NoError(t, yaml.Unmarshal(resultStates[captureName].State, &actualState))
-			assert.Equal(t, expectedState, actualState)
-		}
+		expectedCapturedState := typestest.ToCapturedStates(t, testToRun.expectedCapturedStates)
+		assert.Equal(t, expectedCapturedState, obtaintedCapturedStates)
 	} else {
 		assert.EqualError(t, err, testToRun.err)
 	}
@@ -123,33 +115,34 @@ func TestFilter(t *testing.T) {
 func testFilterMapListOnSecondPathIdentity(t *testing.T) {
 	t.Run("Filter map, list on second path identity", func(t *testing.T) {
 		testToRun := test{
-			astYamls: map[string]string{
-				"default-gw": `
-pos: 1
-eqfilter:
-- pos: 2
-  identity: currentState
-- pos: 3
-  path:
-  - pos: 4
-    identity: routes
-  - pos: 5
-    identity: running
-  - pos: 6
-    identity: destination
-- pos: 7
-  string: 0.0.0.0/0
-`},
+			captureASTPool: `
+default-gw:
+  pos: 1
+  eqfilter:
+  - pos: 2
+    identity: currentState
+  - pos: 3
+    path:
+    - pos: 4
+      identity: routes
+    - pos: 5
+      identity: running
+    - pos: 6
+      identity: destination
+  - pos: 7
+    string: 0.0.0.0/0
+`,
 
-			expectedYamls: map[string]string{
-				"default-gw": `
-routes:
- running:
- - destination: 0.0.0.0/0
-   next-hop-address: 192.168.100.1
-   next-hop-interface: eth1
-   table-id: 254
-`},
+			expectedCapturedStates: `
+default-gw:
+  state:
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+`,
 		}
 		runTest(t, testToRun)
 	})
@@ -158,34 +151,35 @@ routes:
 func testFilterMapListOnFirstPathIdentity(t *testing.T) {
 	t.Run("Filter map, list on first path identity", func(t *testing.T) {
 		testToRun := test{
-			astYamls: map[string]string{
-				"up-interfaces": `
-pos: 1
-eqfilter:
-- pos: 2
-  identity: currentState
-- pos: 3
-  path:
-  - pos: 4
-    identity: interfaces
-  - pos: 5
-    identity: state
-- pos: 6
-  string: down
-`},
-			expectedYamls: map[string]string{
-				"up-interfaces": `
-interfaces:
-  - name: eth2
-    type: ethernet
-    state: down
-    ipv4:
-      address:
-      - ip: 1.2.3.4
-        prefix-length: 24
-      dhcp: false
-      enabled: false
-`},
+			captureASTPool: `
+up-interfaces: 
+  pos: 1
+  eqfilter:
+  - pos: 2
+    identity: currentState
+  - pos: 3
+    path:
+    - pos: 4
+      identity: interfaces
+    - pos: 5
+      identity: state
+  - pos: 6
+    string: down
+`,
+			expectedCapturedStates: `
+up-interfaces:
+  state: 
+    interfaces:
+      - name: eth2
+        type: ethernet
+        state: down
+        ipv4:
+          address:
+          - ip: 1.2.3.4
+            prefix-length: 24
+          dhcp: false
+          enabled: false
+`,
 		}
 		runTest(t, testToRun)
 	})
@@ -194,40 +188,41 @@ interfaces:
 func testFilterList(t *testing.T) {
 	t.Run("Filter list", func(t *testing.T) {
 		testToRun := test{
-			astYamls: map[string]string{
-				"specific-ipv4": `
-pos: 1
-eqfilter:
-- pos: 2
-  identity: currentState
-- pos: 3
-  path:
-  - pos: 4
-    identity: interfaces
-  - pos: 5
-    identity: ipv4
-  - pos: 6
-    identity: address
-  - pos: 7
-    identity: ip
-- pos: 8
-  string: 10.244.0.1
-`},
-			expectedYamls: map[string]string{
-				"specific-ipv4": `
-interfaces:
-  - name: eth1
-    type: ethernet
-    state: up
-    ipv4:
-      address:
-      - ip: 10.244.0.1
-        prefix-length: 24
-      - ip: 169.254.1.0
-        prefix-length: 16
-      dhcp: false
-      enabled: true
-`},
+			captureASTPool: `
+specific-ipv4:
+  pos: 1
+  eqfilter:
+  - pos: 2
+    identity: currentState
+  - pos: 3
+    path:
+    - pos: 4
+      identity: interfaces
+    - pos: 5
+      identity: ipv4
+    - pos: 6
+      identity: address
+    - pos: 7
+      identity: ip
+  - pos: 8
+    string: 10.244.0.1
+`,
+			expectedCapturedStates: `
+specific-ipv4:
+  state: 
+    interfaces:
+    - name: eth1
+      type: ethernet
+      state: up
+      ipv4:
+        address:
+        - ip: 10.244.0.1
+          prefix-length: 24
+        - ip: 169.254.1.0
+          prefix-length: 16
+        dhcp: false
+        enabled: true
+`,
 		}
 		runTest(t, testToRun)
 	})
@@ -236,57 +231,68 @@ interfaces:
 func testFilterCaptureRef(t *testing.T) {
 	t.Run("Filter list with capture reference", func(t *testing.T) {
 		testToRun := test{
-			capturedStates: map[string]string{
-				"default-gw": `
-routes:
- running:
- - destination: 0.0.0.0/0
-   next-hop-address: 192.168.100.1
-   next-hop-interface: eth1
-   table-id: 254
-`},
-			astYamls: map[string]string{
-				"base-iface-routes": `
-pos: 1
-eqfilter:
-- pos: 2
-  identity: currentState
-- pos: 3
-  path:
-  - pos: 4
-    identity: routes
-  - pos: 5
-    identity: running
-  - pos: 6
-    identity: next-hop-interface
-- pos: 7
-  path:
-  - pos: 8
-    identity: capture
-  - pos: 9
-    identity: default-gw
-  - pos: 10
-    identity: routes
-  - pos: 11
-    identity: running
-  - pos: 12
-    number: 0
-  - pos: 13
-    identity: next-hop-interface
-`},
-			expectedYamls: map[string]string{
-				"base-iface-routes": `
-routes:
-  running:
-  - destination: 0.0.0.0/0
-    next-hop-address: 192.168.100.1
-    next-hop-interface: eth1
-    table-id: 254
-  - destination: 1.1.1.0/24
-    next-hop-address: 192.168.100.1
-    next-hop-interface: eth1
-    table-id: 254
-`},
+			capturedStatesCache: `
+default-gw:
+  state: 
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+`,
+			captureASTPool: `
+base-iface-routes:
+  pos: 1
+  eqfilter:
+  - pos: 2
+    identity: currentState
+  - pos: 3
+    path:
+    - pos: 4
+      identity: routes
+    - pos: 5
+      identity: running
+    - pos: 6
+      identity: next-hop-interface
+  - pos: 7
+    path:
+    - pos: 8
+      identity: capture
+    - pos: 9
+      identity: default-gw
+    - pos: 10
+      identity: routes
+    - pos: 11
+      identity: running
+    - pos: 12
+      number: 0
+    - pos: 13
+      identity: next-hop-interface
+`,
+
+			expectedCapturedStates: `
+default-gw:
+  state: 
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+base-iface-routes:
+  state:
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+      - destination: 1.1.1.0/24
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+`,
 		}
 		runTest(t, testToRun)
 	})
@@ -295,64 +301,72 @@ routes:
 func testFilterCaptureRefWithoutCapturedState(t *testing.T) {
 	t.Run("Filter list with capture reference", func(t *testing.T) {
 		testToRun := test{
-			astYamls: map[string]string{
-				"default-gw": `
-pos: 1
-eqfilter:
-- pos: 2
-  identity: currentState
-- pos: 3
-  path:
-  - pos: 4
-    identity: routes
-  - pos: 5
-    identity: running
-  - pos: 6
-    identity: destination
-- pos: 7
-  string: 0.0.0.0/0
+			captureASTPool: `
+default-gw:
+  pos: 1
+  eqfilter:
+  - pos: 2
+    identity: currentState
+  - pos: 3
+    path:
+    - pos: 4
+      identity: routes
+    - pos: 5
+      identity: running
+    - pos: 6
+      identity: destination
+  - pos: 7
+    string: 0.0.0.0/0
+base-iface-routes:
+  pos: 1
+  eqfilter:
+  - pos: 2
+    identity: currentState
+  - pos: 3
+    path:
+    - pos: 4
+      identity: routes
+    - pos: 5
+      identity: running
+    - pos: 6
+      identity: next-hop-interface
+  - pos: 7
+    path:
+    - pos: 8
+      identity: capture
+    - pos: 9
+      identity: default-gw
+    - pos: 10
+      identity: routes
+    - pos: 11
+      identity: running
+    - pos: 12
+      number: 0
+    - pos: 13
+      identity: next-hop-interface
 `,
-				"base-iface-routes": `
-pos: 1
-eqfilter:
-- pos: 2
-  identity: currentState
-- pos: 3
-  path:
-  - pos: 4
-    identity: routes
-  - pos: 5
-    identity: running
-  - pos: 6
-    identity: next-hop-interface
-- pos: 7
-  path:
-  - pos: 8
-    identity: capture
-  - pos: 9
-    identity: default-gw
-  - pos: 10
-    identity: routes
-  - pos: 11
-    identity: running
-  - pos: 12
-    number: 0
-  - pos: 13
-    identity: next-hop-interface
-`},
-			expectedYamls: map[string]string{
-				"base-iface-routes": `
-routes:
-  running:
-  - destination: 0.0.0.0/0
-    next-hop-address: 192.168.100.1
-    next-hop-interface: eth1
-    table-id: 254
-  - destination: 1.1.1.0/24
-    next-hop-address: 192.168.100.1
-    next-hop-interface: eth1
-    table-id: 254
-`},
+			expectedCapturedStates: `
+default-gw:
+  state: 
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+base-iface-routes:
+  state: 
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+      - destination: 1.1.1.0/24
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+`,
 		}
 		runTest(t, testToRun)
 	})
@@ -361,23 +375,23 @@ routes:
 func testFilterInvalidTypeOnPath(t *testing.T) {
 	t.Run("Filter invalid type on path", func(t *testing.T) {
 		testToRun := test{
-			astYamls: map[string]string{
-				"invalid-path-type": `
-pos: 1
-eqfilter:
-- pos: 2
-  identity: currentState
-- pos: 3
-  path:
-  - pos: 4
-    identity: interfaces
-  - pos: 5
-    identity: ipv4
-  - pos: 6
-    identity: address
-- pos: 7
-  string: 10.244.0.1
-`},
+			captureASTPool: `
+invalid-path-type:
+  pos: 1
+  eqfilter:
+  - pos: 2
+    identity: currentState
+  - pos: 3
+    path:
+    - pos: 4
+      identity: interfaces
+    - pos: 5
+      identity: ipv4
+    - pos: 6
+      identity: address
+  - pos: 7
+    string: 10.244.0.1
+`,
 			err: "resolve error: eqfilter error: failed applying operation on the path: " +
 				"error comparing the expected and obtained values : " +
 				"the value [map[ip:10.244.0.1 prefix-length:24] map[ip:169.254.1.0 prefix-length:16]] of type []interface {} " +
@@ -390,21 +404,21 @@ eqfilter:
 func testFilterInvalidPath(t *testing.T) {
 	t.Run("Filter invalid path", func(t *testing.T) {
 		testToRun := test{
-			astYamls: map[string]string{
-				"invalid-path-identity": `
-pos: 1
-eqfilter:
-- pos: 2
-  identity: currentState
-- pos: 3
-  path:
-  - pos: 4
-    identity: interfaces
-  - pos: 5
-    identity: name-invalid-path
-- pos: 6
-  string: eth0
-`},
+			captureASTPool: `
+invalid-path-identity:
+  pos: 1
+  eqfilter:
+  - pos: 2
+    identity: currentState
+  - pos: 3
+    path:
+    - pos: 4
+      identity: interfaces
+    - pos: 5
+      identity: name-invalid-path
+  - pos: 6
+    string: eth0
+`,
 			err: "resolve error: eqfilter error: failed applying operation on the path: cannot find key name-invalid-path in " +
 				"map[ipv4:map[address:[map[ip:10.244.0.1 prefix-length:24] " +
 				"map[ip:169.254.1.0 prefix-length:16]] dhcp:false enabled:true] name:eth1 state:up type:ethernet]",
@@ -416,25 +430,25 @@ eqfilter:
 func testFilterBadCaptureRef(t *testing.T) {
 	t.Run("Filter list with non existing capture reference", func(t *testing.T) {
 		testToRun := test{
-			astYamls: map[string]string{
-				"base-iface-routes": `
-pos: 1
-eqfilter:
-- pos: 2
-  identity: currentState
-- pos: 3
-  path:
-  - pos: 4
-    identity: routes
-  - pos: 5
-    identity: running
-  - pos: 6
-    identity: next-hop-interface
-- pos: 7
-  path:
-  - pos: 8
-    identity: capture
-`},
+			captureASTPool: `
+base-iface-routes:
+  pos: 1
+  eqfilter:
+  - pos: 2
+    identity: currentState
+  - pos: 3
+    path:
+    - pos: 4
+      identity: routes
+    - pos: 5
+      identity: running
+    - pos: 6
+      identity: next-hop-interface
+  - pos: 7
+    path:
+    - pos: 8
+      identity: capture
+`,
 			err: "resolve error: eqfilter error: path capture ref is missing capture entry name",
 		}
 		runTest(t, testToRun)
@@ -444,29 +458,29 @@ eqfilter:
 func testFilterCaptureRefNotFound(t *testing.T) {
 	t.Run("Filter list with non existing capture reference", func(t *testing.T) {
 		testToRun := test{
-			astYamls: map[string]string{
-				"base-iface-routes": `
-pos: 1
-eqfilter:
-- pos: 2
-  identity: currentState
-- pos: 3
-  path:
-  - pos: 4
-    identity: routes
-  - pos: 5
-    identity: running
-  - pos: 6
-    identity: next-hop-interface
-- pos: 7
-  path:
-  - pos: 8
-    identity: capture
-  - pos: 9
-    identity: default-gw
-  - pos: 11
-    identity: routes
-`},
+			captureASTPool: `
+base-iface-routes:
+  pos: 1
+  eqfilter:
+  - pos: 2
+    identity: currentState
+  - pos: 3
+    path:
+    - pos: 4
+      identity: routes
+    - pos: 5
+      identity: running
+    - pos: 6
+      identity: next-hop-interface
+  - pos: 7
+    path:
+    - pos: 8
+      identity: capture
+    - pos: 9
+      identity: default-gw
+    - pos: 11
+      identity: routes
+`,
 			err: "resolve error: eqfilter error: capture entry 'default-gw' not found",
 		}
 		runTest(t, testToRun)
@@ -476,44 +490,45 @@ eqfilter:
 func testFilterCaptureRefInvalidStateForPathMap(t *testing.T) {
 	t.Run("Filter list with capture reference and invalid identity path step", func(t *testing.T) {
 		testToRun := test{
-			capturedStates: map[string]string{
-				"default-gw": `
-routes:
- running:
- - destination: 0.0.0.0/0
-   next-hop-address: 192.168.100.1
-   next-hop-interface: eth1
-   table-id: 254
-`},
-			astYamls: map[string]string{
-				"base-iface-routes": `
-pos: 1
-eqfilter:
-- pos: 2
-  identity: currentState
-- pos: 3
-  path:
-  - pos: 4
-    identity: routes
-  - pos: 5
-    identity: running
-  - pos: 6
-    identity: next-hop-interface
-- pos: 7
-  path:
-  - pos: 8
-    identity: capture
-  - pos: 9
-    identity: default-gw
-  - pos: 11
-    identity: routes
-  - pos: 12
-    identity: running
-  - pos: 13
-    identity: badfield
-  - pos: 14
-    identity: next-hop-interface
-`},
+			capturedStatesCache: `
+default-gw:
+  state:
+    routes:
+       running:
+       - destination: 0.0.0.0/0
+         next-hop-address: 192.168.100.1
+         next-hop-interface: eth1
+         table-id: 254
+`,
+			captureASTPool: `
+base-iface-routes:
+  pos: 1
+  eqfilter:
+  - pos: 2
+    identity: currentState
+  - pos: 3
+    path:
+    - pos: 4
+      identity: routes
+    - pos: 5
+      identity: running
+    - pos: 6
+      identity: next-hop-interface
+  - pos: 7
+    path:
+    - pos: 8
+      identity: capture
+    - pos: 9
+      identity: default-gw
+    - pos: 11
+      identity: routes
+    - pos: 12
+      identity: running
+    - pos: 13
+      identity: badfield
+    - pos: 14
+      identity: next-hop-interface
+`,
 			err: "resolve error: eqfilter error: failed walking non map state " +
 				"'[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]' " +
 				"with path '[routes running badfield]'",
@@ -525,44 +540,45 @@ eqfilter:
 func testFilterCaptureRefInvalidStateForPathSlice(t *testing.T) {
 	t.Run("Filter list with capture reference and invalid numeric path step", func(t *testing.T) {
 		testToRun := test{
-			capturedStates: map[string]string{
-				"default-gw": `
-routes:
- running:
- - destination: 0.0.0.0/0
-   next-hop-address: 192.168.100.1
-   next-hop-interface: eth1
-   table-id: 254
-`},
-			astYamls: map[string]string{
-				"base-iface-routes": `
-pos: 1
-eqfilter:
-- pos: 2
-  identity: currentState
-- pos: 3
-  path:
-  - pos: 4
-    identity: routes
-  - pos: 5
-    identity: running
-  - pos: 6
-    identity: next-hop-interface
-- pos: 7
-  path:
-  - pos: 8
-    identity: capture
-  - pos: 9
-    identity: default-gw
-  - pos: 11
-    identity: routes
-  - pos: 12
-    number: 1
-  - pos: 13
-    number: 0 
-  - pos: 14
-    identity: next-hop-interface
-`},
+			capturedStatesCache: `
+default-gw:
+  state: 
+    routes:
+      running:
+       - destination: 0.0.0.0/0
+         next-hop-address: 192.168.100.1
+         next-hop-interface: eth1
+         table-id: 254
+`,
+			captureASTPool: `
+base-iface-routes:
+  pos: 1
+  eqfilter:
+  - pos: 2
+    identity: currentState
+  - pos: 3
+    path:
+    - pos: 4
+      identity: routes
+    - pos: 5
+      identity: running
+    - pos: 6
+      identity: next-hop-interface
+  - pos: 7
+    path:
+    - pos: 8
+      identity: capture
+    - pos: 9
+      identity: default-gw
+    - pos: 11
+      identity: routes
+    - pos: 12
+      number: 1
+    - pos: 13
+      number: 0
+    - pos: 14
+      identity: next-hop-interface
+`,
 			err: "resolve error: eqfilter error: failed walking non slice state " +
 				"'map[running:[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]]' " +
 				"with path '[routes 1]'",
@@ -574,40 +590,41 @@ eqfilter:
 func testFilterCaptureRefPathNotFoundMap(t *testing.T) {
 	t.Run("Filter list with capture reference and path with not found identity step", func(t *testing.T) {
 		testToRun := test{
-			capturedStates: map[string]string{
-				"default-gw": `
-routes:
- running:
- - destination: 0.0.0.0/0
-   next-hop-address: 192.168.100.1
-   next-hop-interface: eth1
-   table-id: 254
-`},
-			astYamls: map[string]string{
-				"base-iface-routes": `
-pos: 1
-eqfilter:
-- pos: 2
-  identity: currentState
-- pos: 3
-  path:
-  - pos: 4
-    identity: routes
-  - pos: 5
-    identity: running
-  - pos: 6
-    identity: next-hop-interface
-- pos: 7
-  path:
-  - pos: 8
-    identity: capture
-  - pos: 9
-    identity: default-gw
-  - pos: 11
-    identity: routes
-  - pos: 12
-    identity: badfield 
-`},
+			capturedStatesCache: `
+default-gw:
+  state: 
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+`,
+			captureASTPool: `
+base-iface-routes:
+  pos: 1
+  eqfilter:
+  - pos: 2
+    identity: currentState
+  - pos: 3
+    path:
+    - pos: 4
+      identity: routes
+    - pos: 5
+      identity: running
+    - pos: 6
+      identity: next-hop-interface
+  - pos: 7
+    path:
+    - pos: 8
+      identity: capture
+    - pos: 9
+      identity: default-gw
+    - pos: 11
+      identity: routes
+    - pos: 12
+      identity: badfield
+`,
 			err: "resolve error: eqfilter error: step 'badfield' from path '[routes badfield]' not found at map state " +
 				"'map[running:[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]]'",
 		}
@@ -618,42 +635,43 @@ eqfilter:
 func testFilterCaptureRefPathNotFoundSlice(t *testing.T) {
 	t.Run("Filter list with capture reference and path with not found numeric step", func(t *testing.T) {
 		testToRun := test{
-			capturedStates: map[string]string{
-				"default-gw": `
-routes:
- running:
- - destination: 0.0.0.0/0
-   next-hop-address: 192.168.100.1
-   next-hop-interface: eth1
-   table-id: 254
-`},
-			astYamls: map[string]string{
-				"base-iface-routes": `
-pos: 1
-eqfilter:
-- pos: 2
-  identity: currentState
-- pos: 3
-  path:
-  - pos: 4
-    identity: routes
-  - pos: 5
-    identity: running
-  - pos: 6
-    identity: next-hop-interface
-- pos: 7
-  path:
-  - pos: 8
-    identity: capture
-  - pos: 9
-    identity: default-gw
-  - pos: 11
-    identity: routes
-  - pos: 12
-    identity: running
-  - pos: 13
-    number: 6
-`},
+			capturedStatesCache: `
+default-gw:
+  state:
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+`,
+			captureASTPool: `
+base-iface-routes:
+  pos: 1
+  eqfilter:
+  - pos: 2
+    identity: currentState
+  - pos: 3
+    path:
+    - pos: 4
+      identity: routes
+    - pos: 5
+      identity: running
+    - pos: 6
+      identity: next-hop-interface
+  - pos: 7
+    path:
+    - pos: 8
+      identity: capture
+    - pos: 9
+      identity: default-gw
+    - pos: 11
+      identity: routes
+    - pos: 12
+      identity: running
+    - pos: 13
+      number: 6
+`,
 			err: "resolve error: eqfilter error: step '6' from path '[routes running 6]' not found at slice state " +
 				"'[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]'",
 		}
@@ -664,56 +682,29 @@ eqfilter:
 func testFilterNonCaptureRefPathAtThirdArg(t *testing.T) {
 	t.Run("Filter list with path as third argument without capture reference", func(t *testing.T) {
 		testToRun := test{
-			astYamls: map[string]string{
-				"base-iface-routes": `
-pos: 1
-eqfilter:
-- pos: 2
-  identity: currentState
-- pos: 3
-  path:
-  - pos: 4
-    identity: routes
-  - pos: 5
-    identity: running
-  - pos: 6
-    identity: next-hop-interface
-- pos: 7
-  path:
-  - pos: 8
-    identity: routes
-  - pos: 9
-    identity: running
-`},
+			captureASTPool: `
+base-iface-routes:
+  pos: 1
+  eqfilter:
+  - pos: 2
+    identity: currentState
+  - pos: 3
+    path:
+    - pos: 4
+      identity: routes
+    - pos: 5
+      identity: running
+    - pos: 6
+      identity: next-hop-interface
+  - pos: 7
+    path:
+    - pos: 8
+      identity: routes
+    - pos: 9
+      identity: running
+`,
 			err: "resolve error: eqfilter error: not supported filtered value path. Only paths with a capture entry reference are supported",
 		}
 		runTest(t, testToRun)
 	})
-}
-
-func getAstPool(astYamls map[string]string) (map[string]ast.Node, error) {
-	captureASTs := make(map[string]ast.Node)
-	for captureName, astYaml := range astYamls {
-		obtainedAST := &ast.Node{}
-		err := yaml.Unmarshal([]byte(astYaml), obtainedAST)
-		if err != nil {
-			return nil, err
-		}
-		captureASTs[captureName] = *obtainedAST
-	}
-
-	return captureASTs, nil
-}
-
-func unmarshalCapturedState(capturedStatesYAML map[string]string) (map[string]map[string]interface{}, error) {
-	capturedStates := map[string]map[string]interface{}{}
-	for capturedStatesEntryName, capturedStatesEntryYAML := range capturedStatesYAML {
-		capturedStatesEntry := map[string]interface{}{}
-		err := yaml.Unmarshal([]byte(capturedStatesEntryYAML), &capturedStatesEntry)
-		if err != nil {
-			return nil, err
-		}
-		capturedStates[capturedStatesEntryName] = capturedStatesEntry
-	}
-	return capturedStates, nil
 }
