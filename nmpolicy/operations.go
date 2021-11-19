@@ -18,13 +18,11 @@ package nmpolicy
 
 import (
 	"fmt"
-	"time"
 
-	"github.com/nmstate/nmpolicy/nmpolicy/internal/capture"
-	"github.com/nmstate/nmpolicy/nmpolicy/internal/expander"
-	"github.com/nmstate/nmpolicy/nmpolicy/internal/lexer"
-	"github.com/nmstate/nmpolicy/nmpolicy/internal/parser"
-	"github.com/nmstate/nmpolicy/nmpolicy/internal/resolver"
+	yaml "sigs.k8s.io/yaml"
+
+	"github.com/nmstate/nmpolicy/nmpolicy/internal"
+	internaltypes "github.com/nmstate/nmpolicy/nmpolicy/internal/types"
 	"github.com/nmstate/nmpolicy/nmpolicy/types"
 )
 
@@ -40,49 +38,128 @@ import (
 // - Meta Info: Extended information about the generated state (e.g. the policy version).
 //
 // On failure, an error is returned.
-func GenerateState(nmpolicy types.PolicySpec, currentState []byte, cache types.CachedState) (types.GeneratedState, error) {
-	var capturesState map[string]types.CaptureState
-	var desiredState []byte
-
-	if nmpolicy.DesiredState != nil {
-		desiredState = append(desiredState, nmpolicy.DesiredState...)
-
-		capResolver := capture.New(lexer.New(), parser.New(), resolver.New())
-		var err error
-		capturesState, err = capResolver.Resolve(nmpolicy.Capture, cache.Capture, currentState)
-		if err != nil {
-			return types.GeneratedState{}, fmt.Errorf("failed to generate state, err: %v", err)
-		}
-
-		captureEntryPathResolver, err := capture.NewCaptureEntry(capturesState)
-		if err != nil {
-			return types.GeneratedState{}, fmt.Errorf("failed to generate state, err: %v", err)
-		}
-
-		stateExpander := expander.New(captureEntryPathResolver)
-		desiredState, err = stateExpander.Expand(desiredState)
-		if err != nil {
-			return types.GeneratedState{}, fmt.Errorf("failed to generate state, err: %v", err)
-		}
+func GenerateState(policySpec types.PolicySpec,
+	currentState []byte, cachedState types.CachedState) (generatedState types.GeneratedState, err error) {
+	internalPolicySpec, err := toInternalPolicySpec(policySpec)
+	if err != nil {
+		return generatedState, err
+	}
+	internalCurrentState, err := toInternalNMState(currentState)
+	if err != nil {
+		return generatedState, err
+	}
+	internalCachedState, err := toInternalCachedState(cachedState)
+	if err != nil {
+		return generatedState, err
 	}
 
-	timestamp := time.Now().UTC()
-	timestampCapturesState(capturesState, timestamp)
-	return types.GeneratedState{
-		Cache:        types.CachedState{Capture: capturesState},
-		DesiredState: desiredState,
-		MetaInfo: types.MetaInfo{
-			Version:   "0",
-			TimeStamp: timestamp,
-		},
+	internalGeneratedState, err := internal.GenerateState(internalPolicySpec, internalCurrentState, internalCachedState)
+	if err != nil {
+		return generatedState, err
+	}
+
+	generatedState, err = toGeneratedState(internalGeneratedState)
+	if err != nil {
+		return generatedState, err
+	}
+	return generatedState, nil
+}
+
+func toInternalPolicySpec(policySpec types.PolicySpec) (internaltypes.PolicySpec, error) {
+	internalDesiredState, err := toInternalNMState(policySpec.DesiredState)
+	if err != nil {
+		return internaltypes.PolicySpec{}, err
+	}
+	return internaltypes.PolicySpec{
+		DesiredState: internalDesiredState,
+		Capture:      internaltypes.CaptureExpressions(policySpec.Capture),
 	}, nil
 }
 
-func timestampCapturesState(capturesState map[string]types.CaptureState, timeStamp time.Time) {
-	for captureID, captureState := range capturesState {
-		if captureState.MetaInfo.TimeStamp.IsZero() {
-			captureState.MetaInfo.TimeStamp = timeStamp
-			capturesState[captureID] = captureState
-		}
+func toInternalNMState(nmState []byte) (internaltypes.NMState, error) {
+	internalNMState := internaltypes.NMState{}
+	if err := yaml.Unmarshal(nmState, &internalNMState); err != nil {
+		return nil, fmt.Errorf("failed converting to internal NMState: %w", err)
 	}
+	return internalNMState, nil
+}
+
+func toNMState(internalNMState internaltypes.NMState) ([]byte, error) {
+	if len(internalNMState) == 0 {
+		return nil, nil
+	}
+	nmState, err := yaml.Marshal(internalNMState)
+	if err != nil {
+		return nil, fmt.Errorf("failed converting from internal NMState: %w", err)
+	}
+	return nmState, nil
+}
+
+func toInternalCapturedState(capturedState types.CaptureState) (internaltypes.CapturedState, error) {
+	internalState, err := toInternalNMState(capturedState.State)
+	if err != nil {
+		return internaltypes.CapturedState{}, err
+	}
+	return internaltypes.CapturedState{
+		State:    internalState,
+		MetaInfo: capturedState.MetaInfo,
+	}, nil
+}
+
+func toCapturedState(internalCapturedState internaltypes.CapturedState) (types.CaptureState, error) {
+	state, err := toNMState(internalCapturedState.State)
+	if err != nil {
+		return types.CaptureState{}, err
+	}
+	return types.CaptureState{
+		State:    state,
+		MetaInfo: internalCapturedState.MetaInfo,
+	}, nil
+}
+
+func toInternalCachedState(cachedState types.CachedState) (internaltypes.CachedState, error) {
+	internalCachedState := internaltypes.CachedState{
+		CapturedStates: internaltypes.CapturedStates{},
+	}
+	for captureEntryName, capturedState := range cachedState.Capture {
+		internalCapturedState, err := toInternalCapturedState(capturedState)
+		if err != nil {
+			return internaltypes.CachedState{}, err
+		}
+		internalCachedState.CapturedStates[captureEntryName] = internalCapturedState
+	}
+	return internalCachedState, nil
+}
+
+func toCachedState(internalCachedState internaltypes.CachedState) (types.CachedState, error) {
+	if len(internalCachedState.CapturedStates) == 0 {
+		return types.CachedState{}, nil
+	}
+	cachedState := types.CachedState{
+		Capture: map[string]types.CaptureState{},
+	}
+	for captureEntryName, internalCapturedState := range internalCachedState.CapturedStates {
+		capturedState, err := toCapturedState(internalCapturedState)
+		if err != nil {
+			return types.CachedState{}, err
+		}
+		cachedState.Capture[captureEntryName] = capturedState
+	}
+	return cachedState, nil
+}
+
+func toGeneratedState(internalGeneratedState internaltypes.GeneratedState) (types.GeneratedState, error) {
+	desiredState, err := toNMState(internalGeneratedState.DesiredState)
+	if err != nil {
+		return types.GeneratedState{}, err
+	}
+	cachedState, err := toCachedState(internalGeneratedState.Cache)
+	if err != nil {
+		return types.GeneratedState{}, err
+	}
+	return types.GeneratedState{
+		MetaInfo:     internalGeneratedState.MetaInfo,
+		DesiredState: desiredState,
+		Cache:        cachedState,
+	}, nil
 }
