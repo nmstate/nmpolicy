@@ -109,6 +109,8 @@ func TestFilter(t *testing.T) {
 		testFilterInvalidTypeOnPath(t)
 		testFilterInvalidPath(t)
 		testFilterNonCaptureRefPathAtThirdArg(t)
+		testReplaceCurrentState(t)
+		testReplaceCapturedState(t)
 	})
 }
 
@@ -704,6 +706,140 @@ base-iface-routes:
       identity: running
 `,
 			err: "resolve error: eqfilter error: not supported filtered value path. Only paths with a capture entry reference are supported",
+		}
+		runTest(t, testToRun)
+	})
+}
+
+func testReplaceCurrentState(t *testing.T) {
+	t.Run("Replace list of structs field from currentState with string value", func(t *testing.T) {
+		testToRun := test{
+			captureASTPool: `
+bridge-routes:
+  pos: 1
+  replace:
+  - pos: 2
+    identity: currentState
+  - pos: 3
+    path:
+    - pos: 4
+      identity: routes
+    - pos: 5
+      identity: running
+    - pos: 6
+      identity: next-hop-interface
+  - pos: 7
+    string: br1
+`,
+
+			expectedCapturedStates: `
+
+bridge-routes:
+  state:
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: br1
+        table-id: 254
+      - destination: 1.1.1.0/24
+        next-hop-address: 192.168.100.1
+        next-hop-interface: br1
+        table-id: 254
+      - destination: 2.2.2.0/24
+        next-hop-address: 192.168.200.1
+        next-hop-interface: br1
+        table-id: 254
+      config:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+      - destination: 1.1.1.0/24
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+    interfaces:
+      - name: eth1
+        type: ethernet
+        state: up
+        ipv4:
+          address:
+          - ip: 10.244.0.1
+            prefix-length: 24
+          - ip: 169.254.1.0
+            prefix-length: 16
+          dhcp: false
+          enabled: true
+      - name: eth2
+        type: ethernet
+        state: down
+        ipv4:
+          address:
+          - ip: 1.2.3.4
+            prefix-length: 24
+          dhcp: false
+          enabled: false
+`,
+		}
+		runTest(t, testToRun)
+	})
+}
+
+func testReplaceCapturedState(t *testing.T) {
+	t.Run("Replace list of structs field from capture reference with string value", func(t *testing.T) {
+		testToRun := test{
+			capturedStatesCache: `
+default-gw:
+  state:
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+`,
+
+			captureASTPool: `
+bridge-routes:
+  pos: 1
+  replace:
+  - pos: 2
+    path: 
+    - pos: 3
+      identity: capture
+    - pos: 4
+      identity: default-gw
+  - pos: 3
+    path:
+    - pos: 4
+      identity: routes
+    - pos: 5
+      identity: running
+    - pos: 6
+      identity: next-hop-interface
+  - pos: 7
+    string: br1
+`,
+
+			expectedCapturedStates: `
+default-gw:
+  state:
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+bridge-routes:
+  state:
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: br1
+        table-id: 254
+`,
 		}
 		runTest(t, testToRun)
 	})
