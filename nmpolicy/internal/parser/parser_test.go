@@ -29,12 +29,19 @@ import (
 )
 
 func TestParser(t *testing.T) {
-	testParseFailures(t)
-	testParseSuccess(t)
+	testParsePath(t)
+	testParseEqFilter(t)
+	testParseReplace(t)
+
+	testParseBasicFailures(t)
+	testParsePathFailures(t)
+	testParseEqFilterFailure(t)
+	testParseReplaceFailure(t)
+
 	testParserReuse(t)
 }
 
-func testParseFailures(t *testing.T) {
+func testParseBasicFailures(t *testing.T) {
 	var tests = []test{
 		expectError("invalid expression: unexpected token `.`",
 			fromTokens(
@@ -42,6 +49,12 @@ func testParseFailures(t *testing.T) {
 				eof(),
 			),
 		),
+	}
+	runTest(t, tests)
+}
+
+func testParsePathFailures(t *testing.T) {
+	var tests = []test{
 		expectError(`invalid path: missing identity or number after dot`,
 			fromTokens(
 				identity("routes"),
@@ -65,6 +78,12 @@ func testParseFailures(t *testing.T) {
 				eof(),
 			),
 		),
+	}
+	runTest(t, tests)
+}
+
+func testParseEqFilterFailure(t *testing.T) {
+	var tests = []test{
 		expectError(`invalid equality filter: missing left hand argument`,
 			fromTokens(
 				eqfilter(),
@@ -80,6 +99,18 @@ func testParseFailures(t *testing.T) {
 				eof(),
 			),
 		),
+		expectError(`invalid equality filter: missing right hand argument`,
+			fromTokens(
+				identity("routes"),
+				dot(),
+				identity("running"),
+				dot(),
+				identity("destination"),
+				eqfilter(),
+				eof(),
+			),
+		),
+
 		expectError(`invalid equality filter: right hand argument is not a string or identity`,
 			fromTokens(
 				identity("routes"),
@@ -96,7 +127,52 @@ func testParseFailures(t *testing.T) {
 	runTest(t, tests)
 }
 
-func testParseSuccess(t *testing.T) {
+func testParseReplaceFailure(t *testing.T) {
+	var tests = []test{
+		expectError(`invalid replace: missing left hand argument`,
+			fromTokens(
+				replace(),
+				str("0.0.0.0/0"),
+				eof(),
+			),
+		),
+		expectError(`invalid replace: left hand argument is not a path`,
+			fromTokens(
+				str("foo"),
+				replace(),
+				str("0.0.0.0/0"),
+				eof(),
+			),
+		),
+		expectError(`invalid replace: missing right hand argument`,
+			fromTokens(
+				identity("routes"),
+				dot(),
+				identity("running"),
+				dot(),
+				identity("destination"),
+				replace(),
+				eof(),
+			),
+		),
+
+		expectError(`invalid replace: right hand argument is not a string`,
+			fromTokens(
+				identity("routes"),
+				dot(),
+				identity("running"),
+				dot(),
+				identity("destination"),
+				replace(),
+				replace(),
+				eof(),
+			),
+		),
+	}
+	runTest(t, tests)
+}
+
+func testParsePath(t *testing.T) {
 	var tests = []test{
 		expectEmptyAST(fromTokens()),
 		expectEmptyAST(fromTokens(eof())),
@@ -118,6 +194,12 @@ path:
 				eof(),
 			),
 		),
+	}
+	runTest(t, tests)
+}
+
+func testParseEqFilter(t *testing.T) {
+	var tests = []test{
 		expectAST(t, `
 pos: 26
 eqfilter: 
@@ -186,6 +268,39 @@ eqfilter:
 				number(0),
 				dot(),
 				identity("next-hop-interface"),
+				eof(),
+			),
+		),
+	}
+	runTest(t, tests)
+}
+
+func testParseReplace(t *testing.T) {
+	var tests = []test{
+		expectAST(t, `
+pos: 33
+replace:
+- pos: 0
+  identity: currentState
+- pos: 0 
+  path: 
+  - pos: 0 
+    identity: routes
+  - pos: 7
+    identity: running
+  - pos: 15
+    identity: next-hop-interface
+- pos: 35
+  string: br1
+`,
+			fromTokens(
+				identity("routes"),
+				dot(),
+				identity("running"),
+				dot(),
+				identity("next-hop-interface"),
+				replace(),
+				str("br1"),
 				eof(),
 			),
 		),
@@ -332,4 +447,8 @@ func eof() lexer.Token {
 
 func eqfilter() lexer.Token {
 	return lexer.Token{Type: lexer.EQFILTER, Literal: "=="}
+}
+
+func replace() lexer.Token {
+	return lexer.Token{Type: lexer.REPLACE, Literal: ":="}
 }
