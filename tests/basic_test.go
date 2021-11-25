@@ -32,9 +32,9 @@ func TestBasicPolicy(t *testing.T) {
 		testEmptyPolicy(t)
 		testPolicyWithOnlyDesiredState(t)
 		testPolicyWithCachedCaptureAndDesiredStateWithoutRef(t)
-		testPolicyWithFilterCaptureAndDesiredStateCaptureEntryRef(t)
-		testPolicyWithDesiredStateRefToCachedCapturedStates(t)
-		testPolicyWithCaptureEntryExpressionRefToCachedCapturedStates(t)
+		testPolicyWithoutCache(t)
+		testPolicyWithFullCache(t)
+		testPolicyWithPartialCache(t)
 		testGenerateUniqueTimestamps(t)
 	})
 }
@@ -166,6 +166,8 @@ interfaces:
         enabled: false
     port:
     - name: "{{ capture.base-iface.interfaces.0.name }}"
+routes:
+  config: "{{ capture.bridge-routes.routes.running }}"
 `)
 
 var mainExpectedDesiredState = []byte(`
@@ -188,21 +190,91 @@ interfaces:
         enabled: false
     port:
     - name: eth1
+routes:
+  config:
+  - destination: 0.0.0.0/0
+    next-hop-address: 192.168.100.1
+    next-hop-interface: br1
+    table-id: 254
+  - destination: 1.1.1.0/24
+    next-hop-address: 192.168.100.1
+    next-hop-interface: br1
+    table-id: 254
 `)
 
-func testPolicyWithFilterCaptureAndDesiredStateCaptureEntryRef(t *testing.T) {
-	t.Run("with a eqfilter capture expression and desired state that has no ref", func(t *testing.T) {
+var defaultGwCapturedState = types.CaptureState{
+	State: []byte(`
+routes:
+  running:
+  - destination: 0.0.0.0/0
+    next-hop-address: 192.168.100.1
+    next-hop-interface: eth1
+    table-id: 254
+`),
+}
+
+var baseIfaceCapturedState = types.CaptureState{
+	State: []byte(`
+interfaces:
+- name: eth1
+  type: ethernet
+  state: up
+  ipv4:
+    address:
+    - ip: 10.244.0.1
+      prefix-length: 24
+    - ip: 169.254.1.0
+      prefix-length: 16
+    dhcp: false
+    enabled: true
+`),
+}
+
+var baseIfaceRoutesCapturedState = types.CaptureState{
+	State: []byte(`
+routes:
+  running:
+  - destination: 0.0.0.0/0
+    next-hop-address: 192.168.100.1
+    next-hop-interface: eth1
+    table-id: 254
+  - destination: 1.1.1.0/24
+    next-hop-address: 192.168.100.1
+    next-hop-interface: eth1
+    table-id: 254
+`),
+}
+
+var bridgeRoutesCapturedState = types.CaptureState{
+	State: []byte(`
+routes:
+  running:
+  - destination: 0.0.0.0/0
+    next-hop-address: 192.168.100.1
+    next-hop-interface: br1
+    table-id: 254
+  - destination: 1.1.1.0/24
+    next-hop-address: 192.168.100.1
+    next-hop-interface: br1
+    table-id: 254
+`),
+}
+
+func testPolicyWithoutCache(t *testing.T) {
+	t.Run("without cache", func(t *testing.T) {
 		policySpec := types.PolicySpec{
 			Capture: map[string]string{
-				"default-gw": `routes.running.destination=="0.0.0.0/0"`,
-				"base-iface": `interfaces.name==capture.default-gw.routes.running.0.next-hop-interface`,
+				"default-gw":        `routes.running.destination=="0.0.0.0/0"`,
+				"base-iface":        `interfaces.name==capture.default-gw.routes.running.0.next-hop-interface`,
+				"base-iface-routes": `routes.running.next-hop-interface==capture.default-gw.routes.running.0.next-hop-interface`,
+				"bridge-routes":     `capture.base-iface-routes | routes.running.next-hop-interface:="br1"`,
 			},
 			DesiredState: mainDesiredState,
 		}
 		obtained, err := nmpolicy.GenerateState(
 			policySpec,
 			mainCurrentState,
-			types.CachedState{})
+			types.NoCache())
 		assert.NoError(t, err)
 
 		expected := types.GeneratedState{
@@ -212,32 +284,10 @@ func testPolicyWithFilterCaptureAndDesiredStateCaptureEntryRef(t *testing.T) {
 			DesiredState: mainExpectedDesiredState,
 			Cache: types.CachedState{
 				Capture: map[string]types.CaptureState{
-					"default-gw": {
-						State: []byte(`
-routes:
-  running:
-  - destination: 0.0.0.0/0
-    next-hop-address: 192.168.100.1
-    next-hop-interface: eth1
-    table-id: 254
-`),
-					},
-					"base-iface": {
-						State: []byte(`
-interfaces:
-- name: eth1
-  type: ethernet
-  state: up
-  ipv4:
-    address:
-    - ip: 10.244.0.1
-      prefix-length: 24
-    - ip: 169.254.1.0
-      prefix-length: 16
-    dhcp: false
-    enabled: true
-`),
-					},
+					"default-gw":        defaultGwCapturedState,
+					"base-iface":        baseIfaceCapturedState,
+					"base-iface-routes": baseIfaceRoutesCapturedState,
+					"bridge-routes":     bridgeRoutesCapturedState,
 				},
 			},
 		}
@@ -254,32 +304,19 @@ interfaces:
 	})
 }
 
-func testPolicyWithDesiredStateRefToCachedCapturedStates(t *testing.T) {
-	t.Run("with desired state refereing a cached captured state", func(t *testing.T) {
+func testPolicyWithFullCache(t *testing.T) {
+	t.Run("with full cache", func(t *testing.T) {
 		policySpec := types.PolicySpec{
 			Capture: map[string]string{
-				"base-iface": "override me with the cache",
+				"base-iface":    "override me with the cache",
+				"bridge-routes": "override me with the cache",
 			},
 			DesiredState: mainDesiredState,
 		}
 		cachedState := types.CachedState{
 			Capture: map[string]types.CaptureState{
-				"base-iface": {
-					State: []byte(`
-interfaces:
-- name: eth1
-  type: ethernet
-  state: up
-  ipv4:
-    address:
-    - ip: 10.244.0.1
-      prefix-length: 24
-    - ip: 169.254.1.0
-      prefix-length: 16
-    dhcp: false
-    enabled: true
-`),
-				},
+				"base-iface":    baseIfaceCapturedState,
+				"bridge-routes": bridgeRoutesCapturedState,
 			},
 		}
 
@@ -293,22 +330,8 @@ interfaces:
 			DesiredState: mainExpectedDesiredState,
 			Cache: types.CachedState{
 				Capture: map[string]types.CaptureState{
-					"base-iface": {
-						State: []byte(`
-interfaces:
-- name: eth1
-  type: ethernet
-  state: up
-  ipv4:
-    address:
-    - ip: 10.244.0.1
-      prefix-length: 24
-    - ip: 169.254.1.0
-      prefix-length: 16
-    dhcp: false
-    enabled: true
-`),
-					},
+					"base-iface":    baseIfaceCapturedState,
+					"bridge-routes": bridgeRoutesCapturedState,
 				},
 			},
 		}
@@ -325,27 +348,21 @@ interfaces:
 	})
 }
 
-func testPolicyWithCaptureEntryExpressionRefToCachedCapturedStates(t *testing.T) {
-	t.Run("with a eqfilter capture expression and desired state that has no ref", func(t *testing.T) {
+func testPolicyWithPartialCache(t *testing.T) {
+	t.Run("with partial cache", func(t *testing.T) {
 		policySpec := types.PolicySpec{
 			Capture: map[string]string{
-				"default-gw": "override me with the cache",
-				"base-iface": `interfaces.name==capture.default-gw.routes.running.0.next-hop-interface`,
+				"default-gw":        "override me with the cache",
+				"base-iface":        `interfaces.name==capture.default-gw.routes.running.0.next-hop-interface`,
+				"base-iface-routes": `routes.running.next-hop-interface==capture.default-gw.routes.running.0.next-hop-interface`,
+				"bridge-routes":     `capture.base-iface-routes | routes.running.next-hop-interface:="br1"`,
 			},
 			DesiredState: mainDesiredState,
 		}
 		cachedState := types.CachedState{
 			Capture: map[string]types.CaptureState{
-				"default-gw": {
-					State: []byte(`
-routes:
-  running:
-  - destination: 0.0.0.0/0
-    next-hop-address: 192.168.100.1
-    next-hop-interface: eth1
-    table-id: 254
-`),
-				},
+				"default-gw":    defaultGwCapturedState,
+				"bridge-routes": bridgeRoutesCapturedState,
 			},
 		}
 
@@ -359,32 +376,10 @@ routes:
 			DesiredState: mainExpectedDesiredState,
 			Cache: types.CachedState{
 				Capture: map[string]types.CaptureState{
-					"default-gw": {
-						State: []byte(`
-routes:
-  running:
-  - destination: 0.0.0.0/0
-    next-hop-address: 192.168.100.1
-    next-hop-interface: eth1
-    table-id: 254
-`),
-					},
-					"base-iface": {
-						State: []byte(`
-interfaces:
-- name: eth1
-  type: ethernet
-  state: up
-  ipv4:
-    address:
-    - ip: 10.244.0.1
-      prefix-length: 24
-    - ip: 169.254.1.0
-      prefix-length: 16
-    dhcp: false
-    enabled: true
-`),
-					},
+					"default-gw":        defaultGwCapturedState,
+					"base-iface":        baseIfaceCapturedState,
+					"base-iface-routes": baseIfaceRoutesCapturedState,
+					"bridge-routes":     bridgeRoutesCapturedState,
 				},
 			},
 		}
