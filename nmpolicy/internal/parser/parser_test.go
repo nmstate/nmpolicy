@@ -32,6 +32,7 @@ func TestParser(t *testing.T) {
 	testParsePath(t)
 	testParseEqFilter(t)
 	testParseReplace(t)
+	testParseCapturePipeReplace(t)
 
 	testParseBasicFailures(t)
 	testParsePathFailures(t)
@@ -120,6 +121,43 @@ func testParseEqFilterFailure(t *testing.T) {
 				identity("destination"),
 				eqfilter(),
 				eqfilter(),
+				eof(),
+			),
+		),
+		expectError(`invalid pipe: missing pipe in expression`,
+			fromTokens(
+				pipe(),
+				identity("routes"),
+				dot(),
+				identity("running"),
+				dot(),
+				identity("next-hop-interface"),
+				replace(),
+				str("br1"),
+				eof(),
+			),
+		),
+		expectError(`invalid pipe: missing pipe out expression`,
+			fromTokens(
+				identity("capture"),
+				dot(),
+				identity("default-gw"),
+				pipe(),
+				eof(),
+			),
+		),
+
+		expectError(`invalid pipe: only paths can be piped in`,
+			fromTokens(
+				str("foo"),
+				pipe(),
+				identity("routes"),
+				dot(),
+				identity("running"),
+				dot(),
+				identity("next-hop-interface"),
+				replace(),
+				str("br1"),
 				eof(),
 			),
 		),
@@ -308,6 +346,47 @@ replace:
 	runTest(t, tests)
 }
 
+func testParseCapturePipeReplace(t *testing.T) {
+	var tests = []test{
+		expectAST(t, `
+pos: 52
+replace:
+- pos: 0
+  path:
+  - pos: 0
+    identity: capture
+  - pos: 8
+    identity: default-gw
+- pos: 19 
+  path: 
+  - pos: 19
+    identity: routes
+  - pos: 26
+    identity: running
+  - pos: 34
+    identity: next-hop-interface
+- pos: 54
+  string: br1
+`,
+			fromTokens(
+				identity("capture"),
+				dot(),
+				identity("default-gw"),
+				pipe(),
+				identity("routes"),
+				dot(),
+				identity("running"),
+				dot(),
+				identity("next-hop-interface"),
+				replace(),
+				str("br1"),
+				eof(),
+			),
+		),
+	}
+	runTest(t, tests)
+}
+
 func testParserReuse(t *testing.T) {
 	p := parser.New()
 	testToRun1 := expectAST(t, `
@@ -451,4 +530,8 @@ func eqfilter() lexer.Token {
 
 func replace() lexer.Token {
 	return lexer.Token{Type: lexer.REPLACE, Literal: ":="}
+}
+
+func pipe() lexer.Token {
+	return lexer.Token{Type: lexer.PIPE, Literal: "|"}
 }
