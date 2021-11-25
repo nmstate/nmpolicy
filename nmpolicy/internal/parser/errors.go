@@ -78,3 +78,10 @@ func invalidExpressionError(msg string) *parserError {
 		msg:    msg,
 	}
 }
+
+func invalidPipeError(msg string) *parserError {
+	return &parserError{
+		prefix: "invalid pipe",
+		msg:    msg,
+	}
+}

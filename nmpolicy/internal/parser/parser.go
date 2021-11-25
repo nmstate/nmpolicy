@@ -31,6 +31,7 @@ type parser struct {
 	tokens          []lexer.Token
 	currentTokenIdx int
 	lastNode        *ast.Node
+	pipedInNode     *ast.Node
 }
 
 func New() Parser {
@@ -75,15 +76,26 @@ func (p *parser) parse() (ast.Node, error) {
 			if err := p.parseReplace(); err != nil {
 				return ast.Node{}, err
 			}
+		} else if p.currentToken().Type == lexer.PIPE {
+			if err := p.parsePipe(); err != nil {
+				return ast.Node{}, err
+			}
 		} else {
 			return ast.Node{}, invalidExpressionError(fmt.Sprintf("unexpected token `%+v`", p.currentToken().Literal))
 		}
 		p.nextToken()
 	}
-	if p.lastNode == nil {
-		return ast.Node{}, nil
+	if p.pipedInNode != nil {
+		return ast.Node{}, invalidPipeError("missing pipe out expression")
 	}
-	return *p.lastNode, nil
+	return p.lastEmitedNode(), nil
+}
+
+func (p *parser) lastEmitedNode() ast.Node {
+	if p.lastNode == nil {
+		return ast.Node{}
+	}
+	return *p.lastNode
 }
 
 func (p *parser) nextToken() {
@@ -169,7 +181,7 @@ func (p *parser) parsePath() error {
 			}
 			path := append(*operator.Path, *p.lastNode)
 			operator.Path = &path
-		} else if p.currentToken().Type != lexer.EOF && p.currentToken().Type != lexer.EQFILTER && p.currentToken().Type != lexer.REPLACE {
+		} else if p.currentToken().Type != lexer.EOF && !p.currentToken().Type.IsOperator() {
 			return invalidPathError("missing dot")
 		} else {
 			// Token has not being consumed let's go back.
@@ -192,7 +204,9 @@ func (p *parser) parseEqFilter() error {
 	if p.lastNode.Path == nil {
 		return invalidEqualityFilterError("left hand argument is not a path")
 	}
-	operator.EqFilter[0].Terminal = ast.CurrentStateIdentity()
+
+	p.fillInPipedInOrCurrentState(&operator.EqFilter[0])
+
 	operator.EqFilter[1] = *p.lastNode
 
 	p.nextToken()
@@ -228,7 +242,9 @@ func (p *parser) parseReplace() error {
 	if p.lastNode.Path == nil {
 		return invalidReplaceError("left hand argument is not a path")
 	}
-	operator.Replace[0].Terminal = ast.CurrentStateIdentity()
+
+	p.fillInPipedInOrCurrentState(&operator.Replace[0])
+
 	operator.Replace[1] = *p.lastNode
 
 	p.nextToken()
@@ -243,5 +259,25 @@ func (p *parser) parseReplace() error {
 		return invalidReplaceError("right hand argument is not a string")
 	}
 	p.lastNode = operator
+	return nil
+}
+
+func (p *parser) fillInPipedInOrCurrentState(node *ast.Node) {
+	if p.pipedInNode != nil {
+		*node = *p.pipedInNode
+		p.pipedInNode = nil
+	} else {
+		node.Terminal = ast.CurrentStateIdentity()
+	}
+}
+
+func (p *parser) parsePipe() error {
+	if p.lastNode == nil {
+		return invalidPipeError("missing pipe in expression")
+	}
+	if p.lastNode.Path == nil {
+		return invalidPipeError("only paths can be piped in")
+	}
+	p.pipedInNode = p.lastNode
 	return nil
 }
