@@ -20,3 +20,5 @@ vendor/
 # IDEs, editor's
 .idea
 .sw*
+
+dist/
