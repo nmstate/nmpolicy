@@ -103,6 +103,9 @@ func (p *parser) prevToken() {
 }
 
 func (p *parser) currentToken() *lexer.Token {
+	if len(p.tokens) == 0 || p.currentTokenIdx >= len(p.tokens) {
+		return nil
+	}
 	return &p.tokens[p.currentTokenIdx]
 }
 

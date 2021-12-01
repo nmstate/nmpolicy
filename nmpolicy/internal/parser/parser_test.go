@@ -98,6 +98,7 @@ func testParseFailures(t *testing.T) {
 
 func testParseSuccess(t *testing.T) {
 	var tests = []test{
+		expectEmptyAST(fromTokens()),
 		expectAST(t, `
 pos: 0
 path:
@@ -295,6 +296,11 @@ func expectAST(t *testing.T, astYAML string, tst test) test {
 	err := yaml.Unmarshal([]byte(astYAML), a)
 	assert.NoError(t, err)
 	tst.expected.ast = a
+	return tst
+}
+
+func expectEmptyAST(tst test) test {
+	tst.expected.ast = &ast.Node{}
 	return tst
 }
 
