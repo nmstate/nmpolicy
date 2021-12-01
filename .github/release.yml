@@ -6,14 +6,14 @@ changelog:
     - title: Breaking Changes 🛠
       labels:
         - Semver-Major
-        - breaking-change
+        - kind/breaking-change
     - title: Exciting New Features 🎉
       labels:
         - Semver-Minor
-        - enhancement
+        - kind/enhancement
     - title: Bug Fix 🐛
         - Semver-Patch
-        - bug
+        - kind/bug
     - title: Other Changes
       labels:
         - "*"
