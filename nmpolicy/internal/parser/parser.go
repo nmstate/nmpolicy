@@ -76,6 +76,9 @@ func (p *parser) parse() (ast.Node, error) {
 		}
 		p.nextToken()
 	}
+	if p.lastNode == nil {
+		return ast.Node{}, nil
+	}
 	return *p.lastNode, nil
 }
 
