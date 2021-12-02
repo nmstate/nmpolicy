@@ -99,6 +99,7 @@ func testParseFailures(t *testing.T) {
 func testParseSuccess(t *testing.T) {
 	var tests = []test{
 		expectEmptyAST(fromTokens()),
+		expectEmptyAST(fromTokens(eof())),
 		expectAST(t, `
 pos: 0
 path:
