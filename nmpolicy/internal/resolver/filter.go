@@ -24,7 +24,14 @@ import (
 )
 
 func filter(inputState map[string]interface{}, path ast.VariadicOperator, expectedValue interface{}) (map[string]interface{}, error) {
-	filtered, err := applyFuncOnMap(path, inputState, mapContainsValue(expectedValue), true, true)
+	pathVisitorWithEqFilter := pathVisitor{
+		path:              path,
+		lastMapFn:         mapContainsValue(expectedValue),
+		shouldFilterSlice: true,
+		shouldFilterMap:   true,
+	}
+
+	filtered, err := pathVisitorWithEqFilter.visitMap(inputState)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed applying operation on the path: %v", err)
@@ -41,14 +48,15 @@ func filter(inputState map[string]interface{}, path ast.VariadicOperator, expect
 	return filteredMap, nil
 }
 
-func mapContainsValue(expectedValue interface{}) applyFn {
+func mapContainsValue(expectedValue interface{}) mapEntryVisitFn {
 	return func(mapToFilter map[string]interface{}, filterKey string) (interface{}, error) {
 		obtainedValue, ok := mapToFilter[filterKey]
 		if !ok {
 			return nil, nil
 		}
 		if reflect.TypeOf(obtainedValue) != reflect.TypeOf(expectedValue) {
-			return nil, fmt.Errorf(`type missmatch: "%T" != "%T" -> %+v != %+v`, obtainedValue, expectedValue, obtainedValue, expectedValue)
+			return nil, fmt.Errorf(`type missmatch: the value in the path doesn't match the value to filter. `+
+				`"%T" != "%T" -> %+v != %+v`, obtainedValue, expectedValue, obtainedValue, expectedValue)
 		}
 		if obtainedValue == expectedValue {
 			return mapToFilter, nil

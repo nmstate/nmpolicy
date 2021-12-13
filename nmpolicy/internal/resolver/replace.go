@@ -21,7 +21,14 @@ import (
 )
 
 func replace(inputState map[string]interface{}, path ast.VariadicOperator, replaceValue interface{}) (map[string]interface{}, error) {
-	replaced, err := applyFuncOnMap(path, inputState, replaceMapFieldValue(replaceValue), false, false)
+	pathVisitorWithReplace := pathVisitor{
+		path:              path,
+		lastMapFn:         replaceMapFieldValue(replaceValue),
+		shouldFilterSlice: false,
+		shouldFilterMap:   false,
+	}
+
+	replaced, err := pathVisitorWithReplace.visitMap(inputState)
 
 	if err != nil {
 		return nil, replaceError("failed applying operation on the path: %v", err)
@@ -34,7 +41,7 @@ func replace(inputState map[string]interface{}, path ast.VariadicOperator, repla
 	return replacedMap, nil
 }
 
-func replaceMapFieldValue(replaceValue interface{}) applyFn {
+func replaceMapFieldValue(replaceValue interface{}) mapEntryVisitFn {
 	return func(inputMap map[string]interface{}, mapEntryKeyToReplace string) (interface{}, error) {
 		modifiedMap := map[string]interface{}{}
 		for k, v := range inputMap {
