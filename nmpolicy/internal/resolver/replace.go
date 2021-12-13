@@ -20,8 +20,8 @@ import (
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/ast"
 )
 
-func replace(inputState map[string]interface{}, path ast.VariadicOperator, expectedNode ast.Node) (map[string]interface{}, error) {
-	replaced, err := applyFuncOnMap(path, inputState, expectedNode, replaceMapFieldValue, false, false)
+func replace(inputState map[string]interface{}, path ast.VariadicOperator, replaceValue interface{}) (map[string]interface{}, error) {
+	replaced, err := applyFuncOnMap(path, inputState, replaceValue, replaceMapFieldValue, false, false)
 
 	if err != nil {
 		return nil, replaceError("failed applying operation on the path: %v", err)
@@ -34,15 +34,12 @@ func replace(inputState map[string]interface{}, path ast.VariadicOperator, expec
 	return replacedMap, nil
 }
 
-func replaceMapFieldValue(inputMap map[string]interface{}, mapEntryKeyToReplace string, expectedNode ast.Node) (interface{}, error) {
-	if expectedNode.String == nil {
-		return false, replaceError("the desired value %+v is not supported. Curretly only string values are supported", expectedNode)
-	}
+func replaceMapFieldValue(inputMap map[string]interface{}, mapEntryKeyToReplace string, replaceValue interface{}) (interface{}, error) {
 	modifiedMap := map[string]interface{}{}
 	for k, v := range inputMap {
 		modifiedMap[k] = v
 	}
 
-	modifiedMap[mapEntryKeyToReplace] = *expectedNode.String
+	modifiedMap[mapEntryKeyToReplace] = replaceValue
 	return modifiedMap, nil
 }

@@ -30,8 +30,8 @@ type captureEntryNameAndSteps struct {
 
 func applyFuncOnPath(inputState interface{},
 	path []ast.Node,
-	expectedNode ast.Node,
-	funcToApply func(map[string]interface{}, string, ast.Node) (interface{}, error),
+	value interface{},
+	funcToApply func(map[string]interface{}, string, interface{}) (interface{}, error),
 	shouldFilterSlice bool, shouldFilterMap bool) (interface{}, error) {
 	if len(path) == 0 {
 		return inputState, nil
@@ -39,14 +39,14 @@ func applyFuncOnPath(inputState interface{},
 	originalMap, isMap := inputState.(map[string]interface{})
 	if isMap {
 		if len(path) == 1 {
-			return applyFuncOnLastMapOnPath(path, originalMap, expectedNode, inputState, funcToApply)
+			return applyFuncOnLastMapOnPath(path, originalMap, value, inputState, funcToApply)
 		}
-		return applyFuncOnMap(path, originalMap, expectedNode, funcToApply, shouldFilterSlice, shouldFilterMap)
+		return applyFuncOnMap(path, originalMap, value, funcToApply, shouldFilterSlice, shouldFilterMap)
 	}
 
 	originalSlice, isSlice := inputState.([]interface{})
 	if isSlice {
-		return applyFuncOnSlice(originalSlice, path, expectedNode, funcToApply, shouldFilterSlice)
+		return applyFuncOnSlice(originalSlice, path, value, funcToApply, shouldFilterSlice)
 	}
 
 	return nil, pathError("invalid type %T for identity step '%v'", inputState, path[0])
@@ -54,13 +54,13 @@ func applyFuncOnPath(inputState interface{},
 
 func applyFuncOnSlice(originalSlice []interface{},
 	path []ast.Node,
-	expectedNode ast.Node,
-	funcToApply func(map[string]interface{}, string, ast.Node) (interface{}, error),
+	value interface{},
+	funcToApply func(map[string]interface{}, string, interface{}) (interface{}, error),
 	shouldFilterSlice bool) (interface{}, error) {
 	adjustedSlice := []interface{}{}
 	sliceEmptyAfterApply := true
 	for _, valueToCheck := range originalSlice {
-		valueAfterApply, err := applyFuncOnPath(valueToCheck, path, expectedNode, funcToApply, false, false)
+		valueAfterApply, err := applyFuncOnPath(valueToCheck, path, value, funcToApply, false, false)
 		if err != nil {
 			return nil, err
 		}
@@ -81,8 +81,8 @@ func applyFuncOnSlice(originalSlice []interface{},
 
 func applyFuncOnMap(path []ast.Node,
 	originalMap map[string]interface{},
-	expectedNode ast.Node,
-	funcToApply func(map[string]interface{}, string, ast.Node) (interface{}, error),
+	valueToApply interface{},
+	funcToApply func(map[string]interface{}, string, interface{}) (interface{}, error),
 	shouldFilterSlice bool, shouldFilterMap bool) (interface{}, error) {
 	currentStep := path[0]
 	if currentStep.Identity == nil {
@@ -92,12 +92,12 @@ func applyFuncOnMap(path []ast.Node,
 	nextPath := path[1:]
 	key := *currentStep.Identity
 
-	value, ok := originalMap[key]
+	valueToCheck, ok := originalMap[key]
 	if !ok {
 		return nil, pathError("cannot find key %s in %v", key, originalMap)
 	}
 
-	adjustedValue, err := applyFuncOnPath(value, nextPath, expectedNode, funcToApply, shouldFilterSlice, shouldFilterMap)
+	adjustedValue, err := applyFuncOnPath(valueToCheck, nextPath, valueToApply, funcToApply, shouldFilterSlice, shouldFilterMap)
 	if err != nil {
 		return nil, err
 	}
@@ -117,12 +117,12 @@ func applyFuncOnMap(path []ast.Node,
 
 func applyFuncOnLastMapOnPath(path []ast.Node,
 	originalMap map[string]interface{},
-	expectedNode ast.Node,
+	valueToApply interface{},
 	inputState interface{},
-	funcToApply func(map[string]interface{}, string, ast.Node) (interface{}, error)) (interface{}, error) {
+	funcToApply func(map[string]interface{}, string, interface{}) (interface{}, error)) (interface{}, error) {
 	if funcToApply != nil {
 		key := *path[0].Identity
-		outputState, err := funcToApply(originalMap, key, expectedNode)
+		outputState, err := funcToApply(originalMap, key, valueToApply)
 		if err != nil {
 			return nil, err
 		}

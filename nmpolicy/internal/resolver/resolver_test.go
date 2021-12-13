@@ -132,7 +132,7 @@ func TestFilter(t *testing.T) {
 		testFilterCaptureRefPathNotFoundSlice(t)
 		testFilterCaptureRefInvalidStateForPathMap(t)
 		testFilterCaptureRefInvalidStateForPathSlice(t)
-		testFilterInvalidTypeOnPath(t)
+		testFilterDifferentTypeOnPath(t)
 		testFilterOptionalField(t)
 		testFilterNonCaptureRefPathAtThirdArg(t)
 
@@ -402,15 +402,13 @@ base-iface-routes:
 	})
 }
 
-func testFilterInvalidTypeOnPath(t *testing.T) {
-	t.Run("Filter invalid type on path", func(t *testing.T) {
+func testFilterDifferentTypeOnPath(t *testing.T) {
+	t.Run("Filter different type on path", func(t *testing.T) {
 		testToRun := withCaptureExpressions(t, `
 invalid-path-type: interfaces.ipv4.address=="10.244.0.1"
 `)
-		testToRun.err = "resolve error: eqfilter error: failed applying operation on the path: " +
-			"error comparing the expected and obtained values : " +
-			"the value [map[ip:10.244.0.1 prefix-length:24] map[ip:169.254.1.0 prefix-length:16]] of type []interface {} " +
-			"not supported,curretly only string values are supported" + `
+		testToRun.err = `resolve error: eqfilter error: failed applying operation on the path: ` +
+			`type missmatch: "[]interface {}" != "string" -> [map[ip:10.244.0.1 prefix-length:24] map[ip:169.254.1.0 prefix-length:16]] != 10.244.0.1
 | interfaces.ipv4.address=="10.244.0.1"
 | .......................^`
 
