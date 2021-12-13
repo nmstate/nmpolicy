@@ -408,7 +408,8 @@ func testFilterDifferentTypeOnPath(t *testing.T) {
 invalid-path-type: interfaces.ipv4.address=="10.244.0.1"
 `)
 		testToRun.err = `resolve error: eqfilter error: failed applying operation on the path: ` +
-			`type missmatch: "[]interface {}" != "string" -> [map[ip:10.244.0.1 prefix-length:24] map[ip:169.254.1.0 prefix-length:16]] != 10.244.0.1
+			`type missmatch: the value in the path doesn't match the value to filter. ` +
+			`"[]interface {}" != "string" -> [map[ip:10.244.0.1 prefix-length:24] map[ip:169.254.1.0 prefix-length:16]] != 10.244.0.1
 | interfaces.ipv4.address=="10.244.0.1"
 | .......................^`
 

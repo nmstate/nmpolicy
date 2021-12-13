@@ -28,46 +28,50 @@ type captureEntryNameAndSteps struct {
 	steps            ast.VariadicOperator
 }
 
-type applyFn func(map[string]interface{}, string) (interface{}, error)
+type mapEntryVisitFn func(map[string]interface{}, string) (interface{}, error)
 
-func applyFuncOnPath(inputState interface{},
-	path []ast.Node,
-	funcToApply applyFn,
-	shouldFilterSlice bool, shouldFilterMap bool) (interface{}, error) {
-	if len(path) == 0 {
+type pathVisitor struct {
+	path              []ast.Node
+	lastMapFn         mapEntryVisitFn
+	shouldFilterSlice bool
+	shouldFilterMap   bool
+}
+
+func (v pathVisitor) visitInterface(inputState interface{}) (interface{}, error) {
+	if len(v.path) == 0 {
 		return inputState, nil
 	}
 	originalMap, isMap := inputState.(map[string]interface{})
 	if isMap {
-		if len(path) == 1 {
-			return applyFuncOnLastMapOnPath(path, originalMap, inputState, funcToApply)
+		if len(v.path) == 1 {
+			return v.visitLastMapOnPath(originalMap, inputState)
 		}
-		return applyFuncOnMap(path, originalMap, funcToApply, shouldFilterSlice, shouldFilterMap)
+		return v.visitMap(originalMap)
 	}
 
 	originalSlice, isSlice := inputState.([]interface{})
 	if isSlice {
-		return applyFuncOnSlice(originalSlice, path, funcToApply, shouldFilterSlice)
+		return v.visitSlice(originalSlice)
 	}
 
-	return nil, pathError("invalid type %T for identity step '%v'", inputState, path[0])
+	return nil, pathError("invalid type %T for identity step '%v'", inputState, v.path[0])
 }
 
-func applyFuncOnSlice(originalSlice []interface{},
-	path []ast.Node,
-	funcToApply applyFn,
-	shouldFilterSlice bool) (interface{}, error) {
+func (v pathVisitor) visitSlice(originalSlice []interface{}) (interface{}, error) {
 	adjustedSlice := []interface{}{}
 	sliceEmptyAfterApply := true
+	pathVisitorWithoutFilters := v
+	pathVisitorWithoutFilters.shouldFilterSlice = false
+	pathVisitorWithoutFilters.shouldFilterMap = false
 	for _, valueToCheck := range originalSlice {
-		valueAfterApply, err := applyFuncOnPath(valueToCheck, path, funcToApply, false, false)
+		valueAfterApply, err := pathVisitorWithoutFilters.visitInterface(valueToCheck)
 		if err != nil {
 			return nil, err
 		}
 		if valueAfterApply != nil {
 			sliceEmptyAfterApply = false
 			adjustedSlice = append(adjustedSlice, valueAfterApply)
-		} else if !shouldFilterSlice {
+		} else if !v.shouldFilterSlice {
 			adjustedSlice = append(adjustedSlice, valueToCheck)
 		}
 	}
@@ -79,16 +83,13 @@ func applyFuncOnSlice(originalSlice []interface{},
 	return adjustedSlice, nil
 }
 
-func applyFuncOnMap(path []ast.Node,
-	originalMap map[string]interface{},
-	funcToApply applyFn,
-	shouldFilterSlice bool, shouldFilterMap bool) (interface{}, error) {
-	currentStep := path[0]
+func (v pathVisitor) visitMap(originalMap map[string]interface{}) (interface{}, error) {
+	currentStep := v.path[0]
 	if currentStep.Identity == nil {
 		return nil, pathError("%v has unsupported fromat", currentStep)
 	}
 
-	nextPath := path[1:]
+	v.path = v.path[1:]
 	key := *currentStep.Identity
 
 	valueToCheck, ok := originalMap[key]
@@ -96,7 +97,7 @@ func applyFuncOnMap(path []ast.Node,
 		return nil, pathError("cannot find key %s in %v", key, originalMap)
 	}
 
-	adjustedValue, err := applyFuncOnPath(valueToCheck, nextPath, funcToApply, shouldFilterSlice, shouldFilterMap)
+	adjustedValue, err := v.visitInterface(valueToCheck)
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +106,7 @@ func applyFuncOnMap(path []ast.Node,
 	}
 
 	adjustedMap := map[string]interface{}{}
-	if !shouldFilterMap {
+	if !v.shouldFilterMap {
 		for k, v := range originalMap {
 			adjustedMap[k] = v
 		}
@@ -114,13 +115,10 @@ func applyFuncOnMap(path []ast.Node,
 	return adjustedMap, nil
 }
 
-func applyFuncOnLastMapOnPath(path []ast.Node,
-	originalMap map[string]interface{},
-	inputState interface{},
-	funcToApply applyFn) (interface{}, error) {
-	if funcToApply != nil {
-		key := *path[0].Identity
-		outputState, err := funcToApply(originalMap, key)
+func (v pathVisitor) visitLastMapOnPath(originalMap map[string]interface{}, inputState interface{}) (interface{}, error) {
+	if v.lastMapFn != nil {
+		key := *v.path[0].Identity
+		outputState, err := v.lastMapFn(originalMap, key)
 		if err != nil {
 			return nil, err
 		}
