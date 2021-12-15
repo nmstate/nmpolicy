@@ -35,7 +35,7 @@ type Lexer interface {
 }
 
 type Parser interface {
-	Parse([]lexer.Token) (ast.Node, error)
+	Parse(string, []lexer.Token) (ast.Node, error)
 }
 
 type Resolver interface {
@@ -69,7 +69,7 @@ func (c Capture) Resolve(
 			return nil, fmt.Errorf("failed to resolve capture expression, err: %v", err)
 		}
 
-		astRoot, err := c.parser.Parse(tokens)
+		astRoot, err := c.parser.Parse(capExpr, tokens)
 		if err != nil {
 			return nil, fmt.Errorf("failed to resolve capture expression, err: %v", err)
 		}

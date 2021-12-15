@@ -53,7 +53,7 @@ func (c CaptureEntry) ResolveCaptureEntryPath(
 		return nil, fmt.Errorf("failed to resolve capture entry path expression: %v", err)
 	}
 
-	captureEntryPathAST, err := c.parser.Parse(captureEntryPathTokens)
+	captureEntryPathAST, err := c.parser.Parse(captureEntryPathExpression, captureEntryPathTokens)
 	if err != nil {
 		return nil, fmt.Errorf("failed to resolve capture entry path expression: %v", err)
 	}
