@@ -44,7 +44,7 @@ type parserStub struct {
 	failParse bool
 }
 
-func (p parserStub) Parse(tokens []lexer.Token) (ast.Node, error) {
+func (p parserStub) Parse(expression string, tokens []lexer.Token) (ast.Node, error) {
 	if p.failParse {
 		return ast.Node{}, fmt.Errorf("parse failed")
 	}

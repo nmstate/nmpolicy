@@ -21,6 +21,7 @@ import (
 	"strconv"
 
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/ast"
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/expression"
 
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/lexer"
 )
@@ -28,6 +29,7 @@ import (
 type Parser struct{}
 
 type parser struct {
+	expression      string
 	tokens          []lexer.Token
 	currentTokenIdx int
 	lastNode        *ast.Node
@@ -38,18 +40,18 @@ func New() Parser {
 	return Parser{}
 }
 
-func newParser(tokens []lexer.Token) *parser {
-	return &parser{tokens: tokens}
+func newParser(expr string, tokens []lexer.Token) *parser {
+	return &parser{expression: expr, tokens: tokens}
 }
 
-func (Parser) Parse(tokens []lexer.Token) (ast.Node, error) {
-	return newParser(tokens).Parse()
+func (Parser) Parse(expr string, tokens []lexer.Token) (ast.Node, error) {
+	return newParser(expr, tokens).Parse()
 }
 
 func (p *parser) Parse() (ast.Node, error) {
 	node, err := p.parse()
 	if err != nil {
-		return ast.Node{}, err
+		return ast.Node{}, expression.WrapError(err, p.expression, p.currentToken().Position)
 	}
 	return node, nil
 }
