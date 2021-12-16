@@ -56,7 +56,7 @@ type resolverStub struct {
 	failResolve bool
 }
 
-func (r resolverStub) Resolve(captureASTPool types.CaptureASTPool,
+func (r resolverStub) Resolve(captureExpressions types.CaptureExpressions, captureASTPool types.CaptureASTPool,
 	state types.NMState, capturedStates types.CapturedStates) (types.CapturedStates, error) {
 	if r.failResolve {
 		return nil, fmt.Errorf("resolve stub failed")
@@ -76,7 +76,7 @@ func (r resolverStub) Resolve(captureASTPool types.CaptureASTPool,
 	return capsState, nil
 }
 
-func (r resolverStub) ResolveCaptureEntryPath(captureEntryPathAST ast.Node,
+func (r resolverStub) ResolveCaptureEntryPath(expression string, captureEntryPathAST ast.Node,
 	capturedStates types.CapturedStates) (interface{}, error) {
 	if r.failResolve {
 		return nil, fmt.Errorf("resolve capture entry path failed")
