@@ -20,8 +20,12 @@ import (
 	"testing"
 
 	assert "github.com/stretchr/testify/require"
+	yaml "sigs.k8s.io/yaml"
 
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/lexer"
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/parser"
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/resolver"
+	"github.com/nmstate/nmpolicy/nmpolicy/internal/types"
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/types/typestest"
 )
 
@@ -74,17 +78,38 @@ interfaces:
 `
 
 type test struct {
+	captureExpressions     string
 	captureASTPool         string
 	capturedStatesCache    string
 	expectedCapturedStates string
 	err                    string
 }
 
-func runTest(t *testing.T, testToRun test) {
+func withCaptureExpressions(t *testing.T, captureExpressions string) test {
+	testToRun := test{}
+	captureASTPool := types.CaptureASTPool{}
+	for captureEntryName, captureEntryExpression := range typestest.ToCaptureExpressions(t, captureExpressions) {
+		l := lexer.New()
+		tokens, err := l.Lex(captureEntryExpression)
+		assert.NoError(t, err)
+		p := parser.New()
+		astRoot, err := p.Parse(captureEntryExpression, tokens)
+		assert.NoError(t, err)
+		captureASTPool[captureEntryName] = astRoot
+	}
+	captureASTPoolMarshaled, err := yaml.Marshal(captureASTPool)
+	assert.NoError(t, err)
+	testToRun.captureASTPool = string(captureASTPoolMarshaled)
+	testToRun.captureExpressions = captureExpressions
+	return testToRun
+}
+
+func runTest(t *testing.T, testToRun *test) {
 	captureASTPool := typestest.ToCaptureASTPool(t, testToRun.captureASTPool)
 	currentState := typestest.ToNMState(t, sourceYAML)
 	capturedStatesCache := typestest.ToCapturedStates(t, testToRun.capturedStatesCache)
-	obtaintedCapturedStates, err := resolver.New().Resolve(captureASTPool, currentState, capturedStatesCache)
+	captureExpressions := typestest.ToCaptureExpressions(t, testToRun.captureExpressions)
+	obtaintedCapturedStates, err := resolver.New().Resolve(captureExpressions, captureASTPool, currentState, capturedStatesCache)
 	if testToRun.err == "" {
 		assert.NoError(t, err)
 		expectedCapturedState := typestest.ToCapturedStates(t, testToRun.expectedCapturedStates)
@@ -120,7 +145,6 @@ func testFilterMapListOnSecondPathIdentity(t *testing.T) {
 		testToRun := test{
 			captureASTPool: `
 default-gw:
-  pos: 1
   eqfilter:
   - pos: 2
     identity: currentState
@@ -147,7 +171,7 @@ default-gw:
         table-id: 254
 `,
 		}
-		runTest(t, testToRun)
+		runTest(t, &testToRun)
 	})
 }
 
@@ -184,7 +208,7 @@ up-interfaces:
           enabled: false
 `,
 		}
-		runTest(t, testToRun)
+		runTest(t, &testToRun)
 	})
 }
 
@@ -228,7 +252,7 @@ specific-ipv4:
         enabled: true
 `,
 		}
-		runTest(t, testToRun)
+		runTest(t, &testToRun)
 	})
 }
 
@@ -298,7 +322,7 @@ base-iface-routes:
         table-id: 254
 `,
 		}
-		runTest(t, testToRun)
+		runTest(t, &testToRun)
 	})
 }
 
@@ -372,36 +396,23 @@ base-iface-routes:
         table-id: 254
 `,
 		}
-		runTest(t, testToRun)
+		runTest(t, &testToRun)
 	})
 }
 
 func testFilterInvalidTypeOnPath(t *testing.T) {
 	t.Run("Filter invalid type on path", func(t *testing.T) {
-		testToRun := test{
-			captureASTPool: `
-invalid-path-type:
-  pos: 1
-  eqfilter:
-  - pos: 2
-    identity: currentState
-  - pos: 3
-    path:
-    - pos: 4
-      identity: interfaces
-    - pos: 5
-      identity: ipv4
-    - pos: 6
-      identity: address
-  - pos: 7
-    string: 10.244.0.1
-`,
-			err: "resolve error: eqfilter error: failed applying operation on the path: " +
-				"error comparing the expected and obtained values : " +
-				"the value [map[ip:10.244.0.1 prefix-length:24] map[ip:169.254.1.0 prefix-length:16]] of type []interface {} " +
-				"not supported,curretly only string values are supported",
-		}
-		runTest(t, testToRun)
+		testToRun := withCaptureExpressions(t, `
+invalid-path-type: interfaces.ipv4.address=="10.244.0.1"
+`)
+		testToRun.err = "resolve error: eqfilter error: failed applying operation on the path: " +
+			"error comparing the expected and obtained values : " +
+			"the value [map[ip:10.244.0.1 prefix-length:24] map[ip:169.254.1.0 prefix-length:16]] of type []interface {} " +
+			"not supported,curretly only string values are supported" + `
+| interfaces.ipv4.address=="10.244.0.1"
+| .......................^`
+
+		runTest(t, &testToRun)
 	})
 }
 
@@ -440,74 +451,43 @@ description-eth1:
         dhcp: false
         enabled: true
 `}
-		runTest(t, testToRun)
+		runTest(t, &testToRun)
 	})
 }
 
 func testFilterBadCaptureRef(t *testing.T) {
 	t.Run("Filter list with non existing capture reference", func(t *testing.T) {
-		testToRun := test{
-			captureASTPool: `
-base-iface-routes:
-  pos: 1
-  eqfilter:
-  - pos: 2
-    identity: currentState
-  - pos: 3
-    path:
-    - pos: 4
-      identity: routes
-    - pos: 5
-      identity: running
-    - pos: 6
-      identity: next-hop-interface
-  - pos: 7
-    path:
-    - pos: 8
-      identity: capture
-`,
-			err: "resolve error: eqfilter error: path capture ref is missing capture entry name",
-		}
-		runTest(t, testToRun)
+		testToRun := withCaptureExpressions(t, `
+base-iface-routes: routes.running.next-hop-interface==capture
+`)
+		testToRun.err = `resolve error: eqfilter error: path capture ref is missing capture entry name
+| routes.running.next-hop-interface==capture
+| .................................^`
+
+		runTest(t, &testToRun)
 	})
 }
 
 func testFilterCaptureRefNotFound(t *testing.T) {
 	t.Run("Filter list with non existing capture reference", func(t *testing.T) {
-		testToRun := test{
-			captureASTPool: `
-base-iface-routes:
-  pos: 1
-  eqfilter:
-  - pos: 2
-    identity: currentState
-  - pos: 3
-    path:
-    - pos: 4
-      identity: routes
-    - pos: 5
-      identity: running
-    - pos: 6
-      identity: next-hop-interface
-  - pos: 7
-    path:
-    - pos: 8
-      identity: capture
-    - pos: 9
-      identity: default-gw
-    - pos: 11
-      identity: routes
-`,
-			err: "resolve error: eqfilter error: capture entry 'default-gw' not found",
-		}
-		runTest(t, testToRun)
+		testToRun := withCaptureExpressions(t, `
+base-iface-routes: routes.running.next-hop-interface==capture.default-gw.routes
+`)
+		testToRun.err = `resolve error: eqfilter error: capture entry 'default-gw' not found
+| routes.running.next-hop-interface==capture.default-gw.routes
+| .................................^`
+
+		runTest(t, &testToRun)
 	})
 }
 
 func testFilterCaptureRefInvalidStateForPathMap(t *testing.T) {
 	t.Run("Filter list with capture reference and invalid identity path step", func(t *testing.T) {
-		testToRun := test{
-			capturedStatesCache: `
+		testToRun := withCaptureExpressions(t, `
+base-iface-routes: routes.running.next-hop-interface==capture.default-gw.routes.running.badfield.next-hop-interface
+`)
+
+		testToRun.capturedStatesCache = `
 default-gw:
   state:
     routes:
@@ -516,48 +496,23 @@ default-gw:
          next-hop-address: 192.168.100.1
          next-hop-interface: eth1
          table-id: 254
-`,
-			captureASTPool: `
-base-iface-routes:
-  pos: 1
-  eqfilter:
-  - pos: 2
-    identity: currentState
-  - pos: 3
-    path:
-    - pos: 4
-      identity: routes
-    - pos: 5
-      identity: running
-    - pos: 6
-      identity: next-hop-interface
-  - pos: 7
-    path:
-    - pos: 8
-      identity: capture
-    - pos: 9
-      identity: default-gw
-    - pos: 11
-      identity: routes
-    - pos: 12
-      identity: running
-    - pos: 13
-      identity: badfield
-    - pos: 14
-      identity: next-hop-interface
-`,
-			err: "resolve error: eqfilter error: failed walking non map state " +
-				"'[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]' " +
-				"with path '[routes running badfield]'",
-		}
-		runTest(t, testToRun)
+`
+		testToRun.err = "resolve error: eqfilter error: failed walking non map state " +
+			"'[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]' " +
+			"with path '[routes running badfield]'" + `
+| routes.running.next-hop-interface==capture.default-gw.routes.running.badfield.next-hop-interface
+| .................................^`
+
+		runTest(t, &testToRun)
 	})
 }
 
 func testFilterCaptureRefInvalidStateForPathSlice(t *testing.T) {
 	t.Run("Filter list with capture reference and invalid numeric path step", func(t *testing.T) {
-		testToRun := test{
-			capturedStatesCache: `
+		testToRun := withCaptureExpressions(t, `
+base-iface-routes: routes.running.next-hop-interface==capture.default-gw.routes.1.0.next-hop-interface
+`)
+		testToRun.capturedStatesCache = `
 default-gw:
   state: 
     routes:
@@ -566,48 +521,23 @@ default-gw:
          next-hop-address: 192.168.100.1
          next-hop-interface: eth1
          table-id: 254
-`,
-			captureASTPool: `
-base-iface-routes:
-  pos: 1
-  eqfilter:
-  - pos: 2
-    identity: currentState
-  - pos: 3
-    path:
-    - pos: 4
-      identity: routes
-    - pos: 5
-      identity: running
-    - pos: 6
-      identity: next-hop-interface
-  - pos: 7
-    path:
-    - pos: 8
-      identity: capture
-    - pos: 9
-      identity: default-gw
-    - pos: 11
-      identity: routes
-    - pos: 12
-      number: 1
-    - pos: 13
-      number: 0
-    - pos: 14
-      identity: next-hop-interface
-`,
-			err: "resolve error: eqfilter error: failed walking non slice state " +
-				"'map[running:[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]]' " +
-				"with path '[routes 1]'",
-		}
-		runTest(t, testToRun)
+`
+		testToRun.err = "resolve error: eqfilter error: failed walking non slice state " +
+			"'map[running:[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]]' " +
+			"with path '[routes 1]'" + `
+| routes.running.next-hop-interface==capture.default-gw.routes.1.0.next-hop-interface
+| .................................^`
+
+		runTest(t, &testToRun)
 	})
 }
 
 func testFilterCaptureRefPathNotFoundMap(t *testing.T) {
 	t.Run("Filter list with capture reference and path with not found identity step", func(t *testing.T) {
-		testToRun := test{
-			capturedStatesCache: `
+		testToRun := withCaptureExpressions(t, `
+base-iface-routes: routes.running.next-hop-interface==capture.default-gw.routes.badfield
+`)
+		testToRun.capturedStatesCache = `
 default-gw:
   state: 
     routes:
@@ -616,43 +546,22 @@ default-gw:
         next-hop-address: 192.168.100.1
         next-hop-interface: eth1
         table-id: 254
-`,
-			captureASTPool: `
-base-iface-routes:
-  pos: 1
-  eqfilter:
-  - pos: 2
-    identity: currentState
-  - pos: 3
-    path:
-    - pos: 4
-      identity: routes
-    - pos: 5
-      identity: running
-    - pos: 6
-      identity: next-hop-interface
-  - pos: 7
-    path:
-    - pos: 8
-      identity: capture
-    - pos: 9
-      identity: default-gw
-    - pos: 11
-      identity: routes
-    - pos: 12
-      identity: badfield
-`,
-			err: "resolve error: eqfilter error: step 'badfield' from path '[routes badfield]' not found at map state " +
-				"'map[running:[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]]'",
-		}
-		runTest(t, testToRun)
+`
+		testToRun.err = "resolve error: eqfilter error: step 'badfield' from path '[routes badfield]' not found at map state " +
+			"'map[running:[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]]'" + `
+| routes.running.next-hop-interface==capture.default-gw.routes.badfield
+| .................................^`
+
+		runTest(t, &testToRun)
 	})
 }
 
 func testFilterCaptureRefPathNotFoundSlice(t *testing.T) {
 	t.Run("Filter list with capture reference and path with not found numeric step", func(t *testing.T) {
-		testToRun := test{
-			capturedStatesCache: `
+		testToRun := withCaptureExpressions(t, `
+base-interface-routes: routes.running.next-hop-interface==capture.default-gw.routes.running.6
+`)
+		testToRun.capturedStatesCache = `
 default-gw:
   state:
     routes:
@@ -661,68 +570,26 @@ default-gw:
         next-hop-address: 192.168.100.1
         next-hop-interface: eth1
         table-id: 254
-`,
-			captureASTPool: `
-base-iface-routes:
-  pos: 1
-  eqfilter:
-  - pos: 2
-    identity: currentState
-  - pos: 3
-    path:
-    - pos: 4
-      identity: routes
-    - pos: 5
-      identity: running
-    - pos: 6
-      identity: next-hop-interface
-  - pos: 7
-    path:
-    - pos: 8
-      identity: capture
-    - pos: 9
-      identity: default-gw
-    - pos: 11
-      identity: routes
-    - pos: 12
-      identity: running
-    - pos: 13
-      number: 6
-`,
-			err: "resolve error: eqfilter error: step '6' from path '[routes running 6]' not found at slice state " +
-				"'[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]'",
-		}
-		runTest(t, testToRun)
+`
+		testToRun.err = "resolve error: eqfilter error: step '6' from path '[routes running 6]' not found at slice state " +
+			"'[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]'" + `
+| routes.running.next-hop-interface==capture.default-gw.routes.running.6
+| .................................^`
+
+		runTest(t, &testToRun)
 	})
 }
 
 func testFilterNonCaptureRefPathAtThirdArg(t *testing.T) {
 	t.Run("Filter list with path as third argument without capture reference", func(t *testing.T) {
-		testToRun := test{
-			captureASTPool: `
-base-iface-routes:
-  pos: 1
-  eqfilter:
-  - pos: 2
-    identity: currentState
-  - pos: 3
-    path:
-    - pos: 4
-      identity: routes
-    - pos: 5
-      identity: running
-    - pos: 6
-      identity: next-hop-interface
-  - pos: 7
-    path:
-    - pos: 8
-      identity: routes
-    - pos: 9
-      identity: running
-`,
-			err: "resolve error: eqfilter error: not supported filtered value path. Only paths with a capture entry reference are supported",
-		}
-		runTest(t, testToRun)
+		testToRun := withCaptureExpressions(t, `
+base-iface-routes: routes.running.next-hop-interface==routes.running
+`)
+
+		testToRun.err = `resolve error: eqfilter error: not supported filtered value path. Only paths with a capture entry reference are supported
+| routes.running.next-hop-interface==routes.running
+| .................................^`
+		runTest(t, &testToRun)
 	})
 }
 
@@ -798,7 +665,7 @@ bridge-routes:
           enabled: false
 `,
 		}
-		runTest(t, testToRun)
+		runTest(t, &testToRun)
 	})
 }
 
@@ -857,6 +724,6 @@ bridge-routes:
         table-id: 254
 `,
 		}
-		runTest(t, testToRun)
+		runTest(t, &testToRun)
 	})
 }

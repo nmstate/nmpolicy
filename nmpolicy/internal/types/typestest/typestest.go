@@ -35,6 +35,11 @@ func ToIface(t *testing.T, marshaled string) (iface interface{}) {
 	return iface
 }
 
+func ToCaptureExpressions(t *testing.T, marshaled string) (captureExpressions types.CaptureExpressions) {
+	assert.NoError(t, yaml.Unmarshal([]byte(marshaled), &captureExpressions))
+	return captureExpressions
+}
+
 func ToCapturedStates(t *testing.T, marshaled string) (capturedStates types.CapturedStates) {
 	assert.NoError(t, yaml.Unmarshal([]byte(marshaled), &capturedStates))
 	return capturedStates
