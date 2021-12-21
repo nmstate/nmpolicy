@@ -36,6 +36,10 @@ func TestBasicPolicy(t *testing.T) {
 		testPolicyWithFullCache(t)
 		testPolicyWithPartialCache(t)
 		testGenerateUniqueTimestamps(t)
+
+		testFailureLexer(t)
+		testFailureParser(t)
+		testFailureResolver(t)
 	})
 }
 
@@ -436,6 +440,79 @@ func testGenerateUniqueTimestamps(t *testing.T) {
 		assert.Equal(t, cacheState.Capture[capID1].MetaInfo, obtained.Cache.Capture[capID1].MetaInfo)
 		assert.Greater(t, obtained.MetaInfo.TimeStamp.Sub(beforeGenerate), time.Duration(0))
 		assert.Greater(t, obtained.Cache.Capture[capID0].MetaInfo.TimeStamp.Sub(beforeGenerate), time.Duration(0))
+	})
+}
+
+func testFailureLexer(t *testing.T) {
+	t.Run("with lexer error", func(t *testing.T) {
+		stateData := []byte(`routes:
+  running:
+  - destination: 0.0.0.0/0
+    next-hop-address: 192.168.100.1
+    next-hop-interface: eth1
+    table-id: 254
+`)
+
+		policySpec := types.PolicySpec{
+			Capture: map[string]string{
+				"cap1": `routes.running.destination==-"0.0.0.0/0"`,
+			},
+			DesiredState: stateData,
+		}
+		_, err := nmpolicy.GenerateState(policySpec, stateData, types.CachedState{})
+		assert.EqualError(t, err, `failed to generate state, err: failed to resolve capture expression, err: illegal rune -
+| routes.running.destination==-"0.0.0.0/0"
+| ............................^`)
+	})
+}
+
+func testFailureParser(t *testing.T) {
+	t.Run("with parser error", func(t *testing.T) {
+		stateData := []byte(`routes:
+  running:
+  - destination: 0.0.0.0/0
+    next-hop-address: 192.168.100.1
+    next-hop-interface: eth1
+    table-id: 254
+`)
+
+		policySpec := types.PolicySpec{
+			Capture: map[string]string{
+				"cap1": `routes.running.destination=="0.0.0.0/0" |`,
+			},
+			DesiredState: stateData,
+		}
+		_, err := nmpolicy.GenerateState(policySpec, stateData, types.CachedState{})
+		assert.EqualError(t, err,
+			"failed to generate state, err: failed to resolve capture expression, "+
+				"err: invalid pipe: only paths can be piped in"+`
+| routes.running.destination=="0.0.0.0/0" |
+| ........................................^`)
+	})
+}
+
+func testFailureResolver(t *testing.T) {
+	t.Run("with resolver error", func(t *testing.T) {
+		stateData := []byte(`routes:
+  running:
+  - destination: 0.0.0.0/0
+    next-hop-address: 192.168.100.1
+    next-hop-interface: eth1
+    table-id: 254
+`)
+
+		policySpec := types.PolicySpec{
+			Capture: map[string]string{
+				"cap1": `interfaces | routes.running.destination=="0.0.0.0/0"`,
+			},
+			DesiredState: stateData,
+		}
+		_, err := nmpolicy.GenerateState(policySpec, stateData, types.CachedState{})
+		assert.EqualError(t, err,
+			"failed to generate state, err: failed to resolve capture expression, "+
+				"err: resolve error: eqfilter error: invalid path input source, only capture reference is supported"+`
+| interfaces | routes.running.destination=="0.0.0.0/0"
+| .......................................^`)
 	})
 }
 
