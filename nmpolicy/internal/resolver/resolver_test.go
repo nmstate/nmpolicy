@@ -51,6 +51,7 @@ routes:
     table-id: 254
 interfaces:
   - name: eth1
+    description: "1st ethernet interface"
     type: ethernet
     state: up
     ipv4:
@@ -107,7 +108,7 @@ func TestFilter(t *testing.T) {
 		testFilterCaptureRefInvalidStateForPathMap(t)
 		testFilterCaptureRefInvalidStateForPathSlice(t)
 		testFilterInvalidTypeOnPath(t)
-		testFilterInvalidPath(t)
+		testFilterOptionalField(t)
 		testFilterNonCaptureRefPathAtThirdArg(t)
 		testReplaceCurrentState(t)
 		testReplaceCapturedState(t)
@@ -214,6 +215,7 @@ specific-ipv4:
   state: 
     interfaces:
     - name: eth1
+      description: "1st ethernet interface"
       type: ethernet
       state: up
       ipv4:
@@ -403,11 +405,11 @@ invalid-path-type:
 	})
 }
 
-func testFilterInvalidPath(t *testing.T) {
-	t.Run("Filter invalid path", func(t *testing.T) {
+func testFilterOptionalField(t *testing.T) {
+	t.Run("Filter optional field", func(t *testing.T) {
 		testToRun := test{
 			captureASTPool: `
-invalid-path-identity:
+description-eth1:
   pos: 1
   eqfilter:
   - pos: 2
@@ -417,14 +419,27 @@ invalid-path-identity:
     - pos: 4
       identity: interfaces
     - pos: 5
-      identity: name-invalid-path
+      identity: description 
   - pos: 6
-    string: eth0
+    string: 1st ethernet interface 
 `,
-			err: "resolve error: eqfilter error: failed applying operation on the path: cannot find key name-invalid-path in " +
-				"map[ipv4:map[address:[map[ip:10.244.0.1 prefix-length:24] " +
-				"map[ip:169.254.1.0 prefix-length:16]] dhcp:false enabled:true] name:eth1 state:up type:ethernet]",
-		}
+			expectedCapturedStates: `
+description-eth1: 
+  state:
+    interfaces:
+    - name: eth1
+      description: "1st ethernet interface"
+      type: ethernet
+      state: up
+      ipv4:
+        address:
+        - ip: 10.244.0.1
+          prefix-length: 24
+        - ip: 169.254.1.0
+          prefix-length: 16
+        dhcp: false
+        enabled: true
+`}
 		runTest(t, testToRun)
 	})
 }
@@ -761,6 +776,7 @@ bridge-routes:
         table-id: 254
     interfaces:
       - name: eth1
+        description: "1st ethernet interface"
         type: ethernet
         state: up
         ipv4:
