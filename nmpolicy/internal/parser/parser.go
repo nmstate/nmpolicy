@@ -200,34 +200,8 @@ func (p *parser) parseEqFilter() error {
 		Meta:     ast.Meta{Position: p.currentToken().Position},
 		EqFilter: &ast.TernaryOperator{},
 	}
-	if p.lastNode == nil {
-		return invalidEqualityFilterError("missing left hand argument")
-	}
-	if p.lastNode.Path == nil {
-		return invalidEqualityFilterError("left hand argument is not a path")
-	}
-
-	p.fillInPipedInOrCurrentState(&operator.EqFilter[0])
-
-	operator.EqFilter[1] = *p.lastNode
-
-	p.nextToken()
-
-	if p.currentToken().Type == lexer.STRING {
-		if err := p.parseString(); err != nil {
-			return err
-		}
-		operator.EqFilter[2] = *p.lastNode
-	} else if p.currentToken().Type == lexer.IDENTITY {
-		err := p.parsePath()
-		if err != nil {
-			return err
-		}
-		operator.EqFilter[2] = *p.lastNode
-	} else if p.currentToken().Type == lexer.EOF {
-		return invalidEqualityFilterError("missing right hand argument")
-	} else {
-		return invalidEqualityFilterError("right hand argument is not a string or identity")
+	if err := p.fillInTernaryOperator(operator.EqFilter); err != nil {
+		return wrapWithInvalidEqualityFilterError(err)
 	}
 	p.lastNode = operator
 	return nil
@@ -238,29 +212,42 @@ func (p *parser) parseReplace() error {
 		Meta:    ast.Meta{Position: p.currentToken().Position},
 		Replace: &ast.TernaryOperator{},
 	}
+	if err := p.fillInTernaryOperator(operator.Replace); err != nil {
+		return wrapWithInvalidReplaceError(err)
+	}
+	p.lastNode = operator
+	return nil
+}
+
+func (p *parser) fillInTernaryOperator(operator *ast.TernaryOperator) error {
 	if p.lastNode == nil {
-		return invalidReplaceError("missing left hand argument")
+		return fmt.Errorf("missing left hand argument")
 	}
 	if p.lastNode.Path == nil {
-		return invalidReplaceError("left hand argument is not a path")
+		return fmt.Errorf("left hand argument is not a path")
 	}
 
-	p.fillInPipedInOrCurrentState(&operator.Replace[0])
+	p.fillInPipedInOrCurrentState(&operator[0])
 
-	operator.Replace[1] = *p.lastNode
+	operator[1] = *p.lastNode
 
 	p.nextToken()
 	if p.currentToken().Type == lexer.STRING {
 		if err := p.parseString(); err != nil {
 			return err
 		}
-		operator.Replace[2] = *p.lastNode
+		operator[2] = *p.lastNode
+	} else if p.currentToken().Type == lexer.IDENTITY {
+		err := p.parsePath()
+		if err != nil {
+			return err
+		}
+		operator[2] = *p.lastNode
 	} else if p.currentToken().Type == lexer.EOF {
-		return invalidReplaceError("missing right hand argument")
+		return fmt.Errorf("missing right hand argument")
 	} else {
-		return invalidReplaceError("right hand argument is not a string")
+		return fmt.Errorf("right hand argument is not a string or identity")
 	}
-	p.lastNode = operator
 	return nil
 }
 

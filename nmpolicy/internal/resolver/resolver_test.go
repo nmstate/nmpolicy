@@ -135,8 +135,10 @@ func TestFilter(t *testing.T) {
 		testFilterInvalidTypeOnPath(t)
 		testFilterOptionalField(t)
 		testFilterNonCaptureRefPathAtThirdArg(t)
+
 		testReplaceCurrentState(t)
 		testReplaceCapturedState(t)
+		testReplaceWithCaptureRef(t)
 	})
 }
 
@@ -721,6 +723,100 @@ bridge-routes:
       - destination: 0.0.0.0/0
         next-hop-address: 192.168.100.1
         next-hop-interface: br1
+        table-id: 254
+`,
+		}
+		runTest(t, &testToRun)
+	})
+}
+
+func testReplaceWithCaptureRef(t *testing.T) {
+	t.Run("Replace list of structs field from capture reference with capture reference value", func(t *testing.T) {
+		testToRun := test{
+			capturedStatesCache: `
+default-gw:
+  state:
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: br1
+        table-id: 254
+
+br1-bridge:
+  state:
+    interfaces:
+    - name: br1
+      type: linux-bridge
+      bridge:
+        port:
+        - name: eth3
+`,
+
+			captureASTPool: `
+default-gw-br1-first-port:
+  pos: 1
+  replace:
+  - pos: 2
+    path:
+    - pos: 3
+      identity: capture
+    - pos: 4
+      identity: default-gw
+  - pos: 3
+    path:
+    - pos: 4
+      identity: routes
+    - pos: 5
+      identity: running
+    - pos: 6
+      identity: next-hop-interface
+  - pos: 7
+    path:
+    - pos: 8
+      identity: capture
+    - pos: 9
+      identity: br1-bridge
+    - pos: 10
+      identity: interfaces
+    - pos: 11
+      number: 0
+    - pos: 12
+      identity: bridge
+    - pos: 13
+      identity: port
+    - pos: 14
+      number: 0
+    - pos: 15
+      identity: name
+`,
+
+			expectedCapturedStates: `
+default-gw:
+  state:
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: br1
+        table-id: 254
+
+br1-bridge:
+  state:
+    interfaces:
+    - name: br1
+      type: linux-bridge
+      bridge:
+        port:
+        - name: eth3
+
+default-gw-br1-first-port:
+  state:
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth3
         table-id: 254
 `,
 		}

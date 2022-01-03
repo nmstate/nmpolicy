@@ -32,6 +32,7 @@ func TestParser(t *testing.T) {
 	testParsePath(t)
 	testParseEqFilter(t)
 	testParseReplace(t)
+	testParseReplaceWithPath(t)
 	testParseCapturePipeReplace(t)
 
 	testParseBasicFailures(t)
@@ -222,7 +223,7 @@ func testParseReplaceFailure(t *testing.T) {
 			),
 		),
 
-		expectError(`invalid replace: right hand argument is not a string
+		expectError(`invalid replace: right hand argument is not a string or identity
 | routes.running.destination:=:=
 | ............................^`,
 			fromTokens(
@@ -369,6 +370,57 @@ replace:
 				identity("next-hop-interface"),
 				replace(),
 				str("br1"),
+				eof(),
+			),
+		),
+	}
+	runTest(t, tests)
+}
+
+func testParseReplaceWithPath(t *testing.T) {
+	var tests = []test{
+		expectAST(t, `
+pos: 33
+replace:
+- pos: 0
+  identity: currentState
+- pos: 0 
+  path: 
+  - pos: 0 
+    identity: routes
+  - pos: 7
+    identity: running
+  - pos: 15
+    identity: next-hop-interface
+- pos: 35
+  path:
+  - pos: 35
+    identity: capture
+  - pos: 43
+    identity: primary-nic
+  - pos: 55
+    identity: interfaces
+  - pos: 66
+    number: 0
+  - pos: 68
+    identity: name
+`,
+			fromTokens(
+				identity("routes"),
+				dot(),
+				identity("running"),
+				dot(),
+				identity("next-hop-interface"),
+				replace(),
+				identity("capture"),
+				dot(),
+				identity("primary-nic"),
+				dot(),
+				identity("interfaces"),
+				dot(),
+				number(0),
+				dot(),
+				identity("name"),
 				eof(),
 			),
 		),
