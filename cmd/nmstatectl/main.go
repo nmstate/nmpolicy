@@ -17,16 +17,22 @@
 package main
 
 import (
-	"github.com/nmstate/nmpolicy/nmpolicy"
-	"github.com/nmstate/nmpolicy/nmpolicy/types"
+	"os"
+
+	"github.com/spf13/cobra"
 )
 
+// rootCmd represents the base command when called without any subcommands
+var rootCmd = &cobra.Command{
+	Use:   "nmpolicyctl",
+	Short: "This tool helps you to generate dynamic NMState configurations.\nThe generated NMState configuration is written to STDOUT.",
+}
+
 func main() {
-	policySpec := types.PolicySpec{}
-	cachedState := types.CachedState{}
-	currentState := []byte{}
-	_, err := nmpolicy.GenerateState(policySpec, currentState, cachedState)
+	rootCmd.AddCommand(genCmd())
+	rootCmd.SilenceUsage = true
+	err := rootCmd.Execute()
 	if err != nil {
-		panic(err)
+		os.Exit(1)
 	}
 }
