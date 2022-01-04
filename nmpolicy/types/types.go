@@ -16,7 +16,9 @@
 
 package types
 
-import "time"
+import (
+	"time"
+)
 
 type NMState []byte
 
