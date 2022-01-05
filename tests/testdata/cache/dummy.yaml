@@ -1,0 +1,6 @@
+cap0:
+  MetaInfo:
+    TimeStamp: "2022-01-05T13:34:19.093163227Z"
+    Version: "0"
+  State:
+    name: some captured state

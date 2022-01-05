@@ -29,6 +29,7 @@ import (
 
 	"github.com/nmstate/nmpolicy/nmpolicy"
 	"github.com/nmstate/nmpolicy/nmpolicy/types"
+	"github.com/nmstate/nmpolicy/nmpolicy/types/typestest"
 )
 
 const (
@@ -113,4 +114,16 @@ func convertToPolicyYAML(policyMD []byte) []byte {
 	replaced := strings.ReplaceAll(string(policyMD), "{% raw %}", "")
 	replaced = strings.ReplaceAll(replaced, "{% endraw %}", "")
 	return []byte(replaced)
+}
+
+func formatCapturedStates(capturedStates map[string]types.CaptureState) (map[string]types.CaptureState, error) {
+	for captureID, captureState := range capturedStates {
+		formatedYAML, err := typestest.FormatYAML(captureState.State)
+		if err != nil {
+			return nil, err
+		}
+		captureState.State = formatedYAML
+		capturedStates[captureID] = captureState
+	}
+	return capturedStates, nil
 }

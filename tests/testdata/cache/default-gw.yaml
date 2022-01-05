@@ -1,0 +1,11 @@
+default-gw: 
+  MetaInfo:
+    Version: "0"
+  State:
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+

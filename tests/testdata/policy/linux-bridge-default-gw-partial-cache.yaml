@@ -1,0 +1,20 @@
+capture:
+  default-gw: override me with the cache
+  base-iface: interfaces.name==capture.default-gw.routes.running.0.next-hop-interface
+  base-iface-routes: routes.running.next-hop-interface==capture.default-gw.routes.running.0.next-hop-interface
+  bridge-routes: capture.base-iface-routes | routes.running.next-hop-interface:="br1"
+desiredState:
+  interfaces:
+  - name: br1
+    description: Linux bridge with base interface as a port
+    type: linux-bridge
+    state: up
+    ipv4: "{{ capture.base-iface.interfaces.0.ipv4 }}"
+    bridge:
+      options:
+        stp:
+          enabled: false
+      port:
+      - name: "{{ capture.base-iface.interfaces.0.name }}"
+  routes:
+    config: "{{ capture.bridge-routes.routes.running }}"
