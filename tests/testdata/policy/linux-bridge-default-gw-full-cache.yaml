@@ -1,0 +1,18 @@
+capture:
+  base-iface: override me with the cache
+  bridge-routes: override me with the cache
+desiredState:
+  interfaces:
+  - name: br1
+    description: Linux bridge with base interface as a port
+    type: linux-bridge
+    state: up
+    ipv4: "{{ capture.base-iface.interfaces.0.ipv4 }}"
+    bridge:
+      options:
+        stp:
+          enabled: false
+      port:
+      - name: "{{ capture.base-iface.interfaces.0.name }}"
+  routes:
+    config: "{{ capture.bridge-routes.routes.running }}"
