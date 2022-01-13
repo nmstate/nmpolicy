@@ -111,7 +111,7 @@ func (r resolver) resolveCaptureASTEntry() (types.NMState, error) {
 	} else if r.currentNode.Replace != nil {
 		return r.resolveReplace()
 	}
-	return nil, fmt.Errorf("root node has unsupported operation : %+v", *r.currentNode)
+	return nil, fmt.Errorf("root node has unsupported operation : %s", *r.currentNode)
 }
 
 func (r resolver) resolveEqFilter() (types.NMState, error) {
@@ -166,7 +166,7 @@ func (r resolver) resolveInputSource() (types.NMState, error) {
 			return nil, err
 		}
 		if resolvedPath.captureEntryName == "" {
-			return nil, fmt.Errorf("invalid path input source, only capture reference is supported")
+			return nil, fmt.Errorf("invalid path input source (%s), only capture reference is supported", r.currentNode)
 		}
 		capturedState, err := r.resolveCaptureEntryName(resolvedPath.captureEntryName)
 		if err != nil {
@@ -175,7 +175,7 @@ func (r resolver) resolveInputSource() (types.NMState, error) {
 		return capturedState, nil
 	}
 
-	return nil, fmt.Errorf("invalid input source %v, only current state or capture reference is supported", *r.currentNode)
+	return nil, fmt.Errorf("invalid input source (%s), only current state or capture reference is supported", *r.currentNode)
 }
 
 func (r resolver) resolveStringOrCaptureEntryPath() (interface{}, error) {
