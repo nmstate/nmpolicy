@@ -179,8 +179,8 @@ func (r resolver) resolveInputSource() (types.NMState, error) {
 }
 
 func (r resolver) resolveStringOrCaptureEntryPath() (interface{}, error) {
-	if r.currentNode.String != nil {
-		return *r.currentNode.String, nil
+	if r.currentNode.Str != nil {
+		return *r.currentNode.Str, nil
 	} else if r.currentNode.Path != nil {
 		return r.resolveCaptureEntryPath()
 	} else {
