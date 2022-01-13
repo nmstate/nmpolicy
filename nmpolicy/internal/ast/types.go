@@ -23,7 +23,7 @@ type Meta struct {
 type TernaryOperator [3]Node
 type VariadicOperator []Node
 type Terminal struct {
-	String   *string `json:"string,omitempty"`
+	Str      *string `json:"string,omitempty"`
 	Identity *string `json:"identity,omitempty"`
 	Number   *int    `json:"number,omitempty"`
 }

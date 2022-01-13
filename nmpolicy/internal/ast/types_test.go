@@ -63,7 +63,7 @@ eqfilter:
 				{Meta: ast.Meta{Position: 6}, Terminal: ast.Terminal{Identity: strPtr("running")}},
 				{Meta: ast.Meta{Position: 7}, Terminal: ast.Terminal{Identity: strPtr("destination")}},
 			}},
-			{Meta: ast.Meta{Position: 8}, Terminal: ast.Terminal{String: strPtr("0.0.0.0/0")}},
+			{Meta: ast.Meta{Position: 8}, Terminal: ast.Terminal{Str: strPtr("0.0.0.0/0")}},
 		},
 	}
 	assert.Equal(t, expectedAST, obtainedAST)

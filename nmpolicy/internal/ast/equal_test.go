@@ -38,35 +38,35 @@ func TestTeminalDeepEqual(t *testing.T) {
 		expected bool
 	}{
 		{ast.Terminal{Identity: &literalA}, ast.Terminal{Identity: &literalA}, true},
-		{ast.Terminal{String: &literalA}, ast.Terminal{String: &literalA}, true},
+		{ast.Terminal{Str: &literalA}, ast.Terminal{Str: &literalA}, true},
 		{
-			ast.Terminal{String: &literalA, Identity: &literalB},
-			ast.Terminal{String: &literalA, Identity: &literalB},
+			ast.Terminal{Str: &literalA, Identity: &literalB},
+			ast.Terminal{Str: &literalA, Identity: &literalB},
 			true,
 		},
 		{
-			ast.Terminal{String: nil},
-			ast.Terminal{String: nil},
+			ast.Terminal{Str: nil},
+			ast.Terminal{Str: nil},
 			true,
 		},
 		{
-			ast.Terminal{String: nil},
-			ast.Terminal{String: &literalA},
+			ast.Terminal{Str: nil},
+			ast.Terminal{Str: &literalA},
 			false,
 		},
 		{
-			ast.Terminal{String: &literalA},
-			ast.Terminal{String: &literalB},
+			ast.Terminal{Str: &literalA},
+			ast.Terminal{Str: &literalB},
 			false,
 		},
 		{
-			ast.Terminal{String: &literalA},
-			ast.Terminal{String: newPtr(literalA)},
+			ast.Terminal{Str: &literalA},
+			ast.Terminal{Str: newPtr(literalA)},
 			true,
 		},
 		{
-			ast.Terminal{String: &literalA},
-			ast.Terminal{String: newPtr(literalB)},
+			ast.Terminal{Str: &literalA},
+			ast.Terminal{Str: newPtr(literalB)},
 			false,
 		},
 		{
@@ -90,8 +90,8 @@ func TestTeminalDeepEqual(t *testing.T) {
 			false,
 		},
 		{
-			ast.Terminal{Identity: &literalA, String: &literalA},
-			ast.Terminal{Identity: &literalB, String: newPtr(literalA)},
+			ast.Terminal{Identity: &literalA, Str: &literalA},
+			ast.Terminal{Identity: &literalB, Str: newPtr(literalA)},
 			false,
 		},
 	}

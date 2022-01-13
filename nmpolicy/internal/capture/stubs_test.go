@@ -49,7 +49,7 @@ func (p parserStub) Parse(expression string, tokens []lexer.Token) (ast.Node, er
 		return ast.Node{}, fmt.Errorf("parse failed")
 	}
 	literal := fmt.Sprintf(`{"parser": %s}`, tokens[0].Literal)
-	return ast.Node{Terminal: ast.Terminal{String: &literal}}, nil
+	return ast.Node{Terminal: ast.Terminal{Str: &literal}}, nil
 }
 
 type resolverStub struct {
@@ -64,7 +64,7 @@ func (r resolverStub) Resolve(captureExpressions types.CaptureExpressions, captu
 	capsState := types.CapturedStates{}
 	for id, entry := range captureASTPool {
 		state := types.NMState{}
-		marshaled := fmt.Sprintf(`{"resolver": %s}`, *entry.String)
+		marshaled := fmt.Sprintf(`{"resolver": %s}`, *entry.Str)
 		if err := yaml.Unmarshal([]byte(marshaled), &state); err != nil {
 			return nil, fmt.Errorf("resolve stub failed: unmarshaling `%s`: %v", marshaled, err)
 		}
@@ -81,7 +81,7 @@ func (r resolverStub) ResolveCaptureEntryPath(expression string, captureEntryPat
 	if r.failResolve {
 		return nil, fmt.Errorf("resolve capture entry path failed")
 	}
-	return fmt.Sprintf(`{"resolver": %s}`, *captureEntryPathAST.String), nil
+	return fmt.Sprintf(`{"resolver": %s}`, *captureEntryPathAST.Str), nil
 }
 
 func defaultStubCapturedState(t *testing.T, expression string) types.CapturedState {

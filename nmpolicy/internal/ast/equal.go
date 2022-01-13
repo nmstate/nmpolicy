@@ -28,5 +28,5 @@ func deepEqualStringPtr(lhs, rhs *string) bool {
 
 func (lhs Terminal) DeepEqual(rhs Terminal) bool {
 	return deepEqualStringPtr(rhs.Identity, lhs.Identity) &&
-		deepEqualStringPtr(rhs.String, lhs.String)
+		deepEqualStringPtr(rhs.Str, lhs.Str)
 }
