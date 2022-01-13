@@ -16,6 +16,8 @@
 
 package ast
 
+import "fmt"
+
 type Meta struct {
 	Position int `json:"pos"`
 }
@@ -34,4 +36,30 @@ type Node struct {
 	Replace  *TernaryOperator  `json:"replace,omitempty"`
 	Path     *VariadicOperator `json:"path,omitempty"`
 	Terminal
+}
+
+func (n Node) String() string {
+	if n.EqFilter != nil {
+		return fmt.Sprintf("EqFilter(%s)", *n.EqFilter)
+	}
+	if n.Replace != nil {
+		return fmt.Sprintf("Replace(%s)", *n.Replace)
+	}
+	if n.Path != nil {
+		return fmt.Sprintf("Path=%s", *n.Path)
+	}
+	return n.Terminal.String()
+}
+
+func (t Terminal) String() string {
+	if t.Str != nil {
+		return fmt.Sprintf("String=%s", *t.Str)
+	}
+	if t.Identity != nil {
+		return fmt.Sprintf("Identity=%s", *t.Identity)
+	}
+	if t.Number != nil {
+		return fmt.Sprintf("Number=%d", *t.Number)
+	}
+	return ""
 }

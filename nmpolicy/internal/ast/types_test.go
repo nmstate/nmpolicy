@@ -68,3 +68,54 @@ eqfilter:
 	}
 	assert.Equal(t, expectedAST, obtainedAST)
 }
+
+func TestFilterString(t *testing.T) {
+	astYAML := `
+pos: 1
+eqfilter:
+- pos: 2
+  path:
+  - pos: 3
+    identity: currentState
+- pos: 4
+  path:
+  - pos: 5
+    identity: routes
+  - pos: 6
+    identity: running
+  - pos: 7
+    identity: table-id
+- pos: 8
+  number: 254
+`
+
+	node := &ast.Node{}
+	assert.NoError(t, yaml.Unmarshal([]byte(astYAML), node))
+
+	assert.Equal(t, "EqFilter([Path=[Identity=currentState] Path=[Identity=routes Identity=running Identity=table-id] Number=254])",
+		node.String())
+}
+
+func TestReplaceString(t *testing.T) {
+	astYAML := `
+pos: 1
+replace:
+- pos: 2
+  identity: currentState
+- pos: 3
+  path:
+  - pos: 4
+    identity: routes
+  - pos: 5
+    identity: running
+  - pos: 6
+    identity: next-hop-interface
+- pos: 7
+  string: br1`
+
+	node := &ast.Node{}
+	assert.NoError(t, yaml.Unmarshal([]byte(astYAML), node))
+
+	assert.Equal(t, "Replace([Identity=currentState Path=[Identity=routes Identity=running Identity=next-hop-interface] String=br1])",
+		node.String())
+}
