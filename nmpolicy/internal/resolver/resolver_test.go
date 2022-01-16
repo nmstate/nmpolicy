@@ -135,6 +135,7 @@ func TestFilter(t *testing.T) {
 		testFilterDifferentTypeOnPath(t)
 		testFilterOptionalField(t)
 		testFilterNonCaptureRefPathAtThirdArg(t)
+		testFilterWithInvalidInputSource(t)
 
 		testReplaceCurrentState(t)
 		testReplaceCapturedState(t)
@@ -463,7 +464,7 @@ base-iface-routes: routes.running.next-hop-interface==capture
 `)
 		testToRun.err = `resolve error: eqfilter error: path capture ref is missing capture entry name
 | routes.running.next-hop-interface==capture
-| .................................^`
+| ...................................^`
 
 		runTest(t, &testToRun)
 	})
@@ -476,7 +477,7 @@ base-iface-routes: routes.running.next-hop-interface==capture.default-gw.routes
 `)
 		testToRun.err = `resolve error: eqfilter error: capture entry 'default-gw' not found
 | routes.running.next-hop-interface==capture.default-gw.routes
-| .................................^`
+| ...................................^`
 
 		runTest(t, &testToRun)
 	})
@@ -502,7 +503,7 @@ default-gw:
 			"'[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]' " +
 			"with path '[routes running badfield]'" + `
 | routes.running.next-hop-interface==capture.default-gw.routes.running.badfield.next-hop-interface
-| .................................^`
+| ...................................^`
 
 		runTest(t, &testToRun)
 	})
@@ -527,7 +528,7 @@ default-gw:
 			"'map[running:[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]]' " +
 			"with path '[routes 1]'" + `
 | routes.running.next-hop-interface==capture.default-gw.routes.1.0.next-hop-interface
-| .................................^`
+| ...................................^`
 
 		runTest(t, &testToRun)
 	})
@@ -551,7 +552,7 @@ default-gw:
 		testToRun.err = "resolve error: eqfilter error: step 'badfield' from path '[routes badfield]' not found at map state " +
 			"'map[running:[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]]'" + `
 | routes.running.next-hop-interface==capture.default-gw.routes.badfield
-| .................................^`
+| ...................................^`
 
 		runTest(t, &testToRun)
 	})
@@ -575,7 +576,7 @@ default-gw:
 		testToRun.err = "resolve error: eqfilter error: step '6' from path '[routes running 6]' not found at slice state " +
 			"'[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]'" + `
 | routes.running.next-hop-interface==capture.default-gw.routes.running.6
-| .................................^`
+| ...................................^`
 
 		runTest(t, &testToRun)
 	})
@@ -589,7 +590,21 @@ base-iface-routes: routes.running.next-hop-interface==routes.running
 
 		testToRun.err = `resolve error: eqfilter error: not supported filtered value path. Only paths with a capture entry reference are supported
 | routes.running.next-hop-interface==routes.running
-| .................................^`
+| ...................................^`
+		runTest(t, &testToRun)
+	})
+}
+
+func testFilterWithInvalidInputSource(t *testing.T) {
+	t.Run("Filter list with invalid input source", func(t *testing.T) {
+		testToRun := withCaptureExpressions(t, `
+base-iface-routes: invalidInputSource | routes.running.next-hop-interface=='eth1'
+`)
+
+		testToRun.err =
+			`resolve error: eqfilter error: invalid path input source (Path=[Identity=invalidInputSource]), only capture reference is supported
+| invalidInputSource | routes.running.next-hop-interface=='eth1'
+| ^`
 		runTest(t, &testToRun)
 	})
 }

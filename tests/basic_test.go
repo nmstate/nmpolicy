@@ -512,7 +512,7 @@ func testFailureResolver(t *testing.T) {
 			"failed to generate state, err: failed to resolve capture expression, "+
 				"err: resolve error: eqfilter error: invalid path input source (Path=[Identity=interfaces]), only capture reference is supported"+`
 | interfaces | routes.running.destination=="0.0.0.0/0"
-| .......................................^`)
+| ^`)
 	})
 }
 

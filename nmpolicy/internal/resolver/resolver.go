@@ -105,7 +105,7 @@ func (r *resolver) resolveCaptureEntryName(captureEntryName string) (types.NMSta
 	return capturedStateEntry.State, nil
 }
 
-func (r resolver) resolveCaptureASTEntry() (types.NMState, error) {
+func (r *resolver) resolveCaptureASTEntry() (types.NMState, error) {
 	if r.currentNode.EqFilter != nil {
 		return r.resolveEqFilter()
 	} else if r.currentNode.Replace != nil {
@@ -114,7 +114,7 @@ func (r resolver) resolveCaptureASTEntry() (types.NMState, error) {
 	return nil, fmt.Errorf("root node has unsupported operation : %s", *r.currentNode)
 }
 
-func (r resolver) resolveEqFilter() (types.NMState, error) {
+func (r *resolver) resolveEqFilter() (types.NMState, error) {
 	operator := r.currentNode.EqFilter
 	filteredState, err := r.resolveTernaryOperator(operator, filter)
 	if err != nil {
@@ -123,7 +123,7 @@ func (r resolver) resolveEqFilter() (types.NMState, error) {
 	return filteredState, nil
 }
 
-func (r resolver) resolveReplace() (types.NMState, error) {
+func (r *resolver) resolveReplace() (types.NMState, error) {
 	operator := r.currentNode.Replace
 	replacedState, err := r.resolveTernaryOperator(operator, replace)
 	if err != nil {
@@ -132,8 +132,9 @@ func (r resolver) resolveReplace() (types.NMState, error) {
 	return replacedState, nil
 }
 
-func (r resolver) resolveTernaryOperator(operator *ast.TernaryOperator,
+func (r *resolver) resolveTernaryOperator(operator *ast.TernaryOperator,
 	resolverFunc func(map[string]interface{}, ast.VariadicOperator, interface{}) (map[string]interface{}, error)) (types.NMState, error) {
+	operatorNode := r.currentNode
 	r.currentNode = &(*operator)[0]
 	inputSource, err := r.resolveInputSource()
 	if err != nil {
@@ -150,6 +151,8 @@ func (r resolver) resolveTernaryOperator(operator *ast.TernaryOperator,
 	if err != nil {
 		return nil, err
 	}
+
+	r.currentNode = operatorNode
 	resolvedState, err := resolverFunc(inputSource, path.steps, value)
 	if err != nil {
 		return nil, err
@@ -157,7 +160,7 @@ func (r resolver) resolveTernaryOperator(operator *ast.TernaryOperator,
 	return resolvedState, nil
 }
 
-func (r resolver) resolveInputSource() (types.NMState, error) {
+func (r *resolver) resolveInputSource() (types.NMState, error) {
 	if ast.CurrentStateIdentity().DeepEqual(r.currentNode.Terminal) {
 		return r.currentState, nil
 	} else if r.currentNode.Path != nil {
@@ -178,7 +181,7 @@ func (r resolver) resolveInputSource() (types.NMState, error) {
 	return nil, fmt.Errorf("invalid input source (%s), only current state or capture reference is supported", *r.currentNode)
 }
 
-func (r resolver) resolveStringOrCaptureEntryPath() (interface{}, error) {
+func (r *resolver) resolveStringOrCaptureEntryPath() (interface{}, error) {
 	if r.currentNode.Str != nil {
 		return *r.currentNode.Str, nil
 	} else if r.currentNode.Path != nil {
@@ -188,7 +191,7 @@ func (r resolver) resolveStringOrCaptureEntryPath() (interface{}, error) {
 	}
 }
 
-func (r resolver) resolveCaptureEntryPath() (interface{}, error) {
+func (r *resolver) resolveCaptureEntryPath() (interface{}, error) {
 	resolvedPath, err := r.resolvePath()
 	if err != nil {
 		return nil, err
@@ -203,7 +206,7 @@ func (r resolver) resolveCaptureEntryPath() (interface{}, error) {
 	return resolvedPath.walkState(capturedStateEntry)
 }
 
-func (r resolver) resolvePath() (*captureEntryNameAndSteps, error) {
+func (r *resolver) resolvePath() (*captureEntryNameAndSteps, error) {
 	if r.currentNode.Path == nil {
 		return nil, fmt.Errorf("invalid path type %T", *r.currentNode)
 	} else if len(*r.currentNode.Path) == 0 {
