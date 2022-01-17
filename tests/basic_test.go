@@ -518,11 +518,16 @@ func testFailureResolver(t *testing.T) {
 
 func resetTimeStamp(generatedState types.GeneratedState) types.GeneratedState {
 	generatedState.MetaInfo.TimeStamp = time.Time{}
-	for captureID, captureState := range generatedState.Cache.Capture {
-		captureState.MetaInfo.TimeStamp = time.Time{}
-		generatedState.Cache.Capture[captureID] = captureState
-	}
+	generatedState.Cache.Capture = resetCapturedStatesTimeStamp(generatedState.Cache.Capture)
 	return generatedState
+}
+
+func resetCapturedStatesTimeStamp(capturedStates map[string]types.CaptureState) map[string]types.CaptureState {
+	for captureID, captureState := range capturedStates {
+		captureState.MetaInfo.TimeStamp = time.Time{}
+		capturedStates[captureID] = captureState
+	}
+	return capturedStates
 }
 
 func formatGenerateState(generatedState types.GeneratedState) (types.GeneratedState, error) {
