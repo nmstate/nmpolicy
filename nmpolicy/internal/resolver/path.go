@@ -98,8 +98,7 @@ func (v pathVisitor) visitMap(originalMap map[string]interface{}) (interface{}, 
 
 	valueToCheck, ok := originalMap[key]
 	if !ok {
-		// TODO: we shouldn't return error on non-existing key
-		return nil, pathError(v.currentStep, "cannot find key %s in %v", key, originalMap)
+		return nil, nil
 	}
 
 	adjustedValue, err := v.visitInterface(valueToCheck)

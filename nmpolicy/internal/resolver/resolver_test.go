@@ -636,28 +636,13 @@ base-iface-routes: routes.running.next-hop-interface=='eth1'
 func testFilterBadPath(t *testing.T) {
 	t.Run("Filter list with non existing path", func(t *testing.T) {
 		testToRun := withCaptureExpressions(t, `
-base-iface-routes: routes.badfield.next-hop-interface==capture.default-gw.routes.running.0.next-hop-interface
+base-iface-routes: routes.badfield.next-hop-interface=="eth1"
 `)
-		testToRun.capturedStatesCache = `
-default-gw:
-  state: 
-    routes:
-      running:
-      - destination: 0.0.0.0/0
-        next-hop-address: 1.2.3.4
-        next-hop-interface: eth1
-        table-id: 254
-`
-		testToRun.err =
-			`resolve error: eqfilter error: failed applying operation on the path: invalid path: cannot find key badfield in ` +
-				`map[config:[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254] ` +
-				`map[destination:1.1.1.0/24 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]] ` +
-				`running:[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254] ` +
-				`map[destination:1.1.1.0/24 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254] ` +
-				`map[destination:2.2.2.0/24 next-hop-address:192.168.200.1 next-hop-interface:eth2 table-id:254]]]
-| routes.badfield.next-hop-interface==capture.default-gw.routes.running.0.next-hop-interface
-| .......^`
+		testToRun.expectedCapturedStates = `
 
+base-iface-routes:
+  state:
+`
 		runTest(t, &testToRun)
 	})
 }
