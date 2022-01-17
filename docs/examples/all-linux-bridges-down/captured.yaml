@@ -1,0 +1,29 @@
+linux-bridges:
+  metaInfo:
+    time: "2021-12-15T13:45:40Z"
+  state:
+    interfaces:
+    - name: br1
+      type: linux-bridge
+      state: up 
+    - name: br2
+      type: linux-bridge
+      state: up 
+    - name: br3
+      type: linux-bridge
+      state: up 
+linux-bridges-down:
+  metaInfo:
+    time: "2021-12-15T13:45:40Z"
+  state:
+    interfaces:
+    - name: br1
+      type: linux-bridge
+      state: down
+    - name: br2
+      type: linux-bridge
+      state: down
+    - name: br3
+      type: linux-bridge
+      state: down
+

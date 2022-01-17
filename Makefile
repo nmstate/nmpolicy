@@ -1,8 +1,8 @@
-.PHONY: all build lint unit-test integration-test
+.PHONY: all build lint unit-test integration-test docs
 
 CMD=./scripts/make.sh
 
-all:
+all: docs
 	$(CMD)
 
 build: 
@@ -16,3 +16,6 @@ unit-test:
 
 integration-test:
 	$(CMD) --integration-test
+
+docs:
+	make -C docs build

@@ -1,0 +1,38 @@
+theme: minimal-mistakes-jekyll
+minimal_mistakes_skin: "air"
+locale: "en-US"
+title: "The NMPolicy project"
+description: A expressions driven declarative API for network configuration
+name: "The NMPolicy team"
+url: "nmstate.io"
+baseurl: "/nmpolicy"
+markdown: kramdown
+repository: nmstate/nmpolicy
+kramdown:
+  input: GFM
+plugins:
+  - jekyll-spaceship
+  - jekyll-github-metadata
+include:
+  - user-guide
+  - examples
+footer:
+  links:
+    - label: "GitHub"
+      icon: "fab fa-fw fa-github"
+      url: https://github.com/nmstate/nmpolicy
+defaults:
+  # examples
+  - scope:
+      path: "examples"
+    values:
+      example: true
+  - scope:
+      path: ""
+      type: pages
+    values:
+      #permalink: /:path/:basename:output_ext
+      layout: single
+      author_profile: true
+      sidebar:
+        nav: "main"
