@@ -136,6 +136,8 @@ func TestFilter(t *testing.T) {
 		testFilterOptionalField(t)
 		testFilterNonCaptureRefPathAtThirdArg(t)
 		testFilterWithInvalidInputSource(t)
+		testFilterWithInvalidTypeInSource(t)
+		testFilterBadPath(t)
 
 		testReplaceCurrentState(t)
 		testReplaceCapturedState(t)
@@ -499,11 +501,11 @@ default-gw:
          next-hop-interface: eth1
          table-id: 254
 `
-		testToRun.err = "resolve error: eqfilter error: failed walking non map state " +
+		testToRun.err = "resolve error: eqfilter error: invalid path: failed walking non map state " +
 			"'[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]' " +
 			"with path '[routes running badfield]'" + `
 | routes.running.next-hop-interface==capture.default-gw.routes.running.badfield.next-hop-interface
-| ...................................^`
+| .....................................................................^`
 
 		runTest(t, &testToRun)
 	})
@@ -524,11 +526,11 @@ default-gw:
          next-hop-interface: eth1
          table-id: 254
 `
-		testToRun.err = "resolve error: eqfilter error: failed walking non slice state " +
+		testToRun.err = "resolve error: eqfilter error: invalid path: failed walking non slice state " +
 			"'map[running:[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]]' " +
 			"with path '[routes 1]'" + `
 | routes.running.next-hop-interface==capture.default-gw.routes.1.0.next-hop-interface
-| ...................................^`
+| .............................................................^`
 
 		runTest(t, &testToRun)
 	})
@@ -549,10 +551,10 @@ default-gw:
         next-hop-interface: eth1
         table-id: 254
 `
-		testToRun.err = "resolve error: eqfilter error: step 'badfield' from path '[routes badfield]' not found at map state " +
+		testToRun.err = "resolve error: eqfilter error: invalid path: step 'badfield' from path '[routes badfield]' not found at map state " +
 			"'map[running:[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]]'" + `
 | routes.running.next-hop-interface==capture.default-gw.routes.badfield
-| ...................................^`
+| .............................................................^`
 
 		runTest(t, &testToRun)
 	})
@@ -573,10 +575,10 @@ default-gw:
         next-hop-interface: eth1
         table-id: 254
 `
-		testToRun.err = "resolve error: eqfilter error: step '6' from path '[routes running 6]' not found at slice state " +
+		testToRun.err = "resolve error: eqfilter error: invalid path: step '6' from path '[routes running 6]' not found at slice state " +
 			"'[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]'" + `
 | routes.running.next-hop-interface==capture.default-gw.routes.running.6
-| ...................................^`
+| .....................................................................^`
 
 		runTest(t, &testToRun)
 	})
@@ -605,6 +607,57 @@ base-iface-routes: invalidInputSource | routes.running.next-hop-interface=='eth1
 			`resolve error: eqfilter error: invalid path input source (Path=[Identity=invalidInputSource]), only capture reference is supported
 | invalidInputSource | routes.running.next-hop-interface=='eth1'
 | ^`
+		runTest(t, &testToRun)
+	})
+}
+
+func testFilterWithInvalidTypeInSource(t *testing.T) {
+	oldSourceYaml := sourceYAML
+	t.Run("Filter list with invalid input source", func(t *testing.T) {
+		sourceYAML = `
+routes:
+   running:
+`
+		testToRun := withCaptureExpressions(t, `
+base-iface-routes: routes.running.next-hop-interface=='eth1'
+`)
+
+		testToRun.err =
+			`resolve error: eqfilter error: failed applying operation on the path: ` +
+				`invalid path: invalid type <nil> for identity step 'Identity=running'
+| routes.running.next-hop-interface=='eth1'
+| .......^`
+
+		runTest(t, &testToRun)
+	})
+	sourceYAML = oldSourceYaml
+}
+
+func testFilterBadPath(t *testing.T) {
+	t.Run("Filter list with non existing path", func(t *testing.T) {
+		testToRun := withCaptureExpressions(t, `
+base-iface-routes: routes.badfield.next-hop-interface==capture.default-gw.routes.running.0.next-hop-interface
+`)
+		testToRun.capturedStatesCache = `
+default-gw:
+  state: 
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 1.2.3.4
+        next-hop-interface: eth1
+        table-id: 254
+`
+		testToRun.err =
+			`resolve error: eqfilter error: failed applying operation on the path: invalid path: cannot find key badfield in ` +
+				`map[config:[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254] ` +
+				`map[destination:1.1.1.0/24 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]] ` +
+				`running:[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254] ` +
+				`map[destination:1.1.1.0/24 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254] ` +
+				`map[destination:2.2.2.0/24 next-hop-address:192.168.200.1 next-hop-interface:eth2 table-id:254]]]
+| routes.badfield.next-hop-interface==capture.default-gw.routes.running.0.next-hop-interface
+| .......^`
+
 		runTest(t, &testToRun)
 	})
 }
