@@ -1,0 +1,13 @@
+main:
+  - title: User Guide
+    url: /user-guide.html
+    children:
+      - title: "Library"
+        url: /user-guide/101-library.html
+      - title: "Policy syntax"
+        url: /user-guide/102-policy-syntax.html
+  - title: Examples
+    url: /examples.html
+  - title: "GitHub"
+    icon: "fab fa-fw fa-github"
+    url: https://github.com/nmstate/nmpolicy

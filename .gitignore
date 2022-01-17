@@ -22,3 +22,8 @@ vendor/
 .sw*
 
 dist/
+
+# Jekyll
+docs/.bundle/
+docs/.jekyll-cache/
+docs/build/
