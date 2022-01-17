@@ -17,6 +17,7 @@
 package resolver
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/ast"
@@ -234,8 +235,15 @@ func (r resolver) wrapErrorWithCurrentExpression(err error) error {
 	if err == nil {
 		return nil
 	}
-	if r.currentNode == nil || r.currentExpression == nil {
+
+	var pathError PathError
+	errorNode := r.currentNode
+	if errors.As(err, &pathError) {
+		errorNode = pathError.errorNode
+	}
+
+	if errorNode == nil || r.currentExpression == nil {
 		return err
 	}
-	return expression.WrapError(err, *r.currentExpression, r.currentNode.Meta.Position)
+	return expression.WrapError(err, *r.currentExpression, errorNode.Meta.Position)
 }

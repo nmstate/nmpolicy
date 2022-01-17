@@ -34,7 +34,7 @@ func filter(inputState map[string]interface{}, path ast.VariadicOperator, expect
 	filtered, err := pathVisitorWithEqFilter.visitMap(inputState)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed applying operation on the path: %v", err)
+		return nil, fmt.Errorf("failed applying operation on the path: %w", err)
 	}
 
 	if filtered == nil {
