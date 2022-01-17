@@ -16,33 +16,17 @@
 
 package types
 
-import "time"
+import "sigs.k8s.io/yaml"
 
-type NMState []byte
-
-type PolicySpec struct {
-	Capture      map[string]string
-	DesiredState NMState
+func (s *NMState) UnmarshalJSON(b []byte) error {
+	output, err := yaml.JSONToYAML(b)
+	if err != nil {
+		return err
+	}
+	*s = output
+	return nil
 }
 
-type CachedState struct {
-	Capture map[string]CaptureState
+func (s NMState) MarshalJSON() ([]byte, error) {
+	return yaml.YAMLToJSON([]byte(s))
 }
-
-type GeneratedState struct {
-	Cache        CachedState
-	DesiredState NMState
-	MetaInfo     MetaInfo
-}
-
-type CaptureState struct {
-	State    NMState
-	MetaInfo MetaInfo
-}
-
-type MetaInfo struct {
-	Version   string
-	TimeStamp time.Time
-}
-
-func NoCache() CachedState { return CachedState{} }
