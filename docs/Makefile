@@ -24,6 +24,7 @@ build:
 	fi
 	rm -rf $(dest_dir)
 	bundle exec jekyll build --trace --source . --destination $(dest_dir)
+	touch $(dest_dir)/.nojekyll
 
 .PHONY: check
 check: build
