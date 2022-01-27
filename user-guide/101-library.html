@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<!--
+  Minimal Mistakes Jekyll Theme 4.24.0 by Michael Rose
+  Copyright 2013-2020 Michael Rose - mademistakes.com | @mmistakes
+  Free for personal and commercial use under the MIT license
+  https://github.com/mmistakes/minimal-mistakes/blob/master/LICENSE
+--><html lang="en" class="no-js">
+  <head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+
+<!-- begin _includes/seo.html --><title>Library - The NMPolicy project</title>
+<meta name="description" content="A expressions driven declarative API for network configuration">
+
+
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_US">
+<meta property="og:site_name" content="The NMPolicy project">
+<meta property="og:title" content="Library">
+<meta property="og:url" content="nmstate.io/nmpolicy/user-guide/101-library.html">
+
+
+  <meta property="og:description" content="A expressions driven declarative API for network configuration">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="nmstate.io/nmpolicy/user-guide/101-library.html">
+
+
+
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    
+      "@type": "Person",
+      "name": "The NMPolicy team",
+      "url": "nmstate.io/nmpolicy/"
+    
+  }
+</script>
+
+
+
+
+
+
+
+<!-- end _includes/seo.html -->
+
+
+
+  <link href="/nmpolicy/feed.xml" type="application/atom+xml" rel="alternate" title="The NMPolicy project Feed">
+
+
+<!-- https://t.co/dKP3o1e -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script>
+  document.documentElement.className = document.documentElement.className.replace(/\bno-js\b/g, '') + ' js ';
+</script>
+
+<!-- For all browsers -->
+<link rel="stylesheet" href="/nmpolicy/assets/css/main.css">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css"></noscript>
+
+
+
+    <!-- start custom head snippets -->
+
+<!-- insert favicons. use https://realfavicongenerator.net/ -->
+
+<!-- end custom head snippets -->
+
+  </head>
+
+  <body class="layout--single">
+    <nav class="skip-links">
+  <ul>
+    <li><a href="#site-nav" class="screen-reader-shortcut">Skip to primary navigation</a></li>
+    <li><a href="#main" class="screen-reader-shortcut">Skip to content</a></li>
+    <li><a href="#footer" class="screen-reader-shortcut">Skip to footer</a></li>
+  </ul>
+</nav>
+
+    <!--[if lt IE 9]>
+<div class="notice--danger align-center" style="margin: 0;">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade your browser</a> to improve your experience.</div>
+<![endif]-->
+
+    
+
+<div class="masthead">
+  <div class="masthead__inner-wrap">
+    <div class="masthead__menu">
+      <nav id="site-nav" class="greedy-nav">
+        
+        <a class="site-title" href="/nmpolicy/">
+          The NMPolicy project
+          
+        </a>
+        <ul class="visible-links">
+<li class="masthead__menu-item">
+              <a href="/nmpolicy/user-guide.html">User Guide</a>
+            </li>
+<li class="masthead__menu-item">
+              <a href="/nmpolicy/examples.html">Examples</a>
+            </li>
+<li class="masthead__menu-item">
+              <a href="https://github.com/nmstate/nmpolicy">GitHub</a>
+            </li>
+</ul>
+        
+        <button class="greedy-nav__toggle hidden" type="button">
+          <span class="visually-hidden">Toggle menu</span>
+          <div class="navicon"></div>
+        </button>
+        <ul class="hidden-links hidden"></ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+
+    <div class="initial-content">
+      
+
+
+
+<div id="main" role="main">
+  
+  <div class="sidebar sticky">
+  
+
+
+<div itemscope itemtype="https://schema.org/Person">
+
+  
+
+  <div class="author__content">
+    
+      <h3 class="author__name" itemprop="name"></h3>
+    
+    
+  </div>
+
+  <div class="author__urls-wrapper">
+    <button class="btn btn--inverse">Follow</button>
+    <ul class="author__urls social-icons">
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      <!--
+  <li>
+    <a href="http://link-to-whatever-social-network.com/user/" itemprop="sameAs" rel="nofollow noopener noreferrer">
+      <i class="fas fa-fw" aria-hidden="true"></i> Custom Social Profile Link
+    </a>
+  </li>
+-->
+    </ul>
+  </div>
+</div>
+
+  
+    
+      
+      
+      
+      
+    
+    
+      
+
+<nav class="nav__list">
+  
+  <input id="ac-toc" name="accordion-toc" type="checkbox">
+  <label for="ac-toc">Toggle Menu</label>
+  <ul class="nav__items">
+    
+      <li>
+        
+          <a href="/nmpolicy/user-guide.html"><span class="nav__sub-title">User Guide</span></a>
+        
+
+        
+        <ul>
+          
+            <li><a href="/nmpolicy/user-guide/101-library.html" class="active">Library</a></li>
+          
+            <li><a href="/nmpolicy/user-guide/102-policy-syntax.html">Policy syntax</a></li>
+          
+        </ul>
+        
+      </li>
+    
+      <li>
+        
+          <a href="/nmpolicy/examples.html"><span class="nav__sub-title">Examples</span></a>
+        
+
+        
+      </li>
+    
+      <li>
+        
+          <a href="https://github.com/nmstate/nmpolicy"><span class="nav__sub-title">GitHub</span></a>
+        
+
+        
+      </li>
+    
+  </ul>
+</nav>
+
+    
+  
+  </div>
+
+
+
+  <article class="page" itemscope itemtype="https://schema.org/CreativeWork">
+    <meta itemprop="headline" content="Library">
+    
+    
+    
+
+    <div class="page__inner-wrap">
+      
+        <header>
+          <h1 id="page-title" class="page__title" itemprop="headline">Library
+</h1>
+          
+
+
+        </header>
+      
+
+      <section class="page__content" itemprop="text">
+        
+        <p>The NMPolicy project can be integrated as a golang library calling the public 
+function <a href="https://pkg.go.dev/github.com/nmstate/nmpolicy/nmpolicy#GenerateState">GenerateState</a>.</p>
+
+<h2 id="example-calling-generatestate">Example calling GenerateState</h2>
+
+<p>The following golang code will generate a linux bridge
+on top of the default gateway nic using harcoded yamls, following the
+syntax at <a href="102-policy-syntax.html">policy spec</a>, also note that the
+<code class="language-plaintext highlighter-rouge">desiredState</code> field can follow YAML or JSON syntax, in this case is 
+YAML to make it more human readable:</p>
+
+<p><a href="https://go.dev/play/p/eVH2Aa_Ma-I">Run it</a></p>
+
+<div class="language-golang highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">package</span> <span class="n">main</span>
+
+<span class="k">import</span> <span class="p">(</span>
+	<span class="s">"fmt"</span>
+
+	<span class="s">"github.com/nmstate/nmpolicy/nmpolicy"</span>
+	<span class="s">"github.com/nmstate/nmpolicy/nmpolicy/types"</span>
+<span class="p">)</span>
+
+<span class="k">func</span> <span class="n">main</span><span class="p">()</span> <span class="p">{</span>
+	<span class="n">policySpec</span> <span class="o">:=</span> <span class="n">types</span><span class="o">.</span><span class="n">PolicySpec</span><span class="p">{</span>
+		<span class="n">Capture</span><span class="o">:</span> <span class="k">map</span><span class="p">[</span><span class="kt">string</span><span class="p">]</span><span class="kt">string</span><span class="p">{</span>
+			<span class="s">"default-gw"</span><span class="o">:</span> <span class="s">`routes.running.destination=="0.0.0.0/0"`</span><span class="p">,</span>
+		<span class="p">},</span>
+		<span class="n">DesiredState</span><span class="o">:</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">(</span><span class="s">`                                                  
+interfaces:                                                                     
+- name: br1                                                                     
+  type: linux-bridge                                                            
+  state: up                                                                     
+  ipv4:                                                                         
+    dhcp: true                                                                  
+    enabled: true                                                               
+  bridge:                                                                       
+    port:                                                                       
+    - name: "{{ capture.default-gw.routes.running.0.next-hop-interface }}"
+`</span><span class="p">),</span>
+	<span class="p">}</span>
+	<span class="n">currentState</span> <span class="o">:=</span> <span class="p">[]</span><span class="kt">byte</span><span class="p">(</span><span class="s">`                                                    
+routes:                                                                         
+  running:                                                                      
+  - destination: 0.0.0.0/0                                                      
+    next-hop-address: 192.168.100.1                                             
+    next-hop-interface: eth1                                                    
+    table-id: 254                                                               
+  - destination: 1.1.1.0/24                                                     
+    next-hop-address: 192.168.100.1                                             
+    next-hop-interface: eth1                                                    
+    table-id: 254                                                               
+interfaces:                                                                     
+- name: eth1                                                                    
+  type: ethernet                                                                
+  state: up                                                                     
+  mac-address: 00:00:5E:00:00:01                                                
+  ipv4:                                                                         
+    address:                                                                    
+    - ip: 10.244.0.1                                                            
+      prefix-length: 24                                                         
+    - ip: 169.254.1.0                                                           
+      prefix-length: 16                                                         
+    dhcp: true                                                                  
+    enabled: true                                                               
+`</span><span class="p">)</span>
+	<span class="n">generatedState</span><span class="p">,</span> <span class="n">err</span> <span class="o">:=</span> <span class="n">nmpolicy</span><span class="o">.</span><span class="n">GenerateState</span><span class="p">(</span><span class="n">policySpec</span><span class="p">,</span> <span class="n">currentState</span><span class="p">,</span> <span class="n">types</span><span class="o">.</span><span class="n">NoCache</span><span class="p">())</span>
+	<span class="k">if</span> <span class="n">err</span> <span class="o">!=</span> <span class="no">nil</span> <span class="p">{</span>
+		<span class="nb">panic</span><span class="p">(</span><span class="n">err</span><span class="p">)</span>
+	<span class="p">}</span>
+
+	<span class="n">fmt</span><span class="o">.</span><span class="n">Println</span><span class="p">(</span><span class="kt">string</span><span class="p">(</span><span class="n">generatedState</span><span class="o">.</span><span class="n">DesiredState</span><span class="p">))</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>It should output the following network state</p>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">interfaces</span><span class="pi">:</span>
+<span class="pi">-</span> <span class="na">bridge</span><span class="pi">:</span>
+    <span class="na">port</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">eth1</span>
+  <span class="na">ipv4</span><span class="pi">:</span>
+    <span class="na">dhcp</span><span class="pi">:</span> <span class="no">true</span>
+    <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">br1</span>
+  <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+  <span class="na">type</span><span class="pi">:</span> <span class="s">linux-bridge</span>
+</code></pre></div></div>
+
+<p>Also the result from the <code class="language-plaintext highlighter-rouge">capture</code> evaluation will be returned at the
+<code class="language-plaintext highlighter-rouge">generateState.Cache.Capture</code> <a href="https://pkg.go.dev/github.com/nmstate/nmpolicy@v0.2.0/nmpolicy/types#CachedState">field</a></p>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">default-gw</span><span class="pi">:</span>
+  <span class="na">metaInfo</span><span class="pi">:</span>
+     <span class="na">time</span><span class="pi">:</span> <span class="s2">"</span><span class="s">2021-12-15T13:45:40Z"</span>
+  <span class="na">state</span><span class="pi">:</span>
+    <span class="na">routes</span><span class="pi">:</span>
+      <span class="na">running</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span> <span class="s">0.0.0.0/0</span>
+        <span class="na">next-hop-address</span><span class="pi">:</span> <span class="s">192.168.100.1</span>
+        <span class="na">next-hop-interface</span><span class="pi">:</span> <span class="s">eth1</span>
+        <span class="na">table-id</span><span class="pi">:</span> <span class="m">254</span>
+</code></pre></div></div>
+
+<h2 id="captured-states-cache">Captured states cache</h2>
+
+<p>The capture entries are calculated and resolved based on the state of the 
+network at the point the capture entry is created.</p>
+
+<p>Sometimes it is necessary to re-generate the NMState output from a NMPolicy 
+but not rely on the current network state.</p>
+
+<p>For example when updating the desired state, when an error at desiredState 
+needs to be fixed or when generated NMState is lost and needs to be 
+re-applied. Usually for those scenarios you need the old network state 
+so NMPolicy is applied to the same state it was designed for.</p>
+
+<p>For those scenarios the tool has an extra output that contains the results 
+from capture expression evaluation that can be used as input to the tool 
+instead of the normal currentState, allowing to fix desiredState fields at a 
+NMPolicy. The cache contains the captured state referenced by desiredState 
+or another capture, not all the captured states.</p>
+
+<p>When the cached captured state is used the capture expressions evaluation from 
+NMPolicy is ignored and the cache is used instead, 
+so if changes are done at the capture they will be ignored.</p>
+
+<p>The format will be a map with the capture entry
+key the value result of the capture entry expression evaluation.</p>
+
+<p>Example:</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">base-iface</span><span class="pi">:</span>
+  <span class="na">metaInfo</span><span class="pi">:</span>
+    <span class="na">time</span><span class="pi">:</span> <span class="s2">"</span><span class="s">2021-12-15T13:45:40Z"</span>
+  <span class="na">state</span><span class="pi">:</span>
+    <span class="na">interfaces</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">eth1</span>
+      <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
+      <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+      <span class="na">mac-address</span><span class="pi">:</span> <span class="s">00:00:5E:00:00:01</span>
+      <span class="na">ipv4</span><span class="pi">:</span>
+        <span class="na">address</span><span class="pi">:</span>
+        <span class="pi">-</span> <span class="na">ip</span><span class="pi">:</span> <span class="s">10.244.0.1</span>
+          <span class="na">prefix-length</span><span class="pi">:</span> <span class="m">24</span>
+        <span class="pi">-</span> <span class="na">ip</span><span class="pi">:</span> <span class="s">169.254.1.0</span>
+          <span class="na">prefix-length</span><span class="pi">:</span> <span class="m">16</span>
+        <span class="na">dhcp</span><span class="pi">:</span> <span class="no">true</span>
+        <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
+<span class="na">default-gw</span><span class="pi">:</span>
+  <span class="na">metaInfo</span><span class="pi">:</span>
+     <span class="na">time</span><span class="pi">:</span> <span class="s2">"</span><span class="s">2021-12-15T13:45:40Z"</span>
+  <span class="na">state</span><span class="pi">:</span>
+    <span class="na">routes</span><span class="pi">:</span>
+      <span class="na">running</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span> <span class="s">0.0.0.0/0</span>
+        <span class="na">next-hop-address</span><span class="pi">:</span> <span class="s">192.168.100.1</span>
+        <span class="na">next-hop-interface</span><span class="pi">:</span> <span class="s">eth1</span>
+        <span class="na">table-id</span><span class="pi">:</span> <span class="m">254</span>
+
+</code></pre></div></div>
+
+        
+      </section>
+
+      <footer class="page__meta">
+        
+        
+
+
+        
+
+
+      </footer>
+
+      
+
+      
+    </div>
+
+    
+  </article>
+
+  
+  
+</div>
+
+    </div>
+
+    
+
+    <div id="footer" class="page__footer">
+      <footer>
+        <!-- start custom footer snippets -->
+
+<!-- end custom footer snippets -->
+        <div class="page__footer-follow">
+  <ul class="social-icons">
+    
+
+    
+      
+        
+          <li><a href="https://github.com/nmstate/nmpolicy" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-github" aria-hidden="true"></i> GitHub</a></li>
+        
+      
+    
+
+    
+      <li><a href="/nmpolicy/feed.xml"><i class="fas fa-fw fa-rss-square" aria-hidden="true"></i> Feed</a></li>
+    
+  </ul>
+</div>
+
+<div class="page__footer-copyright">© 2022 The NMPolicy team. Powered by <a href="https://jekyllrb.com" rel="nofollow">Jekyll</a> &amp; <a href="https://mademistakes.com/work/minimal-mistakes-jekyll-theme/" rel="nofollow">Minimal Mistakes</a>.</div>
+
+      </footer>
+    </div>
+
+    
+  <script src="/nmpolicy/assets/js/main.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+  </body>
+</html>

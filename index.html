@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<!--
+  Minimal Mistakes Jekyll Theme 4.24.0 by Michael Rose
+  Copyright 2013-2020 Michael Rose - mademistakes.com | @mmistakes
+  Free for personal and commercial use under the MIT license
+  https://github.com/mmistakes/minimal-mistakes/blob/master/LICENSE
+--><html lang="en" class="no-js">
+  <head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+
+<!-- begin _includes/seo.html --><title>The NMPolicy project</title>
+<meta name="description" content="A expressions driven declarative API for network configuration">
+
+
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_US">
+<meta property="og:site_name" content="The NMPolicy project">
+<meta property="og:title" content="The NMPolicy project">
+<meta property="og:url" content="nmstate.io/nmpolicy/">
+
+
+  <meta property="og:description" content="A expressions driven declarative API for network configuration">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="nmstate.io/nmpolicy/">
+
+
+
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    
+      "@type": "Person",
+      "name": "The NMPolicy team",
+      "url": "nmstate.io/nmpolicy/"
+    
+  }
+</script>
+
+
+
+
+
+
+
+<!-- end _includes/seo.html -->
+
+
+
+  <link href="/nmpolicy/feed.xml" type="application/atom+xml" rel="alternate" title="The NMPolicy project Feed">
+
+
+<!-- https://t.co/dKP3o1e -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script>
+  document.documentElement.className = document.documentElement.className.replace(/\bno-js\b/g, '') + ' js ';
+</script>
+
+<!-- For all browsers -->
+<link rel="stylesheet" href="/nmpolicy/assets/css/main.css">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css"></noscript>
+
+
+
+    <!-- start custom head snippets -->
+
+<!-- insert favicons. use https://realfavicongenerator.net/ -->
+
+<!-- end custom head snippets -->
+
+  </head>
+
+  <body class="layout--single">
+    <nav class="skip-links">
+  <ul>
+    <li><a href="#site-nav" class="screen-reader-shortcut">Skip to primary navigation</a></li>
+    <li><a href="#main" class="screen-reader-shortcut">Skip to content</a></li>
+    <li><a href="#footer" class="screen-reader-shortcut">Skip to footer</a></li>
+  </ul>
+</nav>
+
+    <!--[if lt IE 9]>
+<div class="notice--danger align-center" style="margin: 0;">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade your browser</a> to improve your experience.</div>
+<![endif]-->
+
+    
+
+<div class="masthead">
+  <div class="masthead__inner-wrap">
+    <div class="masthead__menu">
+      <nav id="site-nav" class="greedy-nav">
+        
+        <a class="site-title" href="/nmpolicy/">
+          The NMPolicy project
+          
+        </a>
+        <ul class="visible-links">
+<li class="masthead__menu-item">
+              <a href="/nmpolicy/user-guide.html">User Guide</a>
+            </li>
+<li class="masthead__menu-item">
+              <a href="/nmpolicy/examples.html">Examples</a>
+            </li>
+<li class="masthead__menu-item">
+              <a href="https://github.com/nmstate/nmpolicy">GitHub</a>
+            </li>
+</ul>
+        
+        <button class="greedy-nav__toggle hidden" type="button">
+          <span class="visually-hidden">Toggle menu</span>
+          <div class="navicon"></div>
+        </button>
+        <ul class="hidden-links hidden"></ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+
+    <div class="initial-content">
+      
+
+
+
+<div id="main" role="main">
+  
+  <div class="sidebar sticky">
+  
+
+
+<div itemscope itemtype="https://schema.org/Person">
+
+  
+
+  <div class="author__content">
+    
+      <h3 class="author__name" itemprop="name"></h3>
+    
+    
+  </div>
+
+  <div class="author__urls-wrapper">
+    <button class="btn btn--inverse">Follow</button>
+    <ul class="author__urls social-icons">
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      <!--
+  <li>
+    <a href="http://link-to-whatever-social-network.com/user/" itemprop="sameAs" rel="nofollow noopener noreferrer">
+      <i class="fas fa-fw" aria-hidden="true"></i> Custom Social Profile Link
+    </a>
+  </li>
+-->
+    </ul>
+  </div>
+</div>
+
+  
+    
+      
+      
+      
+      
+    
+    
+      
+
+<nav class="nav__list">
+  
+  <input id="ac-toc" name="accordion-toc" type="checkbox">
+  <label for="ac-toc">Toggle Menu</label>
+  <ul class="nav__items">
+    
+      <li>
+        
+          <a href="/nmpolicy/user-guide.html"><span class="nav__sub-title">User Guide</span></a>
+        
+
+        
+        <ul>
+          
+            <li><a href="/nmpolicy/user-guide/101-library.html">Library</a></li>
+          
+            <li><a href="/nmpolicy/user-guide/102-policy-syntax.html">Policy syntax</a></li>
+          
+        </ul>
+        
+      </li>
+    
+      <li>
+        
+          <a href="/nmpolicy/examples.html"><span class="nav__sub-title">Examples</span></a>
+        
+
+        
+      </li>
+    
+      <li>
+        
+          <a href="https://github.com/nmstate/nmpolicy"><span class="nav__sub-title">GitHub</span></a>
+        
+
+        
+      </li>
+    
+  </ul>
+</nav>
+
+    
+  
+  </div>
+
+
+
+  <article class="page" itemscope itemtype="https://schema.org/CreativeWork">
+    
+    
+    
+    
+
+    <div class="page__inner-wrap">
+      
+        <header>
+          
+          
+
+
+        </header>
+      
+
+      <section class="page__content" itemprop="text">
+        
+        <h1 id="introduction">Introduction</h1>
+
+<p>An expressions driven declarative API for dynamic network configuration</p>
+
+<h1 id="motivation">Motivation</h1>
+
+<p>When networking configuration for a cluster is needed and all the details 
+are common between the nodes in the cluster a NMState yaml configuration is 
+enough.</p>
+
+<p>Problems arise when some of the network configuration details 
+are different between nodes and depend on the current node network state.</p>
+
+<p>For that a different NMState yaml configuration needs to be generated 
+per node and that’s not convenient for big clusters and 
+also at scale up scenarios.</p>
+
+<p>The NMPolicy goal is to solve this problem.
+Given a node network state and a network configuration policy 
+(common to the cluster), 
+the NMPolicy tool will generate a node specific desired network state.</p>
+
+<p>Previously without the help from NMPolicy a cluster user needed to apply the 
+following configurations per node at a three nodes cluster to create a linux-bridge on 
+top of an interface and clone the mac, also it has to hardcode the name of the 
+interface, that can be different between nodes on some clusters.</p>
+
+<p>node01:</p>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">desiredState</span><span class="pi">:</span>
+  <span class="na">interfaces</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">br1</span>
+    <span class="na">type</span><span class="pi">:</span> <span class="s">linux-bridge</span>
+    <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+    <span class="na">mac-address</span><span class="pi">:</span> <span class="s">00:00:5E:00:00:01</span>
+    <span class="na">ipv4</span><span class="pi">:</span>
+      <span class="na">dhcp</span><span class="pi">:</span> <span class="no">true</span>
+      <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
+    <span class="na">bridge</span><span class="pi">:</span>
+      <span class="na">options</span><span class="pi">:</span>
+        <span class="na">stp</span><span class="pi">:</span>
+          <span class="na">enabled</span><span class="pi">:</span> <span class="no">false</span>
+        <span class="na">port</span><span class="pi">:</span>
+        <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">eth1</span>
+</code></pre></div></div>
+
+<p>node02:</p>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">desiredState</span><span class="pi">:</span>
+  <span class="na">interfaces</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">br1</span>
+    <span class="na">type</span><span class="pi">:</span> <span class="s">linux-bridge</span>
+    <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+    <span class="na">mac-address</span><span class="pi">:</span> <span class="s">00:00:5E:00:00:02</span>
+    <span class="na">ipv4</span><span class="pi">:</span>
+      <span class="na">dhcp</span><span class="pi">:</span> <span class="no">true</span>
+      <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
+    <span class="na">bridge</span><span class="pi">:</span>
+      <span class="na">options</span><span class="pi">:</span>
+        <span class="na">stp</span><span class="pi">:</span>
+          <span class="na">enabled</span><span class="pi">:</span> <span class="no">false</span>
+        <span class="na">port</span><span class="pi">:</span>
+        <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">eth1</span>
+
+</code></pre></div></div>
+
+<p>node03</p>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">desiredState</span><span class="pi">:</span>
+  <span class="na">interfaces</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">br1</span>
+    <span class="na">type</span><span class="pi">:</span> <span class="s">linux-bridge</span>
+    <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+    <span class="na">mac-address</span><span class="pi">:</span> <span class="s">00:00:5E:00:00:03</span>
+    <span class="na">ipv4</span><span class="pi">:</span>
+      <span class="na">dhcp</span><span class="pi">:</span> <span class="no">true</span>
+      <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
+    <span class="na">bridge</span><span class="pi">:</span>
+      <span class="na">options</span><span class="pi">:</span>
+        <span class="na">stp</span><span class="pi">:</span>
+          <span class="na">enabled</span><span class="pi">:</span> <span class="no">false</span>
+        <span class="na">port</span><span class="pi">:</span>
+        <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">eth1</span>
+</code></pre></div></div>
+
+<p>The example at this page show how to do that without harcoding the nic name
+and the mac addresses.</p>
+
+<h1 id="how-it-works">How it works</h1>
+
+<p>It’s implemented on top of <a href="https://nmstate.io/">nmstate</a>, nmpolicy generates a 
+nmstate desired state as output, given an input of a 
+<a href="https://nmstate.io/nmpolicy/user-guide/102-policy-syntax.html">policy spec</a> and a 
+nmstate current state.</p>
+
+<p>This is a simple nmpolicy example to connect a nic that is referenced by a 
+default gateway to a bridge:</p>
+
+<!--
+
+-->
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">capture</span><span class="pi">:</span>
+  <span class="na">default-gw</span><span class="pi">:</span> <span class="s">routes.running.destination=="0.0.0.0/0"</span>
+  <span class="na">base-iface</span><span class="pi">:</span> <span class="s">interfaces.name==capture.default-gw.routes.running.0.next-hop-interface</span>
+<span class="na">desiredState</span><span class="pi">:</span>
+  <span class="na">interfaces</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">br1</span>
+    <span class="na">description</span><span class="pi">:</span> <span class="s">DHCP aware Linux bridge to connect a nic that is referenced by a default gateway</span>
+    <span class="na">type</span><span class="pi">:</span> <span class="s">linux-bridge</span>
+    <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+    <span class="na">mac-address</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">capture.base-iface.interfaces.0.mac-address</span><span class="nv"> </span><span class="s">}}"</span>
+    <span class="na">ipv4</span><span class="pi">:</span>
+      <span class="na">dhcp</span><span class="pi">:</span> <span class="no">true</span>
+      <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
+    <span class="na">bridge</span><span class="pi">:</span>
+        <span class="na">port</span><span class="pi">:</span>
+        <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">capture.base-iface.interfaces.0.name</span><span class="nv"> </span><span class="s">}}"</span>
+</code></pre></div></div>
+<!--
+
+-->
+
+<h1 id="use">Use</h1>
+
+<p>To start using nmpolicy you can go directly to one of the following 
+<a href="https://nmstate.io/nmpolicy">documentation</a> chapters:</p>
+<ul>
+  <li><a href="https://nmstate.io/nmpolicy/user-guide/101-library.html">library usage</a></li>
+  <li><a href="https://nmstate.io/nmpolicy/user-guide/102-policy-syntax.html">policy syntax</a></li>
+  <li><a href="https://nmstate.io/nmpolicy/examples.html">examples</a></li>
+</ul>
+
+        
+      </section>
+
+      <footer class="page__meta">
+        
+        
+
+
+        
+
+
+      </footer>
+
+      
+
+      
+    </div>
+
+    
+  </article>
+
+  
+  
+</div>
+
+    </div>
+
+    
+
+    <div id="footer" class="page__footer">
+      <footer>
+        <!-- start custom footer snippets -->
+
+<!-- end custom footer snippets -->
+        <div class="page__footer-follow">
+  <ul class="social-icons">
+    
+
+    
+      
+        
+          <li><a href="https://github.com/nmstate/nmpolicy" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-github" aria-hidden="true"></i> GitHub</a></li>
+        
+      
+    
+
+    
+      <li><a href="/nmpolicy/feed.xml"><i class="fas fa-fw fa-rss-square" aria-hidden="true"></i> Feed</a></li>
+    
+  </ul>
+</div>
+
+<div class="page__footer-copyright">© 2022 The NMPolicy team. Powered by <a href="https://jekyllrb.com" rel="nofollow">Jekyll</a> &amp; <a href="https://mademistakes.com/work/minimal-mistakes-jekyll-theme/" rel="nofollow">Minimal Mistakes</a>.</div>
+
+      </footer>
+    </div>
+
+    
+  <script src="/nmpolicy/assets/js/main.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+  </body>
+</html>

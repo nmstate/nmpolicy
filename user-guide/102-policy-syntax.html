@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<!--
+  Minimal Mistakes Jekyll Theme 4.24.0 by Michael Rose
+  Copyright 2013-2020 Michael Rose - mademistakes.com | @mmistakes
+  Free for personal and commercial use under the MIT license
+  https://github.com/mmistakes/minimal-mistakes/blob/master/LICENSE
+--><html lang="en" class="no-js">
+  <head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+
+<!-- begin _includes/seo.html --><title>Policy Syntax - The NMPolicy project</title>
+<meta name="description" content="A expressions driven declarative API for network configuration">
+
+
+
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_US">
+<meta property="og:site_name" content="The NMPolicy project">
+<meta property="og:title" content="Policy Syntax">
+<meta property="og:url" content="nmstate.io/nmpolicy/user-guide/102-policy-syntax.html">
+
+
+  <meta property="og:description" content="A expressions driven declarative API for network configuration">
+
+
+
+
+
+
+
+
+
+
+
+
+<link rel="canonical" href="nmstate.io/nmpolicy/user-guide/102-policy-syntax.html">
+
+
+
+
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    
+      "@type": "Person",
+      "name": "The NMPolicy team",
+      "url": "nmstate.io/nmpolicy/"
+    
+  }
+</script>
+
+
+
+
+
+
+
+<!-- end _includes/seo.html -->
+
+
+
+  <link href="/nmpolicy/feed.xml" type="application/atom+xml" rel="alternate" title="The NMPolicy project Feed">
+
+
+<!-- https://t.co/dKP3o1e -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script>
+  document.documentElement.className = document.documentElement.className.replace(/\bno-js\b/g, '') + ' js ';
+</script>
+
+<!-- For all browsers -->
+<link rel="stylesheet" href="/nmpolicy/assets/css/main.css">
+<link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5/css/all.min.css"></noscript>
+
+
+
+    <!-- start custom head snippets -->
+
+<!-- insert favicons. use https://realfavicongenerator.net/ -->
+
+<!-- end custom head snippets -->
+
+  </head>
+
+  <body class="layout--single">
+    <nav class="skip-links">
+  <ul>
+    <li><a href="#site-nav" class="screen-reader-shortcut">Skip to primary navigation</a></li>
+    <li><a href="#main" class="screen-reader-shortcut">Skip to content</a></li>
+    <li><a href="#footer" class="screen-reader-shortcut">Skip to footer</a></li>
+  </ul>
+</nav>
+
+    <!--[if lt IE 9]>
+<div class="notice--danger align-center" style="margin: 0;">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade your browser</a> to improve your experience.</div>
+<![endif]-->
+
+    
+
+<div class="masthead">
+  <div class="masthead__inner-wrap">
+    <div class="masthead__menu">
+      <nav id="site-nav" class="greedy-nav">
+        
+        <a class="site-title" href="/nmpolicy/">
+          The NMPolicy project
+          
+        </a>
+        <ul class="visible-links">
+<li class="masthead__menu-item">
+              <a href="/nmpolicy/user-guide.html">User Guide</a>
+            </li>
+<li class="masthead__menu-item">
+              <a href="/nmpolicy/examples.html">Examples</a>
+            </li>
+<li class="masthead__menu-item">
+              <a href="https://github.com/nmstate/nmpolicy">GitHub</a>
+            </li>
+</ul>
+        
+        <button class="greedy-nav__toggle hidden" type="button">
+          <span class="visually-hidden">Toggle menu</span>
+          <div class="navicon"></div>
+        </button>
+        <ul class="hidden-links hidden"></ul>
+      </nav>
+    </div>
+  </div>
+</div>
+
+
+    <div class="initial-content">
+      
+
+
+
+<div id="main" role="main">
+  
+  <div class="sidebar sticky">
+  
+
+
+<div itemscope itemtype="https://schema.org/Person">
+
+  
+
+  <div class="author__content">
+    
+      <h3 class="author__name" itemprop="name"></h3>
+    
+    
+  </div>
+
+  <div class="author__urls-wrapper">
+    <button class="btn btn--inverse">Follow</button>
+    <ul class="author__urls social-icons">
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      
+
+      <!--
+  <li>
+    <a href="http://link-to-whatever-social-network.com/user/" itemprop="sameAs" rel="nofollow noopener noreferrer">
+      <i class="fas fa-fw" aria-hidden="true"></i> Custom Social Profile Link
+    </a>
+  </li>
+-->
+    </ul>
+  </div>
+</div>
+
+  
+    
+      
+      
+      
+      
+    
+    
+      
+
+<nav class="nav__list">
+  
+  <input id="ac-toc" name="accordion-toc" type="checkbox">
+  <label for="ac-toc">Toggle Menu</label>
+  <ul class="nav__items">
+    
+      <li>
+        
+          <a href="/nmpolicy/user-guide.html"><span class="nav__sub-title">User Guide</span></a>
+        
+
+        
+        <ul>
+          
+            <li><a href="/nmpolicy/user-guide/101-library.html">Library</a></li>
+          
+            <li><a href="/nmpolicy/user-guide/102-policy-syntax.html" class="active">Policy syntax</a></li>
+          
+        </ul>
+        
+      </li>
+    
+      <li>
+        
+          <a href="/nmpolicy/examples.html"><span class="nav__sub-title">Examples</span></a>
+        
+
+        
+      </li>
+    
+      <li>
+        
+          <a href="https://github.com/nmstate/nmpolicy"><span class="nav__sub-title">GitHub</span></a>
+        
+
+        
+      </li>
+    
+  </ul>
+</nav>
+
+    
+  
+  </div>
+
+
+
+  <article class="page" itemscope itemtype="https://schema.org/CreativeWork">
+    <meta itemprop="headline" content="Policy Syntax">
+    
+    
+    
+
+    <div class="page__inner-wrap">
+      
+        <header>
+          <h1 id="page-title" class="page__title" itemprop="headline">Policy Syntax
+</h1>
+          
+
+
+        </header>
+      
+
+      <section class="page__content" itemprop="text">
+        
+        <p>The policy contains the following fields:</p>
+<ul>
+  <li>
+<code class="language-plaintext highlighter-rouge">capture</code>: Contains some simple expressions
+to evaluate the current network configuration and store the result at 
+variables.</li>
+  <li>
+<code class="language-plaintext highlighter-rouge">desiredState</code>: Contains network state yaml with references to <code class="language-plaintext highlighter-rouge">capture</code> entries.</li>
+</ul>
+
+<p><strong>Example:</strong></p>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="na">capture</span><span class="pi">:</span>
+  <span class="na">default-gw</span><span class="pi">:</span> <span class="s">routes.running.destination=="0.0.0.0/0"</span>
+  <span class="na">base-iface</span><span class="pi">:</span> <span class="s">interfaces.name==capture.default-gw.routes.running.0.next-hop-interface</span>
+<span class="na">desiredState</span><span class="pi">:</span>
+  <span class="na">interfaces</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">br1</span>
+    <span class="na">description</span><span class="pi">:</span> <span class="s">DHCP aware Linux bridge to connect a nic that is referenced by a default gateway</span>
+    <span class="na">type</span><span class="pi">:</span> <span class="s">linux-bridge</span>
+    <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+    <span class="na">mac-address</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">capture.base-iface.interfaces.0.mac-address</span><span class="nv"> </span><span class="s">}}"</span>
+    <span class="na">ipv4</span><span class="pi">:</span>
+      <span class="na">dhcp</span><span class="pi">:</span> <span class="no">true</span>
+      <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
+    <span class="na">bridge</span><span class="pi">:</span>
+      <span class="na">options</span><span class="pi">:</span>
+        <span class="na">stp</span><span class="pi">:</span>
+          <span class="na">enabled</span><span class="pi">:</span> <span class="no">false</span>
+        <span class="na">port</span><span class="pi">:</span>
+        <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">capture.base-iface.interfaces.0.name</span><span class="nv"> </span><span class="s">}}"</span>
+
+
+</code></pre></div></div>
+
+<h2 id="capture-syntax">Capture syntax</h2>
+
+<p>The capture is a map of capture entries with an identifier as the key that can 
+be referenced with <code class="language-plaintext highlighter-rouge">capture.[id]</code></p>
+
+<p>The map value is a capture entry expression that evaluates the current 
+network state and stores the result.</p>
+
+<p>The following is a semi-formal definition of the capture entry expression:</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;letter&gt; ::= "A" | "B" | "C" | "D" | "E" | "F" | "G"
+       | "H" | "I" | "J" | "K" | "L" | "M" | "N"
+       | "O" | "P" | "Q" | "R" | "S" | "T" | "U"
+       | "V" | "W" | "X" | "Y" | "Z" | "a" | "b"
+       | "c" | "d" | "e" | "f" | "g" | "h" | "i"
+       | "j" | "k" | "l" | "m" | "n" | "o" | "p"
+       | "q" | "r" | "s" | "t" | "u" | "v" | "w"
+       | "x" | "y" | "z"
+&lt;digit&gt; ::= [0-9]
+&lt;number&gt; ::= &lt;digit&gt;+
+&lt;identity&gt; ::= &lt;letter&gt; ( &lt;digit&gt; | "-" | &lt;letter&gt; )*
+&lt;dot&gt; ::= "."
+&lt;path&gt; ::= &lt;identity&gt; ( &lt;dot&gt; ( &lt;identity&gt; | &lt;number&gt; ))*
+&lt;string&gt; ::= \" (&lt;all characters&gt;)* \"
+
+&lt;captureid&gt; ::= &lt;identity&gt;
+&lt;capturepath&gt; ::= "capture" &lt;dot&gt; &lt;captureid&gt; &lt;path&gt;
+&lt;eqoperator&gt; ::= "=="
+&lt;eqexpression&gt; ::= &lt;path&gt; &lt;eqoperator&gt; (&lt;string&gt; | &lt;number&gt; | &lt;capturepath&gt;)
+&lt;replaceoperator&gt; ::= ":="
+&lt;replaceexpression&gt; ::= &lt;path&gt; &lt;replaceoperator&gt; (&lt;string&gt; | &lt;number&gt; | &lt;capturepath&gt;)
+&lt;expression&gt; ::= &lt;eqexpression&gt; | &lt;replaceexpression&gt;
+&lt;pipe&gt; ::= "|"
+&lt;pipedexpression&gt; ::= &lt;capturepath&gt; &lt;pipe&gt; &lt;expression&gt;
+</code></pre></div></div>
+
+<h3 id="path-path">Path <code class="language-plaintext highlighter-rouge">&lt;path&gt;</code>
+</h3>
+<p>The path expression contains different “steps” separated by dots, each “step” 
+can be a key from a map or the index starting with 0 from a list.</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>interfaces.name
+routes.running.0.next-hop-interface
+</code></pre></div></div>
+
+<p>To reference a capture entry from a path the reserved word <code class="language-plaintext highlighter-rouge">capture</code> has to be
+used followed by a dot and the capture entry name:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>capture.default-gw.routes.running.0
+capture.primary-nic.interfaces.0.name
+</code></pre></div></div>
+
+<h3 id="equality-filter-eqexpression">Equality filter <code class="language-plaintext highlighter-rouge">&lt;eqexpression&gt;</code>
+</h3>
+<p>Filter the current state based on specific state values. 
+The filter follows a simple syntax, similar to jsonpath. 
+Values may be explicit or appear as references to other expressions. 
+The resulting output is a full NMState state containing only the filtered values.</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>interfaces.name == "eth1"
+routes.destination == "0.0.0.0/0"
+dns.server == "192.168.1.1"
+interfaces.name == capture.default-gw.interfaces.0.name
+</code></pre></div></div>
+
+<h3 id="replace-replaceexpression">Replace <code class="language-plaintext highlighter-rouge">&lt;replaceexpression&gt;</code>
+</h3>
+<p>These commands can replace values from the specified fields 
+at the input NMState and they can reference other capture entries.</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>routes.running.next-hop-interface := "br1"
+</code></pre></div></div>
+
+<h3 id="pipe-pipexpression">Pipe <code class="language-plaintext highlighter-rouge">&lt;pipexpression&gt;</code>
+</h3>
+<p>When expressions are piped the output from the left expression is passed 
+to the input of the right command.</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>capture.base-iface-routes | routes.running.next-hop-interface := "br1"
+</code></pre></div></div>
+
+<h2 id="desired-state-syntax">Desired state syntax</h2>
+
+<p>The state follows <a href="https://nmstate.io/examples.html">NMState</a> syntax and will include optionally references 
+to capture entries so they can be expanded in-place. 
+capture references have to be enclosed between <code class="language-plaintext highlighter-rouge">"{{</code> and <code class="language-plaintext highlighter-rouge">}}"</code> expressions, the
+<code class="language-plaintext highlighter-rouge">desiredState</code> field can be expressed using JSON or YAML.</p>
+
+<p>The only supported expressions are capture entry reference path like the following</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>capture.base-iface.interfaces.0.mac-address
+capture.base-iface.interfaces.0.name
+</code></pre></div></div>
+
+<p>For example to override the routes config from a capture <code class="language-plaintext highlighter-rouge">new-routes</code> 
+the following can be specified</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">routes</span><span class="pi">:</span>
+  <span class="na">config</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">capture.new-routes.running</span><span class="nv"> </span><span class="s">}}"</span>
+</code></pre></div></div>
+
+<p>Or clone the mac-address from a capture entry <code class="language-plaintext highlighter-rouge">primary-nic</code></p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">interfaces</span><span class="pi">:</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">br1</span>
+  <span class="na">type</span><span class="pi">:</span> <span class="s">linux-bridge</span>
+  <span class="na">state</span><span class="pi">:</span> <span class="s">up</span> 
+  <span class="na">mac-address</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">capture.primary-nic.interfaces.0.mac-address</span><span class="nv"> </span><span class="s">}}"</span>
+</code></pre></div></div>
+
+
+        
+      </section>
+
+      <footer class="page__meta">
+        
+        
+
+
+        
+
+
+      </footer>
+
+      
+
+      
+    </div>
+
+    
+  </article>
+
+  
+  
+</div>
+
+    </div>
+
+    
+
+    <div id="footer" class="page__footer">
+      <footer>
+        <!-- start custom footer snippets -->
+
+<!-- end custom footer snippets -->
+        <div class="page__footer-follow">
+  <ul class="social-icons">
+    
+
+    
+      
+        
+          <li><a href="https://github.com/nmstate/nmpolicy" rel="nofollow noopener noreferrer"><i class="fab fa-fw fa-github" aria-hidden="true"></i> GitHub</a></li>
+        
+      
+    
+
+    
+      <li><a href="/nmpolicy/feed.xml"><i class="fas fa-fw fa-rss-square" aria-hidden="true"></i> Feed</a></li>
+    
+  </ul>
+</div>
+
+<div class="page__footer-copyright">© 2022 The NMPolicy team. Powered by <a href="https://jekyllrb.com" rel="nofollow">Jekyll</a> &amp; <a href="https://mademistakes.com/work/minimal-mistakes-jekyll-theme/" rel="nofollow">Minimal Mistakes</a>.</div>
+
+      </footer>
+    </div>
+
+    
+  <script src="/nmpolicy/assets/js/main.min.js"></script>
+
+
+
+
+
+
+
+
+
+
+  </body>
+</html>
