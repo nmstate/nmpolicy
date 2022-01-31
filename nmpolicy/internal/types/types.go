@@ -33,12 +33,12 @@ type PolicySpec struct {
 
 type CachedState struct {
 	CapturedStates CapturedStates
+	MetaInfo       nmpolicytypes.MetaInfo
 }
 
 type GeneratedState struct {
 	Cache        CachedState
 	DesiredState NMState
-	MetaInfo     nmpolicytypes.MetaInfo
 }
 
 type CapturedState struct {

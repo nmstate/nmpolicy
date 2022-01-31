@@ -49,8 +49,8 @@ func testEmptyPolicy(t *testing.T) {
 
 		assert.NoError(t, err)
 
-		expectedEmptyState := types.GeneratedState{MetaInfo: types.MetaInfo{Version: "0"}}
-		assert.NotEqual(t, time.Time{}, s.MetaInfo.TimeStamp)
+		expectedEmptyState := types.GeneratedState{Cache: types.CachedState{MetaInfo: types.MetaInfo{Version: "0"}}}
+		assert.NotEqual(t, time.Time{}, s.Cache.MetaInfo.TimeStamp)
 		assert.Equal(t, expectedEmptyState, resetTimeStamp(s))
 	})
 }
@@ -70,7 +70,9 @@ func testPolicyWithOnlyDesiredState(t *testing.T) {
 		assert.NoError(t, err)
 		expectedState := types.GeneratedState{
 			DesiredState: stateData,
-			MetaInfo:     types.MetaInfo{Version: "0"},
+			Cache: types.CachedState{
+				MetaInfo: types.MetaInfo{Version: "0"},
+			},
 		}
 		assert.Equal(t, expectedState, resetTimeStamp(s))
 	})
@@ -90,7 +92,8 @@ func testPolicyWithCachedCaptureAndDesiredStateWithoutRef(t *testing.T) {
 		}
 
 		cacheState := types.CachedState{
-			Capture: map[string]types.CaptureState{capID0: {State: []byte("name: some captured state")}},
+			MetaInfo: types.MetaInfo{Version: "0"},
+			Capture:  map[string]types.CaptureState{capID0: {State: []byte("name: some captured state")}},
 		}
 		cacheState.Capture, err = formatCapturedStates(cacheState.Capture)
 		assert.NoError(t, err)
@@ -104,7 +107,6 @@ func testPolicyWithCachedCaptureAndDesiredStateWithoutRef(t *testing.T) {
 		expectedState := types.GeneratedState{
 			Cache:        cacheState,
 			DesiredState: stateData,
-			MetaInfo:     types.MetaInfo{Version: "0"},
 		}
 		assert.Equal(t, expectedState, resetTimeStamp(s))
 	})
@@ -282,11 +284,12 @@ func testPolicyWithoutCache(t *testing.T) {
 		assert.NoError(t, err)
 
 		expected := types.GeneratedState{
-			MetaInfo: types.MetaInfo{
-				Version: "0",
-			},
+
 			DesiredState: mainExpectedDesiredState,
 			Cache: types.CachedState{
+				MetaInfo: types.MetaInfo{
+					Version: "0",
+				},
 				Capture: map[string]types.CaptureState{
 					"default-gw":        defaultGwCapturedState,
 					"base-iface":        baseIfaceCapturedState,
@@ -328,11 +331,11 @@ func testPolicyWithFullCache(t *testing.T) {
 		assert.NoError(t, err)
 
 		expected := types.GeneratedState{
-			MetaInfo: types.MetaInfo{
-				Version: "0",
-			},
 			DesiredState: mainExpectedDesiredState,
 			Cache: types.CachedState{
+				MetaInfo: types.MetaInfo{
+					Version: "0",
+				},
 				Capture: map[string]types.CaptureState{
 					"base-iface":    baseIfaceCapturedState,
 					"bridge-routes": bridgeRoutesCapturedState,
@@ -374,11 +377,11 @@ func testPolicyWithPartialCache(t *testing.T) {
 		assert.NoError(t, err)
 
 		expected := types.GeneratedState{
-			MetaInfo: types.MetaInfo{
-				Version: "0",
-			},
 			DesiredState: mainExpectedDesiredState,
 			Cache: types.CachedState{
+				MetaInfo: types.MetaInfo{
+					Version: "0",
+				},
 				Capture: map[string]types.CaptureState{
 					"default-gw":        defaultGwCapturedState,
 					"base-iface":        baseIfaceCapturedState,
@@ -436,9 +439,9 @@ func testGenerateUniqueTimestamps(t *testing.T) {
 			stateData,
 			cacheState)
 		assert.NoError(t, err)
-		assert.Equal(t, obtained.MetaInfo.TimeStamp, obtained.Cache.Capture[capID0].MetaInfo.TimeStamp)
+		assert.Equal(t, obtained.Cache.MetaInfo.TimeStamp, obtained.Cache.Capture[capID0].MetaInfo.TimeStamp)
 		assert.Equal(t, cacheState.Capture[capID1].MetaInfo, obtained.Cache.Capture[capID1].MetaInfo)
-		assert.Greater(t, obtained.MetaInfo.TimeStamp.Sub(beforeGenerate), time.Duration(0))
+		assert.Greater(t, obtained.Cache.MetaInfo.TimeStamp.Sub(beforeGenerate), time.Duration(0))
 		assert.Greater(t, obtained.Cache.Capture[capID0].MetaInfo.TimeStamp.Sub(beforeGenerate), time.Duration(0))
 	})
 }
@@ -517,7 +520,7 @@ func testFailureResolver(t *testing.T) {
 }
 
 func resetTimeStamp(generatedState types.GeneratedState) types.GeneratedState {
-	generatedState.MetaInfo.TimeStamp = time.Time{}
+	generatedState.Cache.MetaInfo.TimeStamp = time.Time{}
 	generatedState.Cache.Capture = resetCapturedStatesTimeStamp(generatedState.Cache.Capture)
 	return generatedState
 }

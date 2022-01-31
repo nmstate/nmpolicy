@@ -57,7 +57,6 @@ func GenerateState(policySpec types.PolicySpec,
 	if err != nil {
 		return generatedState, err
 	}
-
 	generatedState, err = toGeneratedState(internalGeneratedState)
 	if err != nil {
 		return generatedState, err
@@ -132,12 +131,13 @@ func toInternalCachedState(cachedState types.CachedState) (internaltypes.CachedS
 }
 
 func toCachedState(internalCachedState internaltypes.CachedState) (types.CachedState, error) {
-	if len(internalCachedState.CapturedStates) == 0 {
-		return types.CachedState{}, nil
-	}
 	cachedState := types.CachedState{
-		Capture: map[string]types.CaptureState{},
+		MetaInfo: internalCachedState.MetaInfo,
 	}
+	if len(internalCachedState.CapturedStates) == 0 {
+		return cachedState, nil
+	}
+	cachedState.Capture = map[string]types.CaptureState{}
 	for captureEntryName, internalCapturedState := range internalCachedState.CapturedStates {
 		capturedState, err := toCapturedState(internalCapturedState)
 		if err != nil {
@@ -158,7 +158,6 @@ func toGeneratedState(internalGeneratedState internaltypes.GeneratedState) (type
 		return types.GeneratedState{}, err
 	}
 	return types.GeneratedState{
-		MetaInfo:     internalGeneratedState.MetaInfo,
 		DesiredState: desiredState,
 		Cache:        cachedState,
 	}, nil

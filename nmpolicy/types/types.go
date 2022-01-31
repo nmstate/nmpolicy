@@ -26,13 +26,13 @@ type PolicySpec struct {
 }
 
 type CachedState struct {
-	Capture map[string]CaptureState
+	MetaInfo MetaInfo
+	Capture  map[string]CaptureState
 }
 
 type GeneratedState struct {
 	Cache        CachedState
 	DesiredState NMState
-	MetaInfo     MetaInfo
 }
 
 type CaptureState struct {
