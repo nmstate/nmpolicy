@@ -4,6 +4,8 @@ main:
     children:
       - title: "Library"
         url: /user-guide/101-library.html
+      - title: "CLI"
+        url: /user-guide/103-cli.html
       - title: "Policy syntax"
         url: /user-guide/102-policy-syntax.html
   - title: Examples

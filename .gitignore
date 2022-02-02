@@ -27,3 +27,4 @@ dist/
 docs/.bundle/
 docs/.jekyll-cache/
 docs/build/
+docs/user-guide/*-help.txt
