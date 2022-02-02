@@ -1,6 +1,7 @@
 primary-nic:
   metaInfo:
     time: "2021-12-15T13:45:40Z"
+    version: "0"
   state:
     interfaces:
     - name: eth1
@@ -14,6 +15,7 @@ primary-nic:
 secondary-nic:
   metaInfo:
     time: "2021-12-15T13:45:40Z"
+    version: "0"
   state:
     interfaces:
     - name: eth2
