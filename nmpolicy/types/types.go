@@ -32,7 +32,6 @@ type CachedState struct {
 type GeneratedState struct {
 	Cache        CachedState
 	DesiredState NMState
-	MetaInfo     MetaInfo
 }
 
 type CaptureState struct {
