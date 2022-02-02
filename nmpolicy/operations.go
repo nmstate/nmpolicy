@@ -158,7 +158,6 @@ func toGeneratedState(internalGeneratedState internaltypes.GeneratedState) (type
 		return types.GeneratedState{}, err
 	}
 	return types.GeneratedState{
-		MetaInfo:     internalGeneratedState.MetaInfo,
 		DesiredState: desiredState,
 		Cache:        cachedState,
 	}, nil

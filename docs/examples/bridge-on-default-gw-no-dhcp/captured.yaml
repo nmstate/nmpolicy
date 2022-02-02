@@ -1,6 +1,7 @@
 base-iface:
   metaInfo:
     time: "2021-12-15T13:45:40Z"
+    version: "0"
   state:
     interfaces:
     - name: eth1
@@ -18,6 +19,7 @@ base-iface:
 default-gw:
   metaInfo:
      time: "2021-12-15T13:45:40Z"
+     version: "0"
   state:
     routes:
       running:
@@ -28,6 +30,7 @@ default-gw:
 base-iface-routes:
   metaInfo:
      time: "2021-12-15T13:45:40Z"
+     version: "0"
   state:
     routes:
       running:
@@ -42,6 +45,7 @@ base-iface-routes:
 bridge-routes:
   metaInfo:
      time: "2021-12-15T13:45:40Z"
+     version: "0"
   state:
     routes:
       running:

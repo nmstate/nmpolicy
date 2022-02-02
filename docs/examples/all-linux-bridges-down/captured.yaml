@@ -1,6 +1,7 @@
 linux-bridges:
   metaInfo:
     time: "2021-12-15T13:45:40Z"
+    version: "0"
   state:
     interfaces:
     - name: br1
@@ -15,6 +16,7 @@ linux-bridges:
 linux-bridges-down:
   metaInfo:
     time: "2021-12-15T13:45:40Z"
+    version: "0"
   state:
     interfaces:
     - name: br1

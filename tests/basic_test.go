@@ -49,9 +49,8 @@ func testEmptyPolicy(t *testing.T) {
 
 		assert.NoError(t, err)
 
-		expectedEmptyState := types.GeneratedState{MetaInfo: types.MetaInfo{Version: "0"}}
-		assert.NotEqual(t, time.Time{}, s.MetaInfo.TimeStamp)
-		assert.Equal(t, expectedEmptyState, resetTimeStamp(s))
+		expectedEmptyState := types.GeneratedState{}
+		assert.Equal(t, expectedEmptyState, s)
 	})
 }
 
@@ -70,9 +69,8 @@ func testPolicyWithOnlyDesiredState(t *testing.T) {
 		assert.NoError(t, err)
 		expectedState := types.GeneratedState{
 			DesiredState: stateData,
-			MetaInfo:     types.MetaInfo{Version: "0"},
 		}
-		assert.Equal(t, expectedState, resetTimeStamp(s))
+		assert.Equal(t, expectedState, s)
 	})
 }
 
@@ -90,7 +88,10 @@ func testPolicyWithCachedCaptureAndDesiredStateWithoutRef(t *testing.T) {
 		}
 
 		cacheState := types.CachedState{
-			Capture: map[string]types.CaptureState{capID0: {State: []byte("name: some captured state")}},
+			Capture: map[string]types.CaptureState{capID0: {
+				State:    []byte("name: some captured state"),
+				MetaInfo: types.MetaInfo{Version: "0"},
+			}},
 		}
 		cacheState.Capture, err = formatCapturedStates(cacheState.Capture)
 		assert.NoError(t, err)
@@ -104,7 +105,6 @@ func testPolicyWithCachedCaptureAndDesiredStateWithoutRef(t *testing.T) {
 		expectedState := types.GeneratedState{
 			Cache:        cacheState,
 			DesiredState: stateData,
-			MetaInfo:     types.MetaInfo{Version: "0"},
 		}
 		assert.Equal(t, expectedState, resetTimeStamp(s))
 	})
@@ -215,6 +215,9 @@ routes:
     next-hop-interface: eth1
     table-id: 254
 `),
+	MetaInfo: types.MetaInfo{
+		Version: "0",
+	},
 }
 
 var baseIfaceCapturedState = types.CaptureState{
@@ -232,6 +235,9 @@ interfaces:
     dhcp: false
     enabled: true
 `),
+	MetaInfo: types.MetaInfo{
+		Version: "0",
+	},
 }
 
 var baseIfaceRoutesCapturedState = types.CaptureState{
@@ -247,6 +253,9 @@ routes:
     next-hop-interface: eth1
     table-id: 254
 `),
+	MetaInfo: types.MetaInfo{
+		Version: "0",
+	},
 }
 
 var bridgeRoutesCapturedState = types.CaptureState{
@@ -262,6 +271,9 @@ routes:
     next-hop-interface: br1
     table-id: 254
 `),
+	MetaInfo: types.MetaInfo{
+		Version: "0",
+	},
 }
 
 func testPolicyWithoutCache(t *testing.T) {
@@ -282,9 +294,7 @@ func testPolicyWithoutCache(t *testing.T) {
 		assert.NoError(t, err)
 
 		expected := types.GeneratedState{
-			MetaInfo: types.MetaInfo{
-				Version: "0",
-			},
+
 			DesiredState: mainExpectedDesiredState,
 			Cache: types.CachedState{
 				Capture: map[string]types.CaptureState{
@@ -328,9 +338,6 @@ func testPolicyWithFullCache(t *testing.T) {
 		assert.NoError(t, err)
 
 		expected := types.GeneratedState{
-			MetaInfo: types.MetaInfo{
-				Version: "0",
-			},
 			DesiredState: mainExpectedDesiredState,
 			Cache: types.CachedState{
 				Capture: map[string]types.CaptureState{
@@ -374,9 +381,6 @@ func testPolicyWithPartialCache(t *testing.T) {
 		assert.NoError(t, err)
 
 		expected := types.GeneratedState{
-			MetaInfo: types.MetaInfo{
-				Version: "0",
-			},
 			DesiredState: mainExpectedDesiredState,
 			Cache: types.CachedState{
 				Capture: map[string]types.CaptureState{
@@ -436,9 +440,7 @@ func testGenerateUniqueTimestamps(t *testing.T) {
 			stateData,
 			cacheState)
 		assert.NoError(t, err)
-		assert.Equal(t, obtained.MetaInfo.TimeStamp, obtained.Cache.Capture[capID0].MetaInfo.TimeStamp)
 		assert.Equal(t, cacheState.Capture[capID1].MetaInfo, obtained.Cache.Capture[capID1].MetaInfo)
-		assert.Greater(t, obtained.MetaInfo.TimeStamp.Sub(beforeGenerate), time.Duration(0))
 		assert.Greater(t, obtained.Cache.Capture[capID0].MetaInfo.TimeStamp.Sub(beforeGenerate), time.Duration(0))
 	})
 }
@@ -517,7 +519,6 @@ func testFailureResolver(t *testing.T) {
 }
 
 func resetTimeStamp(generatedState types.GeneratedState) types.GeneratedState {
-	generatedState.MetaInfo.TimeStamp = time.Time{}
 	generatedState.Cache.Capture = resetCapturedStatesTimeStamp(generatedState.Cache.Capture)
 	return generatedState
 }
