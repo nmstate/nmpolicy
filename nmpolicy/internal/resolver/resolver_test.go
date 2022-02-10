@@ -121,23 +121,27 @@ func runTest(t *testing.T, testToRun *test) {
 
 func TestFilter(t *testing.T) {
 	t.Run("Resolve Filter", func(t *testing.T) {
-		testFilterMapListOnSecondPathIdentity(t)
-		testFilterMapListOnFirstPathIdentity(t)
-		testFilterList(t)
-		testFilterCaptureRef(t)
-		testFilterCaptureRefWithoutCapturedState(t)
-		testFilterCaptureRefNotFound(t)
-		testFilterBadCaptureRef(t)
-		testFilterCaptureRefPathNotFoundMap(t)
-		testFilterCaptureRefPathNotFoundSlice(t)
-		testFilterCaptureRefInvalidStateForPathMap(t)
-		testFilterCaptureRefInvalidStateForPathSlice(t)
-		testFilterDifferentTypeOnPath(t)
-		testFilterOptionalField(t)
-		testFilterNonCaptureRefPathAtThirdArg(t)
-		testFilterWithInvalidInputSource(t)
-		testFilterWithInvalidTypeInSource(t)
-		testFilterBadPath(t)
+		testEqFilterMapListOnSecondPathIdentity(t)
+		testEqFilterMapListOnFirstPathIdentity(t)
+		testEqFilterList(t)
+		testEqFilterCaptureRef(t)
+		testEqFilterCaptureRefWithoutCapturedState(t)
+		testEqFilterCaptureRefNotFound(t)
+		testEqFilterBadCaptureRef(t)
+		testEqFilterCaptureRefPathNotFoundMap(t)
+		testEqFilterCaptureRefPathNotFoundSlice(t)
+		testEqFilterCaptureRefInvalidStateForPathMap(t)
+		testEqFilterCaptureRefInvalidStateForPathSlice(t)
+		testEqFilterDifferentTypeOnPath(t)
+		testEqFilterOptionalField(t)
+		testEqFilterNonCaptureRefPathAtThirdArg(t)
+		testEqFilterWithInvalidInputSource(t)
+		testEqFilterWithInvalidTypeInSource(t)
+		testEqFilterBadPath(t)
+
+		testNeFilterMapListOnSecondPathIdentity(t)
+		testNeFilterMapListOnFirstPathIdentity(t)
+		testNeFilterList(t)
 
 		testReplaceCurrentState(t)
 		testReplaceCapturedState(t)
@@ -145,8 +149,8 @@ func TestFilter(t *testing.T) {
 	})
 }
 
-func testFilterMapListOnSecondPathIdentity(t *testing.T) {
-	t.Run("Filter map, list on second path identity", func(t *testing.T) {
+func testEqFilterMapListOnSecondPathIdentity(t *testing.T) {
+	t.Run("EqFilter map, list on second path identity", func(t *testing.T) {
 		testToRun := test{
 			captureASTPool: `
 default-gw:
@@ -180,8 +184,8 @@ default-gw:
 	})
 }
 
-func testFilterMapListOnFirstPathIdentity(t *testing.T) {
-	t.Run("Filter map, list on first path identity", func(t *testing.T) {
+func testEqFilterMapListOnFirstPathIdentity(t *testing.T) {
+	t.Run("EqFilter map, list on first path identity", func(t *testing.T) {
 		testToRun := test{
 			captureASTPool: `
 up-interfaces: 
@@ -217,8 +221,8 @@ up-interfaces:
 	})
 }
 
-func testFilterList(t *testing.T) {
-	t.Run("Filter list", func(t *testing.T) {
+func testEqFilterList(t *testing.T) {
+	t.Run("EqFilter list", func(t *testing.T) {
 		testToRun := test{
 			captureASTPool: `
 specific-ipv4:
@@ -261,8 +265,8 @@ specific-ipv4:
 	})
 }
 
-func testFilterCaptureRef(t *testing.T) {
-	t.Run("Filter list with capture reference", func(t *testing.T) {
+func testEqFilterCaptureRef(t *testing.T) {
+	t.Run("EqFilter list with capture reference", func(t *testing.T) {
 		testToRun := test{
 			capturedStatesCache: `
 default-gw:
@@ -331,8 +335,8 @@ base-iface-routes:
 	})
 }
 
-func testFilterCaptureRefWithoutCapturedState(t *testing.T) {
-	t.Run("Filter list with capture reference", func(t *testing.T) {
+func testEqFilterCaptureRefWithoutCapturedState(t *testing.T) {
+	t.Run("EqFilter list with capture reference", func(t *testing.T) {
 		testToRun := test{
 			captureASTPool: `
 default-gw:
@@ -405,8 +409,8 @@ base-iface-routes:
 	})
 }
 
-func testFilterDifferentTypeOnPath(t *testing.T) {
-	t.Run("Filter different type on path", func(t *testing.T) {
+func testEqFilterDifferentTypeOnPath(t *testing.T) {
+	t.Run("EqFilter different type on path", func(t *testing.T) {
 		testToRun := withCaptureExpressions(t, `
 invalid-path-type: interfaces.ipv4.address=="10.244.0.1"
 `)
@@ -420,8 +424,8 @@ invalid-path-type: interfaces.ipv4.address=="10.244.0.1"
 	})
 }
 
-func testFilterOptionalField(t *testing.T) {
-	t.Run("Filter optional field", func(t *testing.T) {
+func testEqFilterOptionalField(t *testing.T) {
+	t.Run("EqFilter optional field", func(t *testing.T) {
 		testToRun := test{
 			captureASTPool: `
 description-eth1:
@@ -459,8 +463,8 @@ description-eth1:
 	})
 }
 
-func testFilterBadCaptureRef(t *testing.T) {
-	t.Run("Filter list with non existing capture reference", func(t *testing.T) {
+func testEqFilterBadCaptureRef(t *testing.T) {
+	t.Run("EqFilter list with non existing capture reference", func(t *testing.T) {
 		testToRun := withCaptureExpressions(t, `
 base-iface-routes: routes.running.next-hop-interface==capture
 `)
@@ -472,8 +476,8 @@ base-iface-routes: routes.running.next-hop-interface==capture
 	})
 }
 
-func testFilterCaptureRefNotFound(t *testing.T) {
-	t.Run("Filter list with non existing capture reference", func(t *testing.T) {
+func testEqFilterCaptureRefNotFound(t *testing.T) {
+	t.Run("EqFilter list with non existing capture reference", func(t *testing.T) {
 		testToRun := withCaptureExpressions(t, `
 base-iface-routes: routes.running.next-hop-interface==capture.default-gw.routes
 `)
@@ -485,8 +489,8 @@ base-iface-routes: routes.running.next-hop-interface==capture.default-gw.routes
 	})
 }
 
-func testFilterCaptureRefInvalidStateForPathMap(t *testing.T) {
-	t.Run("Filter list with capture reference and invalid identity path step", func(t *testing.T) {
+func testEqFilterCaptureRefInvalidStateForPathMap(t *testing.T) {
+	t.Run("EqFilter list with capture reference and invalid identity path step", func(t *testing.T) {
 		testToRun := withCaptureExpressions(t, `
 base-iface-routes: routes.running.next-hop-interface==capture.default-gw.routes.running.badfield.next-hop-interface
 `)
@@ -511,8 +515,8 @@ default-gw:
 	})
 }
 
-func testFilterCaptureRefInvalidStateForPathSlice(t *testing.T) {
-	t.Run("Filter list with capture reference and invalid numeric path step", func(t *testing.T) {
+func testEqFilterCaptureRefInvalidStateForPathSlice(t *testing.T) {
+	t.Run("EqFilter list with capture reference and invalid numeric path step", func(t *testing.T) {
 		testToRun := withCaptureExpressions(t, `
 base-iface-routes: routes.running.next-hop-interface==capture.default-gw.routes.1.0.next-hop-interface
 `)
@@ -536,8 +540,8 @@ default-gw:
 	})
 }
 
-func testFilterCaptureRefPathNotFoundMap(t *testing.T) {
-	t.Run("Filter list with capture reference and path with not found identity step", func(t *testing.T) {
+func testEqFilterCaptureRefPathNotFoundMap(t *testing.T) {
+	t.Run("EqFilter list with capture reference and path with not found identity step", func(t *testing.T) {
 		testToRun := withCaptureExpressions(t, `
 base-iface-routes: routes.running.next-hop-interface==capture.default-gw.routes.badfield
 `)
@@ -560,8 +564,8 @@ default-gw:
 	})
 }
 
-func testFilterCaptureRefPathNotFoundSlice(t *testing.T) {
-	t.Run("Filter list with capture reference and path with not found numeric step", func(t *testing.T) {
+func testEqFilterCaptureRefPathNotFoundSlice(t *testing.T) {
+	t.Run("EqFilter list with capture reference and path with not found numeric step", func(t *testing.T) {
 		testToRun := withCaptureExpressions(t, `
 base-interface-routes: routes.running.next-hop-interface==capture.default-gw.routes.running.6
 `)
@@ -584,8 +588,8 @@ default-gw:
 	})
 }
 
-func testFilterNonCaptureRefPathAtThirdArg(t *testing.T) {
-	t.Run("Filter list with path as third argument without capture reference", func(t *testing.T) {
+func testEqFilterNonCaptureRefPathAtThirdArg(t *testing.T) {
+	t.Run("EqFilter list with path as third argument without capture reference", func(t *testing.T) {
 		testToRun := withCaptureExpressions(t, `
 base-iface-routes: routes.running.next-hop-interface==routes.running
 `)
@@ -597,8 +601,8 @@ base-iface-routes: routes.running.next-hop-interface==routes.running
 	})
 }
 
-func testFilterWithInvalidInputSource(t *testing.T) {
-	t.Run("Filter list with invalid input source", func(t *testing.T) {
+func testEqFilterWithInvalidInputSource(t *testing.T) {
+	t.Run("EqFilter list with invalid input source", func(t *testing.T) {
 		testToRun := withCaptureExpressions(t, `
 base-iface-routes: invalidInputSource | routes.running.next-hop-interface=='eth1'
 `)
@@ -611,9 +615,9 @@ base-iface-routes: invalidInputSource | routes.running.next-hop-interface=='eth1
 	})
 }
 
-func testFilterWithInvalidTypeInSource(t *testing.T) {
+func testEqFilterWithInvalidTypeInSource(t *testing.T) {
 	oldSourceYaml := sourceYAML
-	t.Run("Filter list with invalid input source", func(t *testing.T) {
+	t.Run("EqFilter list with invalid input source", func(t *testing.T) {
 		sourceYAML = `
 routes:
    running:
@@ -633,8 +637,8 @@ base-iface-routes: routes.running.next-hop-interface=='eth1'
 	sourceYAML = oldSourceYaml
 }
 
-func testFilterBadPath(t *testing.T) {
-	t.Run("Filter list with non existing path", func(t *testing.T) {
+func testEqFilterBadPath(t *testing.T) {
+	t.Run("EqFilter list with non existing path", func(t *testing.T) {
 		testToRun := withCaptureExpressions(t, `
 base-iface-routes: routes.badfield.next-hop-interface=="eth1"
 `)
@@ -643,6 +647,126 @@ base-iface-routes: routes.badfield.next-hop-interface=="eth1"
 base-iface-routes:
   state:
 `
+		runTest(t, &testToRun)
+	})
+}
+
+func testNeFilterMapListOnSecondPathIdentity(t *testing.T) {
+	t.Run("NeFilter map, list on second path identity", func(t *testing.T) {
+		testToRun := test{
+			captureASTPool: `
+default-gw:
+  nefilter:
+  - pos: 2
+    identity: currentState
+  - pos: 3
+    path:
+    - pos: 4
+      identity: routes
+    - pos: 5
+      identity: running
+    - pos: 6
+      identity: destination
+  - pos: 7
+    string: 0.0.0.0/0
+`,
+
+			expectedCapturedStates: `
+default-gw:
+  state:
+    routes:
+      running:
+      - destination: 1.1.1.0/24
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+      - destination: 2.2.2.0/24
+        next-hop-address: 192.168.200.1
+        next-hop-interface: eth2
+        table-id: 254
+`,
+		}
+		runTest(t, &testToRun)
+	})
+}
+
+func testNeFilterMapListOnFirstPathIdentity(t *testing.T) {
+	t.Run("NeFilter map, list on first path identity", func(t *testing.T) {
+		testToRun := test{
+			captureASTPool: `
+up-interfaces: 
+  pos: 1
+  nefilter:
+  - pos: 2
+    identity: currentState
+  - pos: 3
+    path:
+    - pos: 4
+      identity: interfaces
+    - pos: 5
+      identity: state
+  - pos: 6
+    string: down
+`,
+			expectedCapturedStates: `
+up-interfaces:
+  state: 
+    interfaces:
+    - name: eth1
+      description: "1st ethernet interface"
+      type: ethernet
+      state: up
+      ipv4:
+        address:
+        - ip: 10.244.0.1
+          prefix-length: 24
+        - ip: 169.254.1.0
+          prefix-length: 16
+        dhcp: false
+        enabled: true
+`,
+		}
+		runTest(t, &testToRun)
+	})
+}
+
+func testNeFilterList(t *testing.T) {
+	t.Run("EqFilter list with not equal filter", func(t *testing.T) {
+		testToRun := test{
+			captureASTPool: `
+specific-ipv4:
+  pos: 1
+  nefilter:
+  - pos: 2
+    identity: currentState
+  - pos: 3
+    path:
+    - pos: 4
+      identity: interfaces
+    - pos: 5
+      identity: ipv4
+    - pos: 6
+      identity: address
+    - pos: 7
+      identity: ip
+  - pos: 8
+    string: 10.244.0.1
+`,
+			expectedCapturedStates: `
+specific-ipv4:
+  state: 
+    interfaces:
+    - name: eth2
+      type: ethernet
+      state: down
+      ipv4:
+        address:
+        - ip: 1.2.3.4
+          prefix-length: 24
+        dhcp: false
+        enabled: false
+`,
+		}
 		runTest(t, &testToRun)
 	})
 }

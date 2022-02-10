@@ -22,10 +22,9 @@ import (
 
 func replace(inputState map[string]interface{}, path ast.VariadicOperator, replaceValue interface{}) (map[string]interface{}, error) {
 	pathVisitorWithReplace := pathVisitor{
-		path:              path,
-		lastMapFn:         replaceMapFieldValue(replaceValue),
-		shouldFilterSlice: false,
-		shouldFilterMap:   false,
+		path:         path,
+		lastMapFn:    replaceMapFieldValue(replaceValue),
+		sliceVisitor: defaultSliceVisitor,
 	}
 
 	replaced, err := pathVisitorWithReplace.visitMap(inputState)
