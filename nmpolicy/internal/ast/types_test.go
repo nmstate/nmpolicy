@@ -69,7 +69,7 @@ eqfilter:
 	assert.Equal(t, expectedAST, obtainedAST)
 }
 
-func TestFilterString(t *testing.T) {
+func TestEqFilterString(t *testing.T) {
 	astYAML := `
 pos: 1
 eqfilter:
@@ -93,6 +93,33 @@ eqfilter:
 	assert.NoError(t, yaml.Unmarshal([]byte(astYAML), node))
 
 	assert.Equal(t, "EqFilter([Path=[Identity=currentState] Path=[Identity=routes Identity=running Identity=table-id] Number=254])",
+		node.String())
+}
+
+func TestNeFilterString(t *testing.T) {
+	astYAML := `
+pos: 1
+nefilter:
+- pos: 2
+  path:
+  - pos: 3
+    identity: currentState
+- pos: 4
+  path:
+  - pos: 5
+    identity: routes
+  - pos: 6
+    identity: running
+  - pos: 7
+    identity: table-id
+- pos: 8
+  number: 254
+`
+
+	node := &ast.Node{}
+	assert.NoError(t, yaml.Unmarshal([]byte(astYAML), node))
+
+	assert.Equal(t, "NeFilter([Path=[Identity=currentState] Path=[Identity=routes Identity=running Identity=table-id] Number=254])",
 		node.String())
 }
 
