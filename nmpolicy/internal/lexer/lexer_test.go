@@ -119,6 +119,16 @@ func testBasicExpressions(t *testing.T) {
 				{7, lexer.IDENTITY, "foo2"},
 				{10, lexer.EOF, ""}},
 			}},
+			{"foo1.bar1!=foo2.bar2", expected{tokens: []lexer.Token{
+				{0, lexer.IDENTITY, "foo1"},
+				{4, lexer.DOT, "."},
+				{5, lexer.IDENTITY, "bar1"},
+				{9, lexer.NEFILTER, "!="},
+				{11, lexer.IDENTITY, "foo2"},
+				{15, lexer.DOT, "."},
+				{16, lexer.IDENTITY, "bar2"},
+				{19, lexer.EOF, ""}},
+			}},
 		})
 	})
 }
