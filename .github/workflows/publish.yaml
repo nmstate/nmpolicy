@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - main
+env:
+  GO_VERSION: 1.16
 jobs:
   publish-docs:
     runs-on: ubuntu-latest
@@ -13,6 +15,10 @@ jobs:
       uses: ruby/setup-ruby@v1
       with:
         ruby-version: 3.0
+    - name: Set up Go
+      uses: actions/setup-go@v1
+      with:
+        go-version: ${{ env.GO_VERSION }}
     - name: Build
       run: make -C docs install build
     - name: Publish 🚀
