@@ -18,6 +18,8 @@ upgrade:
 
 .PHONY: build
 build:
+	go run ../cmd/nmstatectl --help > user-guide/main-help.txt
+	go run ../cmd/nmstatectl gen --help > user-guide/gen-help.txt
 	if [ "${DEPLOY_URL}" != "" ]; then \
 		sed -i 's#^url:.*#url: "${DEPLOY_URL}"#' _config.yaml; \
 		sed -i 's#^baseurl:.*#baseurl: ""#' _config.yaml; \

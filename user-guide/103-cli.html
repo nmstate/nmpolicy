@@ -9,7 +9,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta charset="utf-8">
 
-<!-- begin _includes/seo.html --><title>User Guide - The NMPolicy project</title>
+<!-- begin _includes/seo.html --><title>CLI - The NMPolicy project</title>
 <meta name="description" content="A expressions driven declarative API for network configuration">
 
 
@@ -17,8 +17,8 @@
 <meta property="og:type" content="website">
 <meta property="og:locale" content="en_US">
 <meta property="og:site_name" content="The NMPolicy project">
-<meta property="og:title" content="User Guide">
-<meta property="og:url" content="nmstate.io/nmpolicy/user-guide.html">
+<meta property="og:title" content="CLI">
+<meta property="og:url" content="nmstate.io/nmpolicy/user-guide/103-cli.html">
 
 
   <meta property="og:description" content="A expressions driven declarative API for network configuration">
@@ -34,7 +34,7 @@
 
 
 
-<link rel="canonical" href="nmstate.io/nmpolicy/user-guide.html">
+<link rel="canonical" href="nmstate.io/nmpolicy/user-guide/103-cli.html">
 
 
 
@@ -246,7 +246,7 @@
           
             <li><a href="/nmpolicy/user-guide/101-library.html">Library</a></li>
           
-            <li><a href="/nmpolicy/user-guide/103-cli.html">CLI</a></li>
+            <li><a href="/nmpolicy/user-guide/103-cli.html" class="active">CLI</a></li>
           
             <li><a href="/nmpolicy/user-guide/102-policy-syntax.html">Policy syntax</a></li>
           
@@ -280,7 +280,7 @@
 
 
   <article class="page" itemscope itemtype="https://schema.org/CreativeWork">
-    <meta itemprop="headline" content="User Guide">
+    <meta itemprop="headline" content="CLI">
     
     
     
@@ -288,7 +288,7 @@
     <div class="page__inner-wrap">
       
         <header>
-          <h1 id="page-title" class="page__title" itemprop="headline">User Guide
+          <h1 id="page-title" class="page__title" itemprop="headline">CLI
 </h1>
           
 
@@ -298,13 +298,65 @@
 
       <section class="page__content" itemprop="text">
         
-        
-<p><a href="/nmpolicy/user-guide/101-library.html"> Library </a></p>
+        <p>The NMPolicy project can be used as a CLI calling the <code class="language-plaintext highlighter-rouge">nmstatectl</code> command after
+installing it.</p>
 
-<p><a href="/nmpolicy/user-guide/102-policy-syntax.html"> Policy Syntax </a></p>
+<h2 id="installation">Installation</h2>
 
-<p><a href="/nmpolicy/user-guide/103-cli.html"> CLI </a></p>
+<p>To install <code class="language-plaintext highlighter-rouge">nmpolicyctl</code> you need the <a href="https://go.dev/doc/install">go</a> command at your system and run 
+the following command:</p>
 
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>go <span class="nb">install </span>github.com/nmstate/nmpolicy
+</code></pre></div></div>
+
+<h2 id="usage-with-nmstatectl">Usage with <code class="language-plaintext highlighter-rouge">nmstatectl</code>
+</h2>
+
+<p>Normally the <code class="language-plaintext highlighter-rouge">nmpolicyctl</code> command will be execute side by side with the cli 
+from <a href="https://nmstate.io">nmstate</a> <code class="language-plaintext highlighter-rouge">nmstatectl</code>:</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>nmstatectl show | nmpolicyctl gen policy.yaml | nmstatectl apply
+</code></pre></div></div>
+
+<p>The <code class="language-plaintext highlighter-rouge">nmpolicyctl</code> command will output the generated desired state 
+like the one at the first <a href="/nmpolicy/examples.html#generated-state">example</a>.</p>
+
+<p>It will dump by default the <a href="/nmpolicy/examples.html#captured-states">captured states</a>
+to <code class="language-plaintext highlighter-rouge">~/.cache/nmpolicy/cache.yaml</code></p>
+
+<h2 id="main-help">Main Help</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>This tool helps you to generate dynamic NMState configurations.
+The generated NMState configuration is written to STDOUT.
+
+Usage:
+  nmpolicyctl [command]
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  gen         Generates NMState by policy filename
+  help        Help about any command
+
+Flags:
+  -h, --help   help for nmpolicyctl
+
+Use "nmpolicyctl [command] --help" for more information about a command.
+
+</code></pre></div></div>
+
+<h2 id="generate-state-help">Generate State Help</h2>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Generates NMState by policy filename
+
+Usage:
+  nmpolicyctl gen policy.yaml [flags]
+
+Flags:
+  -i, --captured-states-input string    input file path for already resolved captured states.
+  -o, --captured-states-output string   output file path to the emitted captured states. (default "/home/runner/.cache/nmpolicy/captured-states.yaml")
+  -s, --current-state string            input file path to current NMState. If not specified, STDIN is used.
+  -h, --help                            help for gen
+
+</code></pre></div></div>
 
         
       </section>

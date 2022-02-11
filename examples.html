@@ -246,6 +246,8 @@
           
             <li><a href="/nmpolicy/user-guide/101-library.html">Library</a></li>
           
+            <li><a href="/nmpolicy/user-guide/103-cli.html">CLI</a></li>
+          
             <li><a href="/nmpolicy/user-guide/102-policy-syntax.html">Policy syntax</a></li>
           
         </ul>
@@ -301,10 +303,38 @@
               <header><h4 class="nav__title">
 <i class="fas fa-network-wired"></i> NMPolicy Examples</h4></header>
               <ul class="toc__menu">
-<li><a href="#linux-bridge-on-top-of-default-gw-nic-with-dhcp">Linux bridge on top of default gw NIC with DHCP</a></li>
-<li><a href="#linux-bridge-on-top-of-default-gw-nic-without-dhcp">Linux bridge on top of default gw NIC without DHCP</a></li>
-<li><a href="#ovs-slb-bond-between-primary-and-secondary-nics">OVS SLB bond between primary and secondary nics</a></li>
-<li><a href="#set-all-linux-bridges-down">Set all linux bridges down</a></li>
+<li>
+<a href="#linux-bridge-on-top-of-default-gw-nic-with-dhcp">Linux bridge on top of default gw NIC with DHCP</a><ul>
+<li><a href="#policy">policy</a></li>
+<li><a href="#current-state">current state</a></li>
+<li><a href="#generated-state">generated state</a></li>
+<li><a href="#captured-states">captured states</a></li>
+</ul>
+</li>
+<li>
+<a href="#linux-bridge-on-top-of-default-gw-nic-without-dhcp">Linux bridge on top of default gw NIC without DHCP</a><ul>
+<li><a href="#policy-1">policy</a></li>
+<li><a href="#current-state-1">current state</a></li>
+<li><a href="#generated-state-1">generated state</a></li>
+<li><a href="#captured-states-1">captured states</a></li>
+</ul>
+</li>
+<li>
+<a href="#ovs-slb-bond-between-primary-and-secondary-nics">OVS SLB bond between primary and secondary nics</a><ul>
+<li><a href="#policy-2">policy</a></li>
+<li><a href="#current-state-2">current state</a></li>
+<li><a href="#generated-state-2">generated state</a></li>
+<li><a href="#captured-states-2">captured states</a></li>
+</ul>
+</li>
+<li>
+<a href="#set-all-linux-bridges-down">Set all linux bridges down</a><ul>
+<li><a href="#policy-3">policy</a></li>
+<li><a href="#current-state-3">current state</a></li>
+<li><a href="#generated-state-3">generated state</a></li>
+<li><a href="#captured-states-3">captured states</a></li>
+</ul>
+</li>
 </ul>
 
             </nav>
@@ -312,7 +342,7 @@
         
         <h2 id="linux-bridge-on-top-of-default-gw-nic-with-dhcp">Linux bridge on top of default gw NIC with DHCP</h2>
 
-<p><strong>policy</strong></p>
+<h3 id="policy">policy</h3>
 <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
 <span class="na">capture</span><span class="pi">:</span>
   <span class="na">default-gw</span><span class="pi">:</span> <span class="s">routes.running.destination=="0.0.0.0/0"</span>
@@ -337,7 +367,7 @@
 
 </code></pre></div></div>
 
-<p><strong>current state</strong></p>
+<h3 id="current-state">current state</h3>
 <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">routes</span><span class="pi">:</span>
   <span class="na">running</span><span class="pi">:</span>
   <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span> <span class="s">0.0.0.0/0</span>
@@ -364,7 +394,7 @@
 
 </code></pre></div></div>
 
-<p><strong>generated state</strong></p>
+<h3 id="generated-state">generated state</h3>
 <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">interfaces</span><span class="pi">:</span>
 <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">br1</span>
   <span class="na">description</span><span class="pi">:</span> <span class="s">DHCP aware Linux bridge to connect a nic that is referenced by a default gateway</span>
@@ -383,7 +413,7 @@
 
 </code></pre></div></div>
 
-<p><strong>captured states</strong></p>
+<h3 id="captured-states">captured states</h3>
 <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">base-iface</span><span class="pi">:</span>
   <span class="na">metaInfo</span><span class="pi">:</span>
     <span class="na">time</span><span class="pi">:</span> <span class="s2">"</span><span class="s">2021-12-15T13:45:40Z"</span>
@@ -418,7 +448,7 @@
 
 <h2 id="linux-bridge-on-top-of-default-gw-nic-without-dhcp">Linux bridge on top of default gw NIC without DHCP</h2>
 
-<p><strong>policy</strong></p>
+<h3 id="policy-1">policy</h3>
 <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
 <span class="na">capture</span><span class="pi">:</span>
   <span class="na">default-gw</span><span class="pi">:</span> <span class="s">routes.running.destination=="0.0.0.0/0"</span>
@@ -445,7 +475,7 @@
 
 </code></pre></div></div>
 
-<p><strong>current state</strong></p>
+<h3 id="current-state-1">current state</h3>
 <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">routes</span><span class="pi">:</span>
   <span class="na">running</span><span class="pi">:</span>
   <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span> <span class="s">0.0.0.0/0</span>
@@ -472,7 +502,7 @@
 
 </code></pre></div></div>
 
-<p><strong>generated state</strong></p>
+<h3 id="generated-state-1">generated state</h3>
 <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">interfaces</span><span class="pi">:</span>
 <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">br1</span>
   <span class="na">description</span><span class="pi">:</span> <span class="s">Linux bridge with base interface as a port</span>
@@ -507,7 +537,7 @@
 
 </code></pre></div></div>
 
-<p><strong>captured states</strong></p>
+<h3 id="captured-states-1">captured states</h3>
 <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">base-iface</span><span class="pi">:</span>
   <span class="na">metaInfo</span><span class="pi">:</span>
     <span class="na">time</span><span class="pi">:</span> <span class="s2">"</span><span class="s">2021-12-15T13:45:40Z"</span>
@@ -576,7 +606,7 @@
 
 <p>It uses the <code class="language-plaintext highlighter-rouge">description</code> field to filter between primary and secondary NIC.</p>
 
-<p><strong>policy</strong></p>
+<h3 id="policy-2">policy</h3>
 <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
 <span class="na">capture</span><span class="pi">:</span>
   <span class="na">primary-nic</span><span class="pi">:</span> <span class="s">interfaces.description == "primary"</span>
@@ -608,7 +638,7 @@
 
 </code></pre></div></div>
 
-<p><strong>current state</strong></p>
+<h3 id="current-state-2">current state</h3>
 <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">interfaces</span><span class="pi">:</span>
 <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">eth1</span>
   <span class="na">description</span><span class="pi">:</span> <span class="s">primary</span>
@@ -629,7 +659,7 @@
 
 </code></pre></div></div>
 
-<p><strong>generated state</strong></p>
+<h3 id="generated-state-2">generated state</h3>
 <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">interfaces</span><span class="pi">:</span>
 <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">br1-iface</span>
   <span class="na">type</span><span class="pi">:</span> <span class="s">ovs-interface</span>
@@ -657,7 +687,7 @@
 
 </code></pre></div></div>
 
-<p><strong>captured states</strong></p>
+<h3 id="captured-states-2">captured states</h3>
 <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">primary-nic</span><span class="pi">:</span>
   <span class="na">metaInfo</span><span class="pi">:</span>
     <span class="na">time</span><span class="pi">:</span> <span class="s2">"</span><span class="s">2021-12-15T13:45:40Z"</span>
@@ -692,7 +722,7 @@
 
 <h2 id="set-all-linux-bridges-down">Set all linux bridges down</h2>
 
-<p><strong>policy</strong></p>
+<h3 id="policy-3">policy</h3>
 <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
 <span class="na">capture</span><span class="pi">:</span>
   <span class="na">linux-bridges</span><span class="pi">:</span> <span class="s">interfaces.type=="linux-bridge"</span> 
@@ -704,7 +734,7 @@
 
 </code></pre></div></div>
 
-<p><strong>current state</strong></p>
+<h3 id="current-state-3">current state</h3>
 <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">interfaces</span><span class="pi">:</span>
 <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">eth0</span>
   <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
@@ -720,7 +750,7 @@
 
 </code></pre></div></div>
 
-<p><strong>generated state</strong></p>
+<h3 id="generated-state-3">generated state</h3>
 <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">interfaces</span><span class="pi">:</span>
 <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">br1</span>
   <span class="na">type</span><span class="pi">:</span> <span class="s">linux-bridge</span>
@@ -734,7 +764,7 @@
 
 </code></pre></div></div>
 
-<p><strong>captured states</strong></p>
+<h3 id="captured-states-3">captured states</h3>
 <div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">linux-bridges</span><span class="pi">:</span>
   <span class="na">metaInfo</span><span class="pi">:</span>
     <span class="na">time</span><span class="pi">:</span> <span class="s2">"</span><span class="s">2021-12-15T13:45:40Z"</span>

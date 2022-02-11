@@ -1,0 +1,15 @@
+This tool helps you to generate dynamic NMState configurations.
+The generated NMState configuration is written to STDOUT.
+
+Usage:
+  nmpolicyctl [command]
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  gen         Generates NMState by policy filename
+  help        Help about any command
+
+Flags:
+  -h, --help   help for nmpolicyctl
+
+Use "nmpolicyctl [command] --help" for more information about a command.

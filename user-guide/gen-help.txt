@@ -1,0 +1,10 @@
+Generates NMState by policy filename
+
+Usage:
+  nmpolicyctl gen policy.yaml [flags]
+
+Flags:
+  -i, --captured-states-input string    input file path for already resolved captured states.
+  -o, --captured-states-output string   output file path to the emitted captured states. (default "/home/runner/.cache/nmpolicy/captured-states.yaml")
+  -s, --current-state string            input file path to current NMState. If not specified, STDIN is used.
+  -h, --help                            help for gen
