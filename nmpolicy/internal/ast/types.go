@@ -33,6 +33,7 @@ type Terminal struct {
 type Node struct {
 	Meta
 	EqFilter *TernaryOperator  `json:"eqfilter,omitempty"`
+	NeFilter *TernaryOperator  `json:"nefilter,omitempty"`
 	Replace  *TernaryOperator  `json:"replace,omitempty"`
 	Path     *VariadicOperator `json:"path,omitempty"`
 	Terminal
@@ -41,6 +42,9 @@ type Node struct {
 func (n Node) String() string {
 	if n.EqFilter != nil {
 		return fmt.Sprintf("EqFilter(%s)", *n.EqFilter)
+	}
+	if n.NeFilter != nil {
+		return fmt.Sprintf("NeFilter(%s)", *n.NeFilter)
 	}
 	if n.Replace != nil {
 		return fmt.Sprintf("Replace(%s)", *n.Replace)

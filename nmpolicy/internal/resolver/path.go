@@ -36,6 +36,7 @@ type pathVisitor struct {
 	lastMapFn         mapEntryVisitFn
 	shouldFilterSlice bool
 	shouldFilterMap   bool
+	sliceVisitor      func(pathVisitor, []interface{}) (interface{}, error)
 }
 
 func (v pathVisitor) visitInterface(inputState interface{}) (interface{}, error) {
@@ -59,28 +60,18 @@ func (v pathVisitor) visitInterface(inputState interface{}) (interface{}, error)
 }
 
 func (v pathVisitor) visitSlice(originalSlice []interface{}) (interface{}, error) {
+	return v.sliceVisitor(v, originalSlice)
+}
+
+func defaultSliceVisitor(v pathVisitor, originalSlice []interface{}) (interface{}, error) {
 	adjustedSlice := []interface{}{}
-	sliceEmptyAfterApply := true
-	pathVisitorWithoutFilters := v
-	pathVisitorWithoutFilters.shouldFilterSlice = false
-	pathVisitorWithoutFilters.shouldFilterMap = false
 	for _, valueToCheck := range originalSlice {
-		valueAfterApply, err := pathVisitorWithoutFilters.visitInterface(valueToCheck)
+		valueAfterApply, err := v.visitInterface(valueToCheck)
 		if err != nil {
 			return nil, err
 		}
-		if valueAfterApply != nil {
-			sliceEmptyAfterApply = false
-			adjustedSlice = append(adjustedSlice, valueAfterApply)
-		} else if !v.shouldFilterSlice {
-			adjustedSlice = append(adjustedSlice, valueToCheck)
-		}
+		adjustedSlice = append(adjustedSlice, valueAfterApply)
 	}
-
-	if sliceEmptyAfterApply {
-		return nil, nil
-	}
-
 	return adjustedSlice, nil
 }
 

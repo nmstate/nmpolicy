@@ -23,15 +23,27 @@ import (
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/ast"
 )
 
-func filter(inputState map[string]interface{}, path ast.VariadicOperator, expectedValue interface{}) (map[string]interface{}, error) {
-	pathVisitorWithEqFilter := pathVisitor{
+func eqFilter(inputState map[string]interface{}, path ast.VariadicOperator, expectedValue interface{}) (map[string]interface{}, error) {
+	return filterWithPathVisitor(inputState, pathVisitor{
 		path:              path,
-		lastMapFn:         mapContainsValue(expectedValue),
+		lastMapFn:         matchMapValue(expectedValue, eqMatcher),
 		shouldFilterSlice: true,
 		shouldFilterMap:   true,
-	}
+		sliceVisitor:      notNilEntryFilteringSliceVisitor,
+	})
+}
+func neFilter(inputState map[string]interface{}, path ast.VariadicOperator, expectedValue interface{}) (map[string]interface{}, error) {
+	return filterWithPathVisitor(inputState, pathVisitor{
+		path:              path,
+		lastMapFn:         matchMapValue(expectedValue, neMatcher),
+		shouldFilterSlice: true,
+		shouldFilterMap:   true,
+		sliceVisitor:      nilEntryFilteringSliceVisitor,
+	})
+}
 
-	filtered, err := pathVisitorWithEqFilter.visitMap(inputState)
+func filterWithPathVisitor(inputState map[string]interface{}, pathVisitorWithFilter pathVisitor) (map[string]interface{}, error) {
+	filtered, err := pathVisitorWithFilter.visitMap(inputState)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed applying operation on the path: %w", err)
@@ -48,7 +60,7 @@ func filter(inputState map[string]interface{}, path ast.VariadicOperator, expect
 	return filteredMap, nil
 }
 
-func mapContainsValue(expectedValue interface{}) mapEntryVisitFn {
+func matchMapValue(expectedValue interface{}, match func(interface{}, interface{}) bool) mapEntryVisitFn {
 	return func(mapToFilter map[string]interface{}, filterKey string) (interface{}, error) {
 		obtainedValue, ok := mapToFilter[filterKey]
 		if !ok {
@@ -58,9 +70,64 @@ func mapContainsValue(expectedValue interface{}) mapEntryVisitFn {
 			return nil, fmt.Errorf(`type missmatch: the value in the path doesn't match the value to filter. `+
 				`"%T" != "%T" -> %+v != %+v`, obtainedValue, expectedValue, obtainedValue, expectedValue)
 		}
-		if obtainedValue == expectedValue {
+		if match(obtainedValue, expectedValue) {
 			return mapToFilter, nil
 		}
 		return nil, nil
 	}
+}
+
+func eqMatcher(lhs, rhs interface{}) bool {
+	return lhs == rhs
+}
+
+func neMatcher(lhs, rhs interface{}) bool {
+	return lhs != rhs
+}
+
+func notNilEntryFilteringSliceVisitor(v pathVisitor, originalSlice []interface{}) (interface{}, error) {
+	adjustedSlice := []interface{}{}
+	matching := false
+	for _, valueToCheck := range originalSlice {
+		valueAfterApply, err := disableFiltering(v).visitInterface(valueToCheck)
+		if err != nil {
+			return nil, err
+		}
+		if valueAfterApply != nil {
+			matching = true
+			adjustedSlice = append(adjustedSlice, valueAfterApply)
+		} else if !v.shouldFilterSlice {
+			adjustedSlice = append(adjustedSlice, valueToCheck)
+		}
+	}
+
+	if !matching {
+		return nil, nil
+	}
+
+	return adjustedSlice, nil
+}
+
+func nilEntryFilteringSliceVisitor(v pathVisitor, originalSlice []interface{}) (interface{}, error) {
+	adjustedSlice := []interface{}{}
+	for _, valueToCheck := range originalSlice {
+		valueAfterApply, err := disableFiltering(v).visitInterface(valueToCheck)
+		if err != nil {
+			return nil, err
+		}
+		if valueAfterApply != nil {
+			adjustedSlice = append(adjustedSlice, valueAfterApply)
+		} else if !v.shouldFilterSlice {
+			return nil, nil
+		}
+	}
+
+	return adjustedSlice, nil
+}
+
+func disableFiltering(v pathVisitor) pathVisitor {
+	pathVisitorWithoutFilters := v
+	pathVisitorWithoutFilters.shouldFilterSlice = false
+	pathVisitorWithoutFilters.shouldFilterMap = false
+	return pathVisitorWithoutFilters
 }

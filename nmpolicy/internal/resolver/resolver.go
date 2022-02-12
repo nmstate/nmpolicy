@@ -109,6 +109,8 @@ func (r *resolver) resolveCaptureEntryName(captureEntryName string) (types.NMSta
 func (r *resolver) resolveCaptureASTEntry() (types.NMState, error) {
 	if r.currentNode.EqFilter != nil {
 		return r.resolveEqFilter()
+	} else if r.currentNode.NeFilter != nil {
+		return r.resolveNeFilter()
 	} else if r.currentNode.Replace != nil {
 		return r.resolveReplace()
 	}
@@ -117,9 +119,18 @@ func (r *resolver) resolveCaptureASTEntry() (types.NMState, error) {
 
 func (r *resolver) resolveEqFilter() (types.NMState, error) {
 	operator := r.currentNode.EqFilter
-	filteredState, err := r.resolveTernaryOperator(operator, filter)
+	filteredState, err := r.resolveTernaryOperator(operator, eqFilter)
 	if err != nil {
 		return nil, wrapWithEqFilterError(err)
+	}
+	return filteredState, nil
+}
+
+func (r *resolver) resolveNeFilter() (types.NMState, error) {
+	operator := r.currentNode.NeFilter
+	filteredState, err := r.resolveTernaryOperator(operator, neFilter)
+	if err != nil {
+		return nil, wrapWithNeFilterError(err)
 	}
 	return filteredState, nil
 }

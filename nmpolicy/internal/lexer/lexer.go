@@ -102,6 +102,8 @@ func (l *lexer) lexCurrentRune() (*Token, error) {
 		return l.lexEqualAs(REPLACE)
 	} else if l.isEqual() {
 		return l.lexEqualAs(EQFILTER)
+	} else if l.isExclamationMark() {
+		return l.lexEqualAs(NEFILTER)
 	} else if l.isPlus() {
 		return &Token{l.scn.Position(), MERGE, string(l.scn.Rune())}, nil
 	} else if l.isPipe() {
@@ -162,7 +164,7 @@ func (l *lexer) lexIdentity() (*Token, error) {
 
 		if l.isEOF() || l.isSpace() {
 			return token, nil
-		} else if l.isDot() || l.isEqual() || l.isColon() || l.isPlus() || l.isPipe() {
+		} else if l.isDot() || l.isEqual() || l.isColon() || l.isPlus() || l.isPipe() || l.isExclamationMark() {
 			if err := l.scn.Prev(); err != nil {
 				return nil, fmt.Errorf("failed lexing identity: %w", err)
 			}

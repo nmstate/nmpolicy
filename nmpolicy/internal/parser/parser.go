@@ -26,6 +26,19 @@ import (
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/lexer"
 )
 
+type parseFunc func(*parser) error
+
+var (
+	parserFucs = map[lexer.TokenType]parseFunc{
+		lexer.STRING:   (*parser).parseString,
+		lexer.IDENTITY: (*parser).parsePath,
+		lexer.EQFILTER: (*parser).parseEqFilter,
+		lexer.NEFILTER: (*parser).parseNeFilter,
+		lexer.REPLACE:  (*parser).parseReplace,
+		lexer.PIPE:     (*parser).parsePipe,
+	}
+)
+
 type Parser struct{}
 
 type parser struct {
@@ -62,24 +75,8 @@ func (p *parser) parse() (ast.Node, error) {
 			return ast.Node{}, nil
 		} else if p.currentToken().Type == lexer.EOF {
 			break
-		} else if p.currentToken().Type == lexer.STRING {
-			if err := p.parseString(); err != nil {
-				return ast.Node{}, err
-			}
-		} else if p.currentToken().Type == lexer.IDENTITY {
-			if err := p.parsePath(); err != nil {
-				return ast.Node{}, err
-			}
-		} else if p.currentToken().Type == lexer.EQFILTER {
-			if err := p.parseEqFilter(); err != nil {
-				return ast.Node{}, err
-			}
-		} else if p.currentToken().Type == lexer.REPLACE {
-			if err := p.parseReplace(); err != nil {
-				return ast.Node{}, err
-			}
-		} else if p.currentToken().Type == lexer.PIPE {
-			if err := p.parsePipe(); err != nil {
+		} else if parse, ok := parserFucs[p.currentToken().Type]; ok {
+			if err := parse(p); err != nil {
 				return ast.Node{}, err
 			}
 		} else {
@@ -202,6 +199,18 @@ func (p *parser) parseEqFilter() error {
 	}
 	if err := p.fillInTernaryOperator(operator.EqFilter); err != nil {
 		return wrapWithInvalidEqualityFilterError(err)
+	}
+	p.lastNode = operator
+	return nil
+}
+
+func (p *parser) parseNeFilter() error {
+	operator := &ast.Node{
+		Meta:     ast.Meta{Position: p.currentToken().Position},
+		NeFilter: &ast.TernaryOperator{},
+	}
+	if err := p.fillInTernaryOperator(operator.NeFilter); err != nil {
+		return wrapWithInvalidInequalityFilterError(err)
 	}
 	p.lastNode = operator
 	return nil

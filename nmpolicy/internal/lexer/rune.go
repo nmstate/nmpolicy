@@ -62,3 +62,7 @@ func (l *lexer) isPlus() bool {
 func (l *lexer) isPipe() bool {
 	return l.scn.Rune() == '|'
 }
+
+func (l *lexer) isExclamationMark() bool {
+	return l.scn.Rune() == '!'
+}
