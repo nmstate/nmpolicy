@@ -31,11 +31,13 @@ type captureEntryNameAndSteps struct {
 type mapEntryVisitFn func(map[string]interface{}, string) (interface{}, error)
 
 type pathVisitor struct {
-	path            []ast.Node
-	pathIndex       int
-	currentStep     *ast.Node
-	lastMapFn       mapEntryVisitFn
-	filterLookupMap map[string]bool
+	path                     []ast.Node
+	pathIndex                int
+	currentStep              *ast.Node
+	lastMapFn                mapEntryVisitFn
+	visitSliceWithoutIndexFn func(pathVisitor, []interface{}) (interface{}, error)
+	visitMapWithIdentityFn   func(pathVisitor, map[string]interface{}, string) (interface{}, error)
+	filterLookupMap          map[string]bool
 }
 
 func (v pathVisitor) visitInterface(inputState interface{}) (interface{}, error) {
@@ -57,7 +59,7 @@ func (v pathVisitor) visitInterface(inputState interface{}) (interface{}, error)
 }
 
 func (v pathVisitor) visitSlice(originalSlice []interface{}) (interface{}, error) {
-	return v.visitSliceWithoutIndex(originalSlice)
+	return v.visitSliceWithoutIndexFn(v, originalSlice)
 }
 
 func (v pathVisitor) visitSliceWithoutIndex(originalSlice []interface{}) (interface{}, error) {
@@ -87,7 +89,7 @@ func (v pathVisitor) visitMap(originalMap map[string]interface{}) (interface{}, 
 	if v.currentStep.Identity == nil {
 		return nil, pathError(v.currentStep, "%v has unsupported fromat", *v.currentStep)
 	}
-	return v.visitMapWithIdentity(originalMap, *v.currentStep.Identity)
+	return v.visitMapWithIdentityFn(v, originalMap, *v.currentStep.Identity)
 }
 
 func (v pathVisitor) visitMapWithIdentity(originalMap map[string]interface{}, identity string) (interface{}, error) {
