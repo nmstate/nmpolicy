@@ -142,6 +142,7 @@ func TestFilter(t *testing.T) {
 		testReplaceCurrentState(t)
 		testReplaceCapturedState(t)
 		testReplaceWithCaptureRef(t)
+		testReplaceOptionalField(t)
 	})
 }
 
@@ -872,6 +873,55 @@ default-gw-br1-first-port:
         table-id: 254
 `,
 		}
+		runTest(t, &testToRun)
+	})
+}
+
+func testReplaceOptionalField(t *testing.T) {
+	t.Run("Replace optional field", func(t *testing.T) {
+		testToRun := test{
+			capturedStatesCache: `
+eth2-interface:
+  state:
+    interfaces:
+    - name: eth2
+      type: ethernet
+      state: down
+`,
+			captureASTPool: `
+description-eth2:
+  pos: 1
+  replace:
+  - pos: 2
+    path:
+    - pos: 3
+      identity: capture
+    - pos: 4
+      identity: eth2-interface
+  - pos: 5
+    path:
+    - pos: 6
+      identity: interfaces
+    - pos: 7
+      identity: description
+  - pos: 8
+    string: 2nd ethernet interface
+`,
+			expectedCapturedStates: `
+eth2-interface:
+  state:
+    interfaces:
+    - name: eth2
+      type: ethernet
+      state: down
+description-eth2:
+  state:
+    interfaces:
+    - name: eth2
+      description: "2nd ethernet interface"
+      type: ethernet
+      state: down
+`}
 		runTest(t, &testToRun)
 	})
 }
