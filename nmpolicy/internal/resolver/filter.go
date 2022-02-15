@@ -25,10 +25,14 @@ import (
 
 func filter(inputState map[string]interface{}, path ast.VariadicOperator, expectedValue interface{}) (map[string]interface{}, error) {
 	pathVisitorWithEqFilter := pathVisitor{
-		path:              path,
-		lastMapFn:         mapContainsValue(expectedValue),
-		shouldFilterSlice: true,
-		shouldFilterMap:   true,
+		path:      path,
+		lastMapFn: mapContainsValue(expectedValue),
+		filterLookupMap: map[string]bool{
+			"interfaces": true,
+			"routes":     true,
+			"running":    true,
+			"config":     true,
+		},
 	}
 
 	filtered, err := pathVisitorWithEqFilter.visitInterface(inputState)

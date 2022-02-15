@@ -31,12 +31,11 @@ type captureEntryNameAndSteps struct {
 type mapEntryVisitFn func(map[string]interface{}, string) (interface{}, error)
 
 type pathVisitor struct {
-	path              []ast.Node
-	pathIndex         int
-	currentStep       *ast.Node
-	lastMapFn         mapEntryVisitFn
-	shouldFilterSlice bool
-	shouldFilterMap   bool
+	path            []ast.Node
+	pathIndex       int
+	currentStep     *ast.Node
+	lastMapFn       mapEntryVisitFn
+	filterLookupMap map[string]bool
 }
 
 func (v pathVisitor) visitInterface(inputState interface{}) (interface{}, error) {
@@ -60,18 +59,15 @@ func (v pathVisitor) visitInterface(inputState interface{}) (interface{}, error)
 func (v pathVisitor) visitSlice(originalSlice []interface{}) (interface{}, error) {
 	adjustedSlice := []interface{}{}
 	sliceEmptyAfterApply := true
-	pathVisitorWithoutFilters := v
-	pathVisitorWithoutFilters.shouldFilterSlice = false
-	pathVisitorWithoutFilters.shouldFilterMap = false
 	for _, valueToCheck := range originalSlice {
-		valueAfterApply, err := pathVisitorWithoutFilters.visitInterface(valueToCheck)
+		valueAfterApply, err := v.visitInterface(valueToCheck)
 		if err != nil {
 			return nil, err
 		}
 		if valueAfterApply != nil {
 			sliceEmptyAfterApply = false
 			adjustedSlice = append(adjustedSlice, valueAfterApply)
-		} else if !v.shouldFilterSlice {
+		} else if !v.shouldFilter() {
 			adjustedSlice = append(adjustedSlice, valueToCheck)
 		}
 	}
@@ -103,7 +99,7 @@ func (v pathVisitor) visitMap(originalMap map[string]interface{}) (interface{}, 
 	}
 
 	adjustedMap := map[string]interface{}{}
-	if !v.shouldFilterMap {
+	if !v.shouldFilter() {
 		for k, v := range originalMap {
 			adjustedMap[k] = v
 		}
@@ -131,6 +127,14 @@ func (v *pathVisitor) nextStep() {
 		v.pathIndex++
 	}
 	v.currentStep = &v.path[v.pathIndex]
+}
+
+func (v *pathVisitor) shouldFilter() bool {
+	if v.currentStep == nil || v.currentStep.Identity == nil {
+		return false
+	}
+	_, ok := v.filterLookupMap[*v.currentStep.Identity]
+	return ok
 }
 
 func (v pathVisitor) hasMoreSteps() bool {
