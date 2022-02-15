@@ -57,6 +57,10 @@ func (v pathVisitor) visitInterface(inputState interface{}) (interface{}, error)
 }
 
 func (v pathVisitor) visitSlice(originalSlice []interface{}) (interface{}, error) {
+	return v.visitSliceWithoutIndex(originalSlice)
+}
+
+func (v pathVisitor) visitSliceWithoutIndex(originalSlice []interface{}) (interface{}, error) {
 	adjustedSlice := []interface{}{}
 	sliceEmptyAfterApply := true
 	for _, valueToCheck := range originalSlice {
@@ -83,9 +87,11 @@ func (v pathVisitor) visitMap(originalMap map[string]interface{}) (interface{}, 
 	if v.currentStep.Identity == nil {
 		return nil, pathError(v.currentStep, "%v has unsupported fromat", *v.currentStep)
 	}
-	key := *v.currentStep.Identity
+	return v.visitMapWithIdentity(originalMap, *v.currentStep.Identity)
+}
 
-	valueToCheck, ok := originalMap[key]
+func (v pathVisitor) visitMapWithIdentity(originalMap map[string]interface{}, identity string) (interface{}, error) {
+	valueToCheck, ok := originalMap[identity]
 	if !ok {
 		return nil, nil
 	}
@@ -104,7 +110,7 @@ func (v pathVisitor) visitMap(originalMap map[string]interface{}) (interface{}, 
 			adjustedMap[k] = v
 		}
 	}
-	adjustedMap[key] = adjustedValue
+	adjustedMap[identity] = adjustedValue
 	return adjustedMap, nil
 }
 
