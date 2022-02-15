@@ -32,6 +32,7 @@ type mapEntryVisitFn func(map[string]interface{}, string) (interface{}, error)
 
 type pathVisitor struct {
 	path              []ast.Node
+	pathIndex         int
 	currentStep       *ast.Node
 	lastMapFn         mapEntryVisitFn
 	shouldFilterSlice bool
@@ -39,15 +40,13 @@ type pathVisitor struct {
 }
 
 func (v pathVisitor) visitInterface(inputState interface{}) (interface{}, error) {
-	if len(v.path) == 0 {
-		return inputState, nil
-	}
 	originalMap, isMap := inputState.(map[string]interface{})
 	if isMap {
-		if len(v.path) == 1 {
-			return v.visitLastMapOnPath(originalMap, inputState)
+		v.nextStep()
+		if v.hasMoreSteps() {
+			return v.visitMap(originalMap)
 		}
-		return v.visitMap(originalMap)
+		return v.visitLastMapOnPath(originalMap, inputState)
 	}
 
 	originalSlice, isSlice := inputState.([]interface{})
@@ -85,15 +84,9 @@ func (v pathVisitor) visitSlice(originalSlice []interface{}) (interface{}, error
 }
 
 func (v pathVisitor) visitMap(originalMap map[string]interface{}) (interface{}, error) {
-	if v.currentStep == nil {
-		v.currentStep = &ast.Node{}
-	}
-	*v.currentStep = v.path[0]
 	if v.currentStep.Identity == nil {
 		return nil, pathError(v.currentStep, "%v has unsupported fromat", *v.currentStep)
 	}
-
-	v.path = v.path[1:]
 	key := *v.currentStep.Identity
 
 	valueToCheck, ok := originalMap[key]
@@ -121,7 +114,7 @@ func (v pathVisitor) visitMap(originalMap map[string]interface{}) (interface{}, 
 
 func (v pathVisitor) visitLastMapOnPath(originalMap map[string]interface{}, inputState interface{}) (interface{}, error) {
 	if v.lastMapFn != nil {
-		key := *v.path[0].Identity
+		key := *v.currentStep.Identity
 		outputState, err := v.lastMapFn(originalMap, key)
 		if err != nil {
 			return nil, err
@@ -129,6 +122,19 @@ func (v pathVisitor) visitLastMapOnPath(originalMap map[string]interface{}, inpu
 		return outputState, nil
 	}
 	return inputState, nil
+}
+
+func (v *pathVisitor) nextStep() {
+	if v.currentStep == nil {
+		v.pathIndex = 0
+	} else if v.hasMoreSteps() {
+		v.pathIndex++
+	}
+	v.currentStep = &v.path[v.pathIndex]
+}
+
+func (v pathVisitor) hasMoreSteps() bool {
+	return v.pathIndex+1 < len(v.path)
 }
 
 func (p captureEntryNameAndSteps) walkState(stateToWalk map[string]interface{}) (interface{}, error) {

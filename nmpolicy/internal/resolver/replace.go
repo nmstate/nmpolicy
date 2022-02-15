@@ -28,7 +28,7 @@ func replace(inputState map[string]interface{}, path ast.VariadicOperator, repla
 		shouldFilterMap:   false,
 	}
 
-	replaced, err := pathVisitorWithReplace.visitMap(inputState)
+	replaced, err := pathVisitorWithReplace.visitInterface(inputState)
 
 	if err != nil {
 		return nil, replaceError("failed applying operation on the path: %w", err)
