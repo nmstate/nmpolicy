@@ -142,6 +142,7 @@ func TestFilter(t *testing.T) {
 		testReplaceCurrentState(t)
 		testReplaceCapturedState(t)
 		testReplaceWithCaptureRef(t)
+		testReplaceOptionalField(t)
 	})
 }
 
@@ -411,10 +412,10 @@ func testFilterDifferentTypeOnPath(t *testing.T) {
 invalid-path-type: interfaces.ipv4.address=="10.244.0.1"
 `)
 		testToRun.err = `resolve error: eqfilter error: failed applying operation on the path: ` +
-			`type missmatch: the value in the path doesn't match the value to filter. ` +
+			`invalid path: type missmatch: the value in the path doesn't match the value to filter. ` +
 			`"[]interface {}" != "string" -> [map[ip:10.244.0.1 prefix-length:24] map[ip:169.254.1.0 prefix-length:16]] != 10.244.0.1
 | interfaces.ipv4.address=="10.244.0.1"
-| .......................^`
+| ................^`
 
 		runTest(t, &testToRun)
 	})
@@ -531,7 +532,6 @@ default-gw:
 			"with path '[routes 1]'" + `
 | routes.running.next-hop-interface==capture.default-gw.routes.1.0.next-hop-interface
 | .............................................................^`
-
 		runTest(t, &testToRun)
 	})
 }
@@ -624,9 +624,9 @@ base-iface-routes: routes.running.next-hop-interface=='eth1'
 
 		testToRun.err =
 			`resolve error: eqfilter error: failed applying operation on the path: ` +
-				`invalid path: invalid type <nil> for identity step 'Identity=running'
+				`invalid path: invalid type <nil> for identity step 'Identity=next-hop-interface'
 | routes.running.next-hop-interface=='eth1'
-| .......^`
+| ...............^`
 
 		runTest(t, &testToRun)
 	})
@@ -872,6 +872,55 @@ default-gw-br1-first-port:
         table-id: 254
 `,
 		}
+		runTest(t, &testToRun)
+	})
+}
+
+func testReplaceOptionalField(t *testing.T) {
+	t.Run("Replace optional field", func(t *testing.T) {
+		testToRun := test{
+			capturedStatesCache: `
+eth2-interface:
+  state:
+    interfaces:
+    - name: eth2
+      type: ethernet
+      state: down
+`,
+			captureASTPool: `
+description-eth2:
+  pos: 1
+  replace:
+  - pos: 2
+    path:
+    - pos: 3
+      identity: capture
+    - pos: 4
+      identity: eth2-interface
+  - pos: 5
+    path:
+    - pos: 6
+      identity: interfaces
+    - pos: 7
+      identity: description
+  - pos: 8
+    string: 2nd ethernet interface
+`,
+			expectedCapturedStates: `
+eth2-interface:
+  state:
+    interfaces:
+    - name: eth2
+      type: ethernet
+      state: down
+description-eth2:
+  state:
+    interfaces:
+    - name: eth2
+      description: "2nd ethernet interface"
+      type: ethernet
+      state: down
+`}
 		runTest(t, &testToRun)
 	})
 }
