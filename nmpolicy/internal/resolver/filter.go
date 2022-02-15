@@ -23,18 +23,21 @@ import (
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/ast"
 )
 
+var (
+	filterLookupMap = map[string]bool{
+		"interfaces": true,
+		"routes":     true,
+		"running":    true,
+		"config":     true,
+	}
+)
+
 func filter(inputState map[string]interface{}, path ast.VariadicOperator, expectedValue interface{}) (map[string]interface{}, error) {
 	pathVisitorWithEqFilter := pathVisitor{
 		path:                     path,
 		lastMapFn:                mapContainsValue(expectedValue),
-		visitSliceWithoutIndexFn: pathVisitor.visitSliceWithoutIndex,
-		visitMapWithIdentityFn:   pathVisitor.visitMapWithIdentity,
-		filterLookupMap: map[string]bool{
-			"interfaces": true,
-			"routes":     true,
-			"running":    true,
-			"config":     true,
-		},
+		visitSliceWithoutIndexFn: filterSliceEntriesWithVisitResult,
+		visitMapWithIdentityFn:   filterMapEntryWithVisitResult,
 	}
 
 	filtered, err := pathVisitorWithEqFilter.visitInterface(inputState)
@@ -69,4 +72,58 @@ func mapContainsValue(expectedValue interface{}) mapEntryVisitFn {
 		}
 		return nil, nil
 	}
+}
+
+func filterMapEntryWithVisitResult(v pathVisitor, mapToVisit map[string]interface{}, identity string) (interface{}, error) {
+	interfaceToVisit, ok := mapToVisit[identity]
+	if !ok {
+		return nil, nil
+	}
+
+	visitResult, err := v.visitInterface(interfaceToVisit)
+	if err != nil {
+		return nil, err
+	}
+	if visitResult == nil {
+		return nil, nil
+	}
+
+	filteredMap := map[string]interface{}{}
+	if !shouldFilter(v.currentStep) {
+		for k, v := range mapToVisit {
+			filteredMap[k] = v
+		}
+	}
+	filteredMap[identity] = visitResult
+	return filteredMap, nil
+}
+
+func filterSliceEntriesWithVisitResult(v pathVisitor, sliceToVisit []interface{}) (interface{}, error) {
+	filteredSlice := []interface{}{}
+	hasVisitResult := false
+	for _, interfaceToVisit := range sliceToVisit {
+		visitResult, err := v.visitInterface(interfaceToVisit)
+		if err != nil {
+			return nil, err
+		}
+		if visitResult != nil {
+			hasVisitResult = true
+			filteredSlice = append(filteredSlice, visitResult)
+		} else if !shouldFilter(v.currentStep) {
+			filteredSlice = append(filteredSlice, interfaceToVisit)
+		}
+	}
+
+	if !hasVisitResult {
+		return nil, nil
+	}
+	return filteredSlice, nil
+}
+
+func shouldFilter(currentStep *ast.Node) bool {
+	if currentStep == nil || currentStep.Identity == nil {
+		return false
+	}
+	_, ok := filterLookupMap[*currentStep.Identity]
+	return ok
 }

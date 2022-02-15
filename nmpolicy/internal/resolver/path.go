@@ -37,7 +37,6 @@ type pathVisitor struct {
 	lastMapFn                mapEntryVisitFn
 	visitSliceWithoutIndexFn func(pathVisitor, []interface{}) (interface{}, error)
 	visitMapWithIdentityFn   func(pathVisitor, map[string]interface{}, string) (interface{}, error)
-	filterLookupMap          map[string]bool
 }
 
 func (v pathVisitor) visitInterface(inputState interface{}) (interface{}, error) {
@@ -62,58 +61,11 @@ func (v pathVisitor) visitSlice(originalSlice []interface{}) (interface{}, error
 	return v.visitSliceWithoutIndexFn(v, originalSlice)
 }
 
-func (v pathVisitor) visitSliceWithoutIndex(originalSlice []interface{}) (interface{}, error) {
-	adjustedSlice := []interface{}{}
-	sliceEmptyAfterApply := true
-	for _, valueToCheck := range originalSlice {
-		valueAfterApply, err := v.visitInterface(valueToCheck)
-		if err != nil {
-			return nil, err
-		}
-		if valueAfterApply != nil {
-			sliceEmptyAfterApply = false
-			adjustedSlice = append(adjustedSlice, valueAfterApply)
-		} else if !v.shouldFilter() {
-			adjustedSlice = append(adjustedSlice, valueToCheck)
-		}
-	}
-
-	if sliceEmptyAfterApply {
-		return nil, nil
-	}
-
-	return adjustedSlice, nil
-}
-
 func (v pathVisitor) visitMap(originalMap map[string]interface{}) (interface{}, error) {
 	if v.currentStep.Identity == nil {
 		return nil, pathError(v.currentStep, "%v has unsupported fromat", *v.currentStep)
 	}
 	return v.visitMapWithIdentityFn(v, originalMap, *v.currentStep.Identity)
-}
-
-func (v pathVisitor) visitMapWithIdentity(originalMap map[string]interface{}, identity string) (interface{}, error) {
-	valueToCheck, ok := originalMap[identity]
-	if !ok {
-		return nil, nil
-	}
-
-	adjustedValue, err := v.visitInterface(valueToCheck)
-	if err != nil {
-		return nil, err
-	}
-	if adjustedValue == nil {
-		return nil, nil
-	}
-
-	adjustedMap := map[string]interface{}{}
-	if !v.shouldFilter() {
-		for k, v := range originalMap {
-			adjustedMap[k] = v
-		}
-	}
-	adjustedMap[identity] = adjustedValue
-	return adjustedMap, nil
 }
 
 func (v pathVisitor) visitLastMapOnPath(originalMap map[string]interface{}, inputState interface{}) (interface{}, error) {
@@ -135,14 +87,6 @@ func (v *pathVisitor) nextStep() {
 		v.pathIndex++
 	}
 	v.currentStep = &v.path[v.pathIndex]
-}
-
-func (v *pathVisitor) shouldFilter() bool {
-	if v.currentStep == nil || v.currentStep.Identity == nil {
-		return false
-	}
-	_, ok := v.filterLookupMap[*v.currentStep.Identity]
-	return ok
 }
 
 func (v pathVisitor) hasMoreSteps() bool {
