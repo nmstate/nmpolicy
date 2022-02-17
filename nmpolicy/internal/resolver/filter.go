@@ -32,15 +32,14 @@ var (
 	}
 )
 
-func filter(inputState map[string]interface{}, path ast.VariadicOperator, expectedValue interface{}) (map[string]interface{}, error) {
+func filter(inputState map[string]interface{}, pathSteps ast.VariadicOperator, expectedValue interface{}) (map[string]interface{}, error) {
 	pathVisitorWithEqFilter := pathVisitor{
-		path:                     path,
 		lastMapFn:                mapContainsValue(expectedValue),
 		visitSliceWithoutIndexFn: filterSliceEntriesWithVisitResult,
 		visitMapWithIdentityFn:   filterMapEntryWithVisitResult,
 	}
 
-	filtered, err := pathVisitorWithEqFilter.visitNextStep(inputState)
+	filtered, err := pathVisitorWithEqFilter.visitNextStep(path{steps: pathSteps}, inputState)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed applying operation on the path: %w", err)
@@ -74,13 +73,13 @@ func mapContainsValue(expectedValue interface{}) mapEntryVisitFn {
 	}
 }
 
-func filterMapEntryWithVisitResult(v pathVisitor, mapToVisit map[string]interface{}, identity string) (interface{}, error) {
+func filterMapEntryWithVisitResult(v *pathVisitor, p path, mapToVisit map[string]interface{}, identity string) (interface{}, error) {
 	interfaceToVisit, ok := mapToVisit[identity]
 	if !ok {
 		return nil, nil
 	}
 
-	visitResult, err := v.visitNextStep(interfaceToVisit)
+	visitResult, err := v.visitNextStep(p, interfaceToVisit)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +87,7 @@ func filterMapEntryWithVisitResult(v pathVisitor, mapToVisit map[string]interfac
 		return nil, nil
 	}
 	filteredMap := map[string]interface{}{}
-	if !shouldFilter(v.currentStep) {
+	if !shouldFilter(p.currentStep) {
 		for k, v := range mapToVisit {
 			filteredMap[k] = v
 		}
@@ -97,18 +96,18 @@ func filterMapEntryWithVisitResult(v pathVisitor, mapToVisit map[string]interfac
 	return filteredMap, nil
 }
 
-func filterSliceEntriesWithVisitResult(v pathVisitor, sliceToVisit []interface{}) (interface{}, error) {
+func filterSliceEntriesWithVisitResult(v *pathVisitor, p path, sliceToVisit []interface{}) (interface{}, error) {
 	filteredSlice := []interface{}{}
 	hasVisitResult := false
 	for _, interfaceToVisit := range sliceToVisit {
-		visitResult, err := v.visitNextStep(interfaceToVisit)
+		visitResult, err := v.visitNextStep(p, interfaceToVisit)
 		if err != nil {
 			return nil, err
 		}
 		if visitResult != nil {
 			hasVisitResult = true
 			filteredSlice = append(filteredSlice, visitResult)
-		} else if !shouldFilter(v.currentStep) {
+		} else if !shouldFilter(p.currentStep) {
 			filteredSlice = append(filteredSlice, interfaceToVisit)
 		}
 	}

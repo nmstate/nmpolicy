@@ -20,15 +20,14 @@ import (
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/ast"
 )
 
-func replace(inputState map[string]interface{}, path ast.VariadicOperator, replaceValue interface{}) (map[string]interface{}, error) {
+func replace(inputState map[string]interface{}, pathSteps ast.VariadicOperator, replaceValue interface{}) (map[string]interface{}, error) {
 	pathVisitorWithReplace := pathVisitor{
-		path:                     path,
 		lastMapFn:                replaceMapFieldValue(replaceValue),
 		visitSliceWithoutIndexFn: replaceSliceEntriesWithVisitResult,
 		visitMapWithIdentityFn:   replaceMapEntryWithVisitResult,
 	}
 
-	replaced, err := pathVisitorWithReplace.visitNextStep(inputState)
+	replaced, err := pathVisitorWithReplace.visitNextStep(path{steps: pathSteps}, inputState)
 
 	if err != nil {
 		return nil, replaceError("failed applying operation on the path: %w", err)
@@ -53,13 +52,13 @@ func replaceMapFieldValue(replaceValue interface{}) mapEntryVisitFn {
 	}
 }
 
-func replaceMapEntryWithVisitResult(v pathVisitor, mapToVisit map[string]interface{}, identity string) (interface{}, error) {
+func replaceMapEntryWithVisitResult(v *pathVisitor, p path, mapToVisit map[string]interface{}, identity string) (interface{}, error) {
 	interfaceToVisit, ok := mapToVisit[identity]
 	if !ok {
 		return nil, nil
 	}
 
-	visitResult, err := v.visitNextStep(interfaceToVisit)
+	visitResult, err := v.visitNextStep(p, interfaceToVisit)
 	if err != nil {
 		return nil, err
 	}
@@ -72,10 +71,10 @@ func replaceMapEntryWithVisitResult(v pathVisitor, mapToVisit map[string]interfa
 	return replacedMap, nil
 }
 
-func replaceSliceEntriesWithVisitResult(v pathVisitor, sliceToVisit []interface{}) (interface{}, error) {
+func replaceSliceEntriesWithVisitResult(v *pathVisitor, p path, sliceToVisit []interface{}) (interface{}, error) {
 	replacedSlice := make([]interface{}, len(sliceToVisit))
 	for i, interfaceToVisit := range sliceToVisit {
-		visitResult, err := v.visitNextStep(interfaceToVisit)
+		visitResult, err := v.visitNextStep(p, interfaceToVisit)
 		if err != nil {
 			return nil, err
 		}
