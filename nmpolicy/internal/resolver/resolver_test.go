@@ -412,10 +412,10 @@ func testFilterDifferentTypeOnPath(t *testing.T) {
 invalid-path-type: interfaces.ipv4.address=="10.244.0.1"
 `)
 		testToRun.err = `resolve error: eqfilter error: failed applying operation on the path: ` +
-			`type missmatch: the value in the path doesn't match the value to filter. ` +
+			`invalid path: type missmatch: the value in the path doesn't match the value to filter. ` +
 			`"[]interface {}" != "string" -> [map[ip:10.244.0.1 prefix-length:24] map[ip:169.254.1.0 prefix-length:16]] != 10.244.0.1
 | interfaces.ipv4.address=="10.244.0.1"
-| .......................^`
+| ................^`
 
 		runTest(t, &testToRun)
 	})
@@ -532,7 +532,6 @@ default-gw:
 			"with path '[routes 1]'" + `
 | routes.running.next-hop-interface==capture.default-gw.routes.1.0.next-hop-interface
 | .............................................................^`
-
 		runTest(t, &testToRun)
 	})
 }
@@ -625,9 +624,9 @@ base-iface-routes: routes.running.next-hop-interface=='eth1'
 
 		testToRun.err =
 			`resolve error: eqfilter error: failed applying operation on the path: ` +
-				`invalid path: invalid type <nil> for identity step 'Identity=running'
+				`invalid path: invalid type <nil> for identity step 'Identity=next-hop-interface'
 | routes.running.next-hop-interface=='eth1'
-| .......^`
+| ...............^`
 
 		runTest(t, &testToRun)
 	})

@@ -28,7 +28,7 @@ func replace(inputState map[string]interface{}, path ast.VariadicOperator, repla
 		visitMapWithIdentityFn:   replaceMapEntryWithVisitResult,
 	}
 
-	replaced, err := pathVisitorWithReplace.visitInterface(inputState)
+	replaced, err := pathVisitorWithReplace.visitNextStep(inputState)
 
 	if err != nil {
 		return nil, replaceError("failed applying operation on the path: %w", err)
@@ -59,7 +59,7 @@ func replaceMapEntryWithVisitResult(v pathVisitor, mapToVisit map[string]interfa
 		return nil, nil
 	}
 
-	visitResult, err := v.visitInterface(interfaceToVisit)
+	visitResult, err := v.visitNextStep(interfaceToVisit)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func replaceMapEntryWithVisitResult(v pathVisitor, mapToVisit map[string]interfa
 func replaceSliceEntriesWithVisitResult(v pathVisitor, sliceToVisit []interface{}) (interface{}, error) {
 	replacedSlice := make([]interface{}, len(sliceToVisit))
 	for i, interfaceToVisit := range sliceToVisit {
-		visitResult, err := v.visitInterface(interfaceToVisit)
+		visitResult, err := v.visitNextStep(interfaceToVisit)
 		if err != nil {
 			return nil, err
 		}

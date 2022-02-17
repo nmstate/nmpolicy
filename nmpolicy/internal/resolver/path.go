@@ -29,20 +29,23 @@ type captureEntryNameAndSteps struct {
 }
 
 type mapEntryVisitFn func(map[string]interface{}, string) (interface{}, error)
+type sliceEntryVisitFn func([]interface{}, int) (interface{}, error)
 
 type pathVisitor struct {
 	path                     []ast.Node
-	pathIndex                int
+	currentStepIndex         int
 	currentStep              *ast.Node
 	lastMapFn                mapEntryVisitFn
+	lastSliceFn              sliceEntryVisitFn
 	visitSliceWithoutIndexFn func(pathVisitor, []interface{}) (interface{}, error)
+	visitSliceWithIndexFn    func(pathVisitor, []interface{}, int) (interface{}, error)
 	visitMapWithIdentityFn   func(pathVisitor, map[string]interface{}, string) (interface{}, error)
 }
 
-func (v pathVisitor) visitInterface(inputState interface{}) (interface{}, error) {
+func (v pathVisitor) visitNextStep(inputState interface{}) (interface{}, error) {
+	v.nextStep()
 	originalMap, isMap := inputState.(map[string]interface{})
 	if isMap {
-		v.nextStep()
 		if v.hasMoreSteps() {
 			return v.visitMap(originalMap)
 		}
@@ -51,29 +54,46 @@ func (v pathVisitor) visitInterface(inputState interface{}) (interface{}, error)
 
 	originalSlice, isSlice := inputState.([]interface{})
 	if isSlice {
-		return v.visitSlice(originalSlice)
+		if v.hasMoreSteps() || v.currentStep.Number == nil {
+			return v.visitSlice(originalSlice)
+		}
+		return v.visitLastSliceOnPath(originalSlice, inputState)
 	}
 
 	return nil, pathError(v.currentStep, "invalid type %T for identity step '%v'", inputState, *v.currentStep)
 }
 
 func (v pathVisitor) visitSlice(originalSlice []interface{}) (interface{}, error) {
-	return v.visitSliceWithoutIndexFn(v, originalSlice)
+	if v.currentStep.Number == nil {
+		v.backStep()
+		return v.visitSliceWithoutIndexFn(v, originalSlice)
+	}
+	return v.visitSliceWithIndexFn(v, originalSlice, *v.currentStep.Number)
 }
 
 func (v pathVisitor) visitMap(originalMap map[string]interface{}) (interface{}, error) {
 	if v.currentStep.Identity == nil {
-		return nil, pathError(v.currentStep, "%v has unsupported fromat", *v.currentStep)
+		return nil, pathError(v.currentStep, "unexpected non identity step for map state '%+v'", originalMap)
 	}
 	return v.visitMapWithIdentityFn(v, originalMap, *v.currentStep.Identity)
 }
 
 func (v pathVisitor) visitLastMapOnPath(originalMap map[string]interface{}, inputState interface{}) (interface{}, error) {
 	if v.lastMapFn != nil {
-		key := *v.currentStep.Identity
-		outputState, err := v.lastMapFn(originalMap, key)
+		outputState, err := v.lastMapFn(originalMap, *v.currentStep.Identity)
 		if err != nil {
-			return nil, err
+			return nil, wrapWithPathError(v.currentStep, err)
+		}
+		return outputState, nil
+	}
+	return inputState, nil
+}
+
+func (v *pathVisitor) visitLastSliceOnPath(originalSlice []interface{}, inputState interface{}) (interface{}, error) {
+	if v.lastSliceFn != nil {
+		outputState, err := v.lastSliceFn(originalSlice, *v.currentStep.Number)
+		if err != nil {
+			return nil, wrapWithPathError(v.currentStep, err)
 		}
 		return outputState, nil
 	}
@@ -82,15 +102,31 @@ func (v pathVisitor) visitLastMapOnPath(originalMap map[string]interface{}, inpu
 
 func (v *pathVisitor) nextStep() {
 	if v.currentStep == nil {
-		v.pathIndex = 0
+		v.currentStepIndex = 0
 	} else if v.hasMoreSteps() {
-		v.pathIndex++
+		v.currentStepIndex++
 	}
-	v.currentStep = &v.path[v.pathIndex]
+	v.currentStep = &v.path[v.currentStepIndex]
+}
+
+func (v *pathVisitor) peekNextStep() *ast.Node {
+	if !v.hasMoreSteps() {
+		return v.currentStep
+	}
+	return &v.path[v.currentStepIndex+1]
+}
+
+func (v *pathVisitor) backStep() {
+	if v.currentStep == nil {
+		v.currentStepIndex = 0
+	} else if v.currentStepIndex > 0 {
+		v.currentStepIndex--
+	}
+	v.currentStep = &v.path[v.currentStepIndex]
 }
 
 func (v pathVisitor) hasMoreSteps() bool {
-	return v.pathIndex+1 < len(v.path)
+	return v.currentStepIndex+1 < len(v.path)
 }
 
 func (p captureEntryNameAndSteps) walkState(stateToWalk map[string]interface{}) (interface{}, error) {

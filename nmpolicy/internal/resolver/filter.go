@@ -40,7 +40,7 @@ func filter(inputState map[string]interface{}, path ast.VariadicOperator, expect
 		visitMapWithIdentityFn:   filterMapEntryWithVisitResult,
 	}
 
-	filtered, err := pathVisitorWithEqFilter.visitInterface(inputState)
+	filtered, err := pathVisitorWithEqFilter.visitNextStep(inputState)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed applying operation on the path: %w", err)
@@ -80,14 +80,13 @@ func filterMapEntryWithVisitResult(v pathVisitor, mapToVisit map[string]interfac
 		return nil, nil
 	}
 
-	visitResult, err := v.visitInterface(interfaceToVisit)
+	visitResult, err := v.visitNextStep(interfaceToVisit)
 	if err != nil {
 		return nil, err
 	}
 	if visitResult == nil {
 		return nil, nil
 	}
-
 	filteredMap := map[string]interface{}{}
 	if !shouldFilter(v.currentStep) {
 		for k, v := range mapToVisit {
@@ -102,7 +101,7 @@ func filterSliceEntriesWithVisitResult(v pathVisitor, sliceToVisit []interface{}
 	filteredSlice := []interface{}{}
 	hasVisitResult := false
 	for _, interfaceToVisit := range sliceToVisit {
-		visitResult, err := v.visitInterface(interfaceToVisit)
+		visitResult, err := v.visitNextStep(interfaceToVisit)
 		if err != nil {
 			return nil, err
 		}
@@ -121,7 +120,10 @@ func filterSliceEntriesWithVisitResult(v pathVisitor, sliceToVisit []interface{}
 }
 
 func shouldFilter(currentStep *ast.Node) bool {
-	if currentStep == nil || currentStep.Identity == nil {
+	if currentStep == nil {
+		return true
+	}
+	if currentStep.Identity == nil {
 		return false
 	}
 	_, ok := filterLookupMap[*currentStep.Identity]
