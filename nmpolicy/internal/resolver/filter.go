@@ -34,9 +34,7 @@ var (
 
 func filter(inputState map[string]interface{}, pathSteps ast.VariadicOperator, expectedValue interface{}) (map[string]interface{}, error) {
 	pathVisitorWithEqFilter := pathVisitor{
-		lastMapFn:                mapContainsValue(expectedValue),
-		visitSliceWithoutIndexFn: filterSliceEntriesWithVisitResult,
-		visitMapWithIdentityFn:   filterMapEntryWithVisitResult,
+		stateVisitor: &eqFilterVisitor{expectedValue: expectedValue},
 	}
 
 	filtered, err := pathVisitorWithEqFilter.visitNextStep(path{steps: pathSteps}, inputState)
@@ -56,30 +54,37 @@ func filter(inputState map[string]interface{}, pathSteps ast.VariadicOperator, e
 	return filteredMap, nil
 }
 
-func mapContainsValue(expectedValue interface{}) mapEntryVisitFn {
-	return func(mapToFilter map[string]interface{}, filterKey string) (interface{}, error) {
-		obtainedValue, ok := mapToFilter[filterKey]
-		if !ok {
-			return nil, nil
-		}
-		if reflect.TypeOf(obtainedValue) != reflect.TypeOf(expectedValue) {
-			return nil, fmt.Errorf(`type missmatch: the value in the path doesn't match the value to filter. `+
-				`"%T" != "%T" -> %+v != %+v`, obtainedValue, expectedValue, obtainedValue, expectedValue)
-		}
-		if obtainedValue == expectedValue {
-			return mapToFilter, nil
-		}
-		return nil, nil
-	}
+type eqFilterVisitor struct {
+	expectedValue interface{}
 }
 
-func filterMapEntryWithVisitResult(v *pathVisitor, p path, mapToVisit map[string]interface{}, identity string) (interface{}, error) {
+func (e *eqFilterVisitor) visitLastMap(mapToFilter map[string]interface{}, filterKey string) (interface{}, error) {
+	obtainedValue, ok := mapToFilter[filterKey]
+	if !ok {
+		return nil, nil
+	}
+	if reflect.TypeOf(obtainedValue) != reflect.TypeOf(e.expectedValue) {
+		return nil, fmt.Errorf(`type missmatch: the value in the path doesn't match the value to filter. `+
+			`"%T" != "%T" -> %+v != %+v`, obtainedValue, e.expectedValue, obtainedValue, e.expectedValue)
+	}
+	if obtainedValue == e.expectedValue {
+		return mapToFilter, nil
+	}
+	return nil, nil
+}
+
+func (e *eqFilterVisitor) visitLastSlice([]interface{}, int) (interface{}, error) {
+	return nil, nil
+}
+
+func (*eqFilterVisitor) visitMapWithIdentity(sv stepVisitor, p path,
+	mapToVisit map[string]interface{}, identity string) (interface{}, error) {
 	interfaceToVisit, ok := mapToVisit[identity]
 	if !ok {
 		return nil, nil
 	}
 
-	visitResult, err := v.visitNextStep(p, interfaceToVisit)
+	visitResult, err := sv.visitNextStep(p, interfaceToVisit)
 	if err != nil {
 		return nil, err
 	}
@@ -96,11 +101,11 @@ func filterMapEntryWithVisitResult(v *pathVisitor, p path, mapToVisit map[string
 	return filteredMap, nil
 }
 
-func filterSliceEntriesWithVisitResult(v *pathVisitor, p path, sliceToVisit []interface{}) (interface{}, error) {
+func (*eqFilterVisitor) visitSliceWithoutIndex(sv stepVisitor, p path, sliceToVisit []interface{}) (interface{}, error) {
 	filteredSlice := []interface{}{}
 	hasVisitResult := false
 	for _, interfaceToVisit := range sliceToVisit {
-		visitResult, err := v.visitNextStep(p, interfaceToVisit)
+		visitResult, err := sv.visitNextStep(p, interfaceToVisit)
 		if err != nil {
 			return nil, err
 		}
@@ -116,6 +121,10 @@ func filterSliceEntriesWithVisitResult(v *pathVisitor, p path, sliceToVisit []in
 		return nil, nil
 	}
 	return filteredSlice, nil
+}
+
+func (*eqFilterVisitor) visitSliceWithIndex(stepVisitor, path, []interface{}, int) (interface{}, error) {
+	return nil, nil
 }
 
 func shouldFilter(currentStep *ast.Node) bool {

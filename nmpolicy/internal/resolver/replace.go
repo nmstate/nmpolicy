@@ -21,13 +21,12 @@ import (
 )
 
 func replace(inputState map[string]interface{}, pathSteps ast.VariadicOperator, replaceValue interface{}) (map[string]interface{}, error) {
-	pathVisitorWithReplace := pathVisitor{
-		lastMapFn:                replaceMapFieldValue(replaceValue),
-		visitSliceWithoutIndexFn: replaceSliceEntriesWithVisitResult,
-		visitMapWithIdentityFn:   replaceMapEntryWithVisitResult,
+	pathVisitorWithReplaceOp := pathVisitor{
+		stateVisitor: &replaceOpVisitor{
+			replaceValue: replaceValue,
+		},
 	}
-
-	replaced, err := pathVisitorWithReplace.visitNextStep(path{steps: pathSteps}, inputState)
+	replaced, err := pathVisitorWithReplaceOp.visitNextStep(path{steps: pathSteps}, inputState)
 
 	if err != nil {
 		return nil, replaceError("failed applying operation on the path: %w", err)
@@ -40,25 +39,32 @@ func replace(inputState map[string]interface{}, pathSteps ast.VariadicOperator, 
 	return replacedMap, nil
 }
 
-func replaceMapFieldValue(replaceValue interface{}) mapEntryVisitFn {
-	return func(inputMap map[string]interface{}, mapEntryKeyToReplace string) (interface{}, error) {
-		modifiedMap := map[string]interface{}{}
-		for k, v := range inputMap {
-			modifiedMap[k] = v
-		}
-
-		modifiedMap[mapEntryKeyToReplace] = replaceValue
-		return modifiedMap, nil
-	}
+type replaceOpVisitor struct {
+	replaceValue interface{}
 }
 
-func replaceMapEntryWithVisitResult(v *pathVisitor, p path, mapToVisit map[string]interface{}, identity string) (interface{}, error) {
+func (r *replaceOpVisitor) visitLastMap(inputMap map[string]interface{}, mapEntryKeyToReplace string) (interface{}, error) {
+	modifiedMap := map[string]interface{}{}
+	for k, v := range inputMap {
+		modifiedMap[k] = v
+	}
+
+	modifiedMap[mapEntryKeyToReplace] = r.replaceValue
+	return modifiedMap, nil
+}
+
+func (*replaceOpVisitor) visitLastSlice([]interface{}, int) (interface{}, error) {
+	return nil, nil
+}
+
+func (*replaceOpVisitor) visitMapWithIdentity(sv stepVisitor, p path,
+	mapToVisit map[string]interface{}, identity string) (interface{}, error) {
 	interfaceToVisit, ok := mapToVisit[identity]
 	if !ok {
 		return nil, nil
 	}
 
-	visitResult, err := v.visitNextStep(p, interfaceToVisit)
+	visitResult, err := sv.visitNextStep(p, interfaceToVisit)
 	if err != nil {
 		return nil, err
 	}
@@ -71,14 +77,18 @@ func replaceMapEntryWithVisitResult(v *pathVisitor, p path, mapToVisit map[strin
 	return replacedMap, nil
 }
 
-func replaceSliceEntriesWithVisitResult(v *pathVisitor, p path, sliceToVisit []interface{}) (interface{}, error) {
+func (r *replaceOpVisitor) visitSliceWithoutIndex(sv stepVisitor, p path, sliceToVisit []interface{}) (interface{}, error) {
 	replacedSlice := make([]interface{}, len(sliceToVisit))
 	for i, interfaceToVisit := range sliceToVisit {
-		visitResult, err := v.visitNextStep(p, interfaceToVisit)
+		visitResult, err := sv.visitNextStep(p, interfaceToVisit)
 		if err != nil {
 			return nil, err
 		}
 		replacedSlice[i] = visitResult
 	}
 	return replacedSlice, nil
+}
+
+func (*replaceOpVisitor) visitSliceWithIndex(stepVisitor, path, []interface{}, int) (interface{}, error) {
+	return nil, nil
 }

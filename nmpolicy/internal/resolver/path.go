@@ -28,21 +28,26 @@ type captureEntryNameAndSteps struct {
 	steps            ast.VariadicOperator
 }
 
-type mapEntryVisitFn func(map[string]interface{}, string) (interface{}, error)
-type sliceEntryVisitFn func([]interface{}, int) (interface{}, error)
-
 type path struct {
 	steps            []ast.Node
 	currentStepIndex int
 	currentStep      *ast.Node
 }
 
+type stepVisitor interface {
+	visitNextStep(path, interface{}) (interface{}, error)
+}
+
+type stateVisitor interface {
+	visitLastMap(map[string]interface{}, string) (interface{}, error)
+	visitLastSlice([]interface{}, int) (interface{}, error)
+	visitSliceWithoutIndex(stepVisitor, path, []interface{}) (interface{}, error)
+	visitSliceWithIndex(stepVisitor, path, []interface{}, int) (interface{}, error)
+	visitMapWithIdentity(stepVisitor, path, map[string]interface{}, string) (interface{}, error)
+}
+
 type pathVisitor struct {
-	lastMapFn                mapEntryVisitFn
-	lastSliceFn              sliceEntryVisitFn
-	visitSliceWithoutIndexFn func(*pathVisitor, path, []interface{}) (interface{}, error)
-	visitSliceWithIndexFn    func(*pathVisitor, path, []interface{}, int) (interface{}, error)
-	visitMapWithIdentityFn   func(*pathVisitor, path, map[string]interface{}, string) (interface{}, error)
+	stateVisitor stateVisitor
 }
 
 func (v *pathVisitor) visitNextStep(p path, inputState interface{}) (interface{}, error) {
@@ -69,38 +74,32 @@ func (v *pathVisitor) visitNextStep(p path, inputState interface{}) (interface{}
 func (v *pathVisitor) visitSlice(p path, originalSlice []interface{}) (interface{}, error) {
 	if p.currentStep.Number == nil {
 		p.backStep()
-		return v.visitSliceWithoutIndexFn(v, p, originalSlice)
+		return v.stateVisitor.visitSliceWithoutIndex(v, p, originalSlice)
 	}
-	return v.visitSliceWithIndexFn(v, p, originalSlice, *p.currentStep.Number)
+	return v.stateVisitor.visitSliceWithIndex(v, p, originalSlice, *p.currentStep.Number)
 }
 
 func (v *pathVisitor) visitMap(p path, originalMap map[string]interface{}) (interface{}, error) {
 	if p.currentStep.Identity == nil {
 		return nil, pathError(p.currentStep, "unexpected non identity step for map state '%+v'", originalMap)
 	}
-	return v.visitMapWithIdentityFn(v, p, originalMap, *p.currentStep.Identity)
+	return v.stateVisitor.visitMapWithIdentity(v, p, originalMap, *p.currentStep.Identity)
 }
 
-func (v *pathVisitor) visitLastMapOnPath(p path, originalMap map[string]interface{}, inputState interface{}) (interface{}, error) {
-	if v.lastMapFn != nil {
-		outputState, err := v.lastMapFn(originalMap, *p.currentStep.Identity)
-		if err != nil {
-			return nil, wrapWithPathError(p.currentStep, err)
-		}
-		return outputState, nil
+func (v *pathVisitor) visitLastMapOnPath(p path, originalMap map[string]interface{}, _ interface{}) (interface{}, error) {
+	outputState, err := v.stateVisitor.visitLastMap(originalMap, *p.currentStep.Identity)
+	if err != nil {
+		return nil, wrapWithPathError(p.currentStep, err)
 	}
-	return inputState, nil
+	return outputState, nil
 }
 
-func (v *pathVisitor) visitLastSliceOnPath(p path, originalSlice []interface{}, inputState interface{}) (interface{}, error) {
-	if v.lastSliceFn != nil {
-		outputState, err := v.lastSliceFn(originalSlice, *p.currentStep.Number)
-		if err != nil {
-			return nil, wrapWithPathError(p.currentStep, err)
-		}
-		return outputState, nil
+func (v *pathVisitor) visitLastSliceOnPath(p path, originalSlice []interface{}, _ interface{}) (interface{}, error) {
+	outputState, err := v.stateVisitor.visitLastSlice(originalSlice, *p.currentStep.Number)
+	if err != nil {
+		return nil, wrapWithPathError(p.currentStep, err)
 	}
-	return inputState, nil
+	return outputState, nil
 }
 
 func (p *path) nextStep() {
@@ -110,13 +109,6 @@ func (p *path) nextStep() {
 		p.currentStepIndex++
 	}
 	p.currentStep = &p.steps[p.currentStepIndex]
-}
-
-func (p *path) peekNextStep() *ast.Node {
-	if !p.hasMoreSteps() {
-		return p.currentStep
-	}
-	return &p.steps[p.currentStepIndex+1]
 }
 
 func (p *path) backStep() {
