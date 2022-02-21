@@ -17,9 +17,6 @@
 package resolver
 
 import (
-	"fmt"
-	"strconv"
-
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/ast"
 )
 
@@ -124,39 +121,13 @@ func (p *path) hasMoreSteps() bool {
 	return p.currentStepIndex+1 < len(p.steps)
 }
 
-func (p captureEntryNameAndSteps) walkState(stateToWalk map[string]interface{}) (interface{}, error) {
-	var (
-		walkedState interface{}
-		walkedPath  []string
-	)
-	walkedState = stateToWalk
-	for _, step := range p.steps {
-		node := step
-		if step.Identity != nil {
-			identityStep := *step.Identity
-			walkedPath = append(walkedPath, identityStep)
-			walkedStateMap, ok := walkedState.(map[string]interface{})
-			if !ok {
-				return nil, wrapWithPathError(&node, fmt.Errorf("failed walking non map state '%+v' with path '%+v'", walkedState, walkedPath))
-			}
-			walkedState, ok = walkedStateMap[identityStep]
-			if !ok {
-				return nil, wrapWithPathError(&node,
-					fmt.Errorf("step '%s' from path '%s' not found at map state '%+v'", identityStep, walkedPath, walkedStateMap))
-			}
-		} else if step.Number != nil {
-			numberStep := *step.Number
-			walkedPath = append(walkedPath, strconv.Itoa(numberStep))
-			walkedStateSlice, ok := walkedState.([]interface{})
-			if !ok {
-				return nil, wrapWithPathError(&node, fmt.Errorf("failed walking non slice state '%+v' with path '%+v'", walkedState, walkedPath))
-			}
-			if len(walkedStateSlice) == 0 || numberStep >= len(walkedStateSlice) {
-				return nil, wrapWithPathError(&node,
-					fmt.Errorf("step '%d' from path '%s' not found at slice state '%+v'", numberStep, walkedPath, walkedStateSlice))
-			}
-			walkedState = walkedStateSlice[numberStep]
-		}
+func (p *path) peekNextStep() *ast.Node {
+	if !p.hasMoreSteps() {
+		return &p.steps[p.currentStepIndex]
 	}
-	return walkedState, nil
+	return &p.steps[p.currentStepIndex+1]
+}
+
+func (p captureEntryNameAndSteps) walkState(stateToWalk map[string]interface{}) (interface{}, error) {
+	return walk(stateToWalk, p.steps)
 }
