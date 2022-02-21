@@ -502,9 +502,8 @@ default-gw:
          next-hop-interface: eth1
          table-id: 254
 `
-		testToRun.err = "resolve error: eqfilter error: invalid path: failed walking non map state " +
-			"'[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]' " +
-			"with path '[routes running badfield]'" + `
+		testToRun.err = "resolve error: eqfilter error: failed walking path: invalid path: unexpected non numeric step for slice state " +
+			"'[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]'" + `
 | routes.running.next-hop-interface==capture.default-gw.routes.running.badfield.next-hop-interface
 | .....................................................................^`
 
@@ -527,9 +526,8 @@ default-gw:
          next-hop-interface: eth1
          table-id: 254
 `
-		testToRun.err = "resolve error: eqfilter error: invalid path: failed walking non slice state " +
-			"'map[running:[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]]' " +
-			"with path '[routes 1]'" + `
+		testToRun.err = "resolve error: eqfilter error: failed walking path: invalid path: unexpected non identity step for map state " +
+			"'map[running:[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]]'" + `
 | routes.running.next-hop-interface==capture.default-gw.routes.1.0.next-hop-interface
 | .............................................................^`
 		runTest(t, &testToRun)
@@ -551,7 +549,7 @@ default-gw:
         next-hop-interface: eth1
         table-id: 254
 `
-		testToRun.err = "resolve error: eqfilter error: invalid path: step 'badfield' from path '[routes badfield]' not found at map state " +
+		testToRun.err = "resolve error: eqfilter error: failed walking path: invalid path: step not found at map state " +
 			"'map[running:[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]]'" + `
 | routes.running.next-hop-interface==capture.default-gw.routes.badfield
 | .............................................................^`
@@ -575,7 +573,7 @@ default-gw:
         next-hop-interface: eth1
         table-id: 254
 `
-		testToRun.err = "resolve error: eqfilter error: invalid path: step '6' from path '[routes running 6]' not found at slice state " +
+		testToRun.err = "resolve error: eqfilter error: failed walking path: invalid path: step not found at slice state " +
 			"'[map[destination:0.0.0.0/0 next-hop-address:192.168.100.1 next-hop-interface:eth1 table-id:254]]'" + `
 | routes.running.next-hop-interface==capture.default-gw.routes.running.6
 | .....................................................................^`

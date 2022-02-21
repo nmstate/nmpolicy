@@ -18,49 +18,62 @@ package resolver
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/ast"
 )
 
-type captureEntryNameAndSteps struct {
-	captureEntryName string
-	steps            ast.VariadicOperator
+func walk(inputState map[string]interface{}, pathSteps ast.VariadicOperator) (interface{}, error) {
+	visitResult, err := visitState(newPath(pathSteps), inputState, &walkOpVisitor{})
+	if err != nil {
+		return nil, fmt.Errorf("failed walking path: %w", err)
+	}
+
+	return visitResult, nil
 }
 
-func (p captureEntryNameAndSteps) walkState(stateToWalk map[string]interface{}) (interface{}, error) {
-	var (
-		walkedState interface{}
-		walkedPath  []string
-	)
-	walkedState = stateToWalk
-	for _, step := range p.steps {
-		node := step
-		if step.Identity != nil {
-			identityStep := *step.Identity
-			walkedPath = append(walkedPath, identityStep)
-			walkedStateMap, ok := walkedState.(map[string]interface{})
-			if !ok {
-				return nil, wrapWithPathError(&node, fmt.Errorf("failed walking non map state '%+v' with path '%+v'", walkedState, walkedPath))
-			}
-			walkedState, ok = walkedStateMap[identityStep]
-			if !ok {
-				return nil, wrapWithPathError(&node,
-					fmt.Errorf("step '%s' from path '%s' not found at map state '%+v'", identityStep, walkedPath, walkedStateMap))
-			}
-		} else if step.Number != nil {
-			numberStep := *step.Number
-			walkedPath = append(walkedPath, strconv.Itoa(numberStep))
-			walkedStateSlice, ok := walkedState.([]interface{})
-			if !ok {
-				return nil, wrapWithPathError(&node, fmt.Errorf("failed walking non slice state '%+v' with path '%+v'", walkedState, walkedPath))
-			}
-			if len(walkedStateSlice) == 0 || numberStep >= len(walkedStateSlice) {
-				return nil, wrapWithPathError(&node,
-					fmt.Errorf("step '%d' from path '%s' not found at slice state '%+v'", numberStep, walkedPath, walkedStateSlice))
-			}
-			walkedState = walkedStateSlice[numberStep]
-		}
+type walkOpVisitor struct{}
+
+func (walkOpVisitor) visitLastMap(p path, mapToAccess map[string]interface{}) (interface{}, error) {
+	return accessMapWithCurrentStep(p, mapToAccess)
+}
+
+func (walkOpVisitor) visitLastSlice(p path, sliceToAccess []interface{}) (interface{}, error) {
+	return accessSliceWithCurrentStep(p, sliceToAccess)
+}
+
+func (w walkOpVisitor) visitSlice(p path, sliceToVisit []interface{}) (interface{}, error) {
+	interfaceToVisit, err := accessSliceWithCurrentStep(p, sliceToVisit)
+	if err != nil {
+		return nil, err
 	}
-	return walkedState, nil
+	return visitState(p.nextStep(), interfaceToVisit, &w)
+}
+
+func (w walkOpVisitor) visitMap(p path, mapToVisit map[string]interface{}) (interface{}, error) {
+	interfaceToVisit, err := accessMapWithCurrentStep(p, mapToVisit)
+	if err != nil {
+		return nil, err
+	}
+	return visitState(p.nextStep(), interfaceToVisit, &w)
+}
+
+func accessMapWithCurrentStep(p path, mapToAccess map[string]interface{}) (interface{}, error) {
+	if p.currentStep.Identity == nil {
+		return nil, pathError(p.currentStep, "unexpected non identity step for smap state '%+v'", mapToAccess)
+	}
+	v, ok := mapToAccess[*p.currentStep.Identity]
+	if !ok {
+		return nil, pathError(p.currentStep, "step not found at map state '%+v'", mapToAccess)
+	}
+	return v, nil
+}
+
+func accessSliceWithCurrentStep(p path, sliceToAccess []interface{}) (interface{}, error) {
+	if p.currentStep.Number == nil {
+		return nil, pathError(p.currentStep, "unexpected non numeric step for slice state '%+v'", sliceToAccess)
+	}
+	if len(sliceToAccess) <= *p.currentStep.Number {
+		return nil, pathError(p.currentStep, "step not found at slice state '%+v'", sliceToAccess)
+	}
+	return sliceToAccess[*p.currentStep.Number], nil
 }

@@ -25,6 +25,11 @@ import (
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/types"
 )
 
+type captureEntryNameAndSteps struct {
+	captureEntryName string
+	steps            ast.VariadicOperator
+}
+
 type Resolver struct{}
 
 type resolver struct {
@@ -204,7 +209,7 @@ func (r *resolver) resolveCaptureEntryPath() (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return resolvedPath.walkState(capturedStateEntry)
+	return walk(capturedStateEntry, resolvedPath.steps)
 }
 
 func (r *resolver) resolvePath() (*captureEntryNameAndSteps, error) {
