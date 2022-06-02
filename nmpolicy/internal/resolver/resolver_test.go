@@ -135,6 +135,7 @@ func TestFilter(t *testing.T) {
 		testFilterDifferentTypeOnPath(t)
 		testFilterOptionalField(t)
 		testFilterNonCaptureRefPathAtThirdArg(t)
+		testFilterByPath(t)
 		testFilterWithInvalidInputSource(t)
 		testFilterWithInvalidTypeInSource(t)
 		testFilterBadPath(t)
@@ -919,6 +920,33 @@ description-eth2:
       type: ethernet
       state: down
 `}
+		runTest(t, &testToRun)
+	})
+}
+
+func testFilterByPath(t *testing.T) {
+	t.Run("filter current state by path", func(t *testing.T) {
+		testToRun := withCaptureExpressions(t, `
+running-routes: routes.running
+`)
+		testToRun.expectedCapturedStates = `
+running-routes:
+  state:
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+      - destination: 1.1.1.0/24
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+      - destination: 2.2.2.0/24
+        next-hop-address: 192.168.200.1
+        next-hop-interface: eth2
+        table-id: 254
+`
 		runTest(t, &testToRun)
 	})
 }

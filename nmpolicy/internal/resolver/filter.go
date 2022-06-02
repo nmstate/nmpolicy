@@ -24,7 +24,7 @@ import (
 )
 
 func filter(inputState map[string]interface{}, pathSteps ast.VariadicOperator, expectedValue interface{}) (map[string]interface{}, error) {
-	filtered, err := visitState(newPath(pathSteps), inputState, &eqFilterVisitor{expectedValue: expectedValue})
+	filtered, err := visitState(newPath(pathSteps), inputState, &filterVisitor{expectedValue: expectedValue})
 
 	if err != nil {
 		return nil, fmt.Errorf("failed applying operation on the path: %w", err)
@@ -41,16 +41,22 @@ func filter(inputState map[string]interface{}, pathSteps ast.VariadicOperator, e
 	return filteredMap, nil
 }
 
-type eqFilterVisitor struct {
+type filterVisitor struct {
 	mergeVisitResult bool
 	expectedValue    interface{}
 }
 
-func (e eqFilterVisitor) visitLastMap(p path, mapToFilter map[string]interface{}) (interface{}, error) {
+func (e filterVisitor) visitLastMap(p path, mapToFilter map[string]interface{}) (interface{}, error) {
 	obtainedValue, ok := mapToFilter[*p.currentStep.Identity]
 	if !ok {
 		return nil, nil
 	}
+
+	// Filter by the path since there is no value to compare
+	if e.expectedValue == nil {
+		return map[string]interface{}{*p.currentStep.Identity: obtainedValue}, nil
+	}
+
 	if reflect.TypeOf(obtainedValue) != reflect.TypeOf(e.expectedValue) {
 		return nil, pathError(p.currentStep, `type missmatch: the value in the path doesn't match the value to filter. `+
 			`"%T" != "%T" -> %+v != %+v`, obtainedValue, e.expectedValue, obtainedValue, e.expectedValue)
@@ -61,14 +67,14 @@ func (e eqFilterVisitor) visitLastMap(p path, mapToFilter map[string]interface{}
 	return nil, nil
 }
 
-func (e eqFilterVisitor) visitLastSlice(p path, sliceToVisit []interface{}) (interface{}, error) {
+func (e filterVisitor) visitLastSlice(p path, sliceToVisit []interface{}) (interface{}, error) {
 	if p.currentStep.Identity != nil {
 		return e.visitSlice(p, sliceToVisit)
 	}
 	return nil, pathError(p.currentStep, "filtering lists index with equal not implemented")
 }
 
-func (e eqFilterVisitor) visitMap(p path, mapToVisit map[string]interface{}) (interface{}, error) {
+func (e filterVisitor) visitMap(p path, mapToVisit map[string]interface{}) (interface{}, error) {
 	if p.currentStep.Number != nil {
 		return nil, pathError(p.currentStep, "failed filtering map: path with index not supported")
 	}
@@ -93,7 +99,7 @@ func (e eqFilterVisitor) visitMap(p path, mapToVisit map[string]interface{}) (in
 	return filteredMap, nil
 }
 
-func (e eqFilterVisitor) visitSlice(p path, sliceToVisit []interface{}) (interface{}, error) {
+func (e filterVisitor) visitSlice(p path, sliceToVisit []interface{}) (interface{}, error) {
 	if p.currentStep.Number != nil {
 		return nil, pathError(p.currentStep, "failed filtering slice: path with index not supported")
 	}
@@ -103,7 +109,7 @@ func (e eqFilterVisitor) visitSlice(p path, sliceToVisit []interface{}) (interfa
 	for _, interfaceToVisit := range sliceToVisit {
 		// Filter only the first slice by forcing "mergeVisitResult" to true
 		// for the the following ones.
-		visitResult, err := visitState(p, interfaceToVisit, &eqFilterVisitor{mergeVisitResult: true, expectedValue: e.expectedValue})
+		visitResult, err := visitState(p, interfaceToVisit, &filterVisitor{mergeVisitResult: true, expectedValue: e.expectedValue})
 		if err != nil {
 			return nil, err
 		}

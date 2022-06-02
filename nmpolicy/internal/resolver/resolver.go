@@ -116,6 +116,8 @@ func (r *resolver) resolveCaptureASTEntry() (types.NMState, error) {
 		return r.resolveEqFilter()
 	} else if r.currentNode.Replace != nil {
 		return r.resolveReplace()
+	} else if r.currentNode.Path != nil {
+		return r.resolvePathFilter()
 	}
 	return nil, fmt.Errorf("root node has unsupported operation : %s", *r.currentNode)
 }
@@ -136,6 +138,10 @@ func (r *resolver) resolveReplace() (types.NMState, error) {
 		return nil, wrapWithResolveError(err)
 	}
 	return replacedState, nil
+}
+
+func (r *resolver) resolvePathFilter() (types.NMState, error) {
+	return filter(r.currentState, *r.currentNode.Path, nil)
 }
 
 func (r *resolver) resolveTernaryOperator(operator *ast.TernaryOperator,
