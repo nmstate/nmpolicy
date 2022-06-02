@@ -46,7 +46,8 @@ The following is a semi-formal definition of the capture entry expression:
 <eqexpression> ::= <path> <eqoperator> (<string> | <number> | <capturepath>)
 <replaceoperator> ::= ":="
 <replaceexpression> ::= <path> <replaceoperator> (<string> | <number> | <capturepath>)
-<expression> ::= <eqexpression> | <replaceexpression>
+<pathexpression> ::= <path>
+<expression> ::= <pathexpression> | <eqexpression> | <replaceexpression>
 <pipe> ::= "|"
 <pipedexpression> ::= <capturepath> <pipe> <expression>
 ```
@@ -76,6 +77,30 @@ interfaces.name == "eth1"
 routes.destination == "0.0.0.0/0"
 dns.server == "192.168.1.1"
 interfaces.name == capture.default-gw.interfaces.0.name
+```
+
+### Path filter ```<pathexpression>```
+Filter out current state to include only the data matching the ```<path>```
+
+Following is a path filter to filter out everything except the running DNS
+configuration:
+```
+dns-resolver.running
+```
+
+This will create a capture entry with the the following Nmstate
+```yaml
+dns-resolver:
+  running:
+    search:
+    - redhat.com
+    server:
+    - 8.8.8.8
+```
+
+This can be referened later on with:
+```
+"{{ capture.[capture name].dns-resolver.running }}"
 ```
 
 ### Replace ```<replaceexpression>```
