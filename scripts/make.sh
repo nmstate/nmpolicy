@@ -55,7 +55,7 @@ if [ -z "${OPT_BUILD}" ] && [ -z "${OPT_LINT}" ] && [ -z "${OPT_UTEST}" ] && [ -
 fi
 
 if [ -n "${OPT_BUILD}" ]; then
-    go build -o ./.out/nmpolicyctl ./cmd/nmstatectl/...
+    go build -o ./.out/nmpolicyctl ./cmd/nmpolicyctl/...
 fi
 
 if [ -n "${OPT_LINT}" ]; then
