@@ -9,7 +9,7 @@ builds:
       - CGO_ENABLED=0
     goos:
       - linux
-    main: ./cmd/nmpolicy
+    main: ./cmd/nmpolicyctl
 archives:
   - replacements:
       linux: Linux
