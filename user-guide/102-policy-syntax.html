@@ -364,7 +364,8 @@ network state and stores the result.</p>
 &lt;eqexpression&gt; ::= &lt;path&gt; &lt;eqoperator&gt; (&lt;string&gt; | &lt;number&gt; | &lt;capturepath&gt;)
 &lt;replaceoperator&gt; ::= ":="
 &lt;replaceexpression&gt; ::= &lt;path&gt; &lt;replaceoperator&gt; (&lt;string&gt; | &lt;number&gt; | &lt;capturepath&gt;)
-&lt;expression&gt; ::= &lt;eqexpression&gt; | &lt;replaceexpression&gt;
+&lt;pathexpression&gt; ::= &lt;path&gt;
+&lt;expression&gt; ::= &lt;pathexpression&gt; | &lt;eqexpression&gt; | &lt;replaceexpression&gt;
 &lt;pipe&gt; ::= "|"
 &lt;pipedexpression&gt; ::= &lt;capturepath&gt; &lt;pipe&gt; &lt;expression&gt;
 </code></pre></div></div>
@@ -393,6 +394,28 @@ The resulting output is a full NMState state containing only the filtered values
 routes.destination == "0.0.0.0/0"
 dns.server == "192.168.1.1"
 interfaces.name == capture.default-gw.interfaces.0.name
+</code></pre></div></div>
+
+<h3 id="path-filter-pathexpression">Path filter <code class="language-plaintext highlighter-rouge">&lt;pathexpression&gt;</code>
+</h3>
+<p>Filter out current state to include only the data matching the <code class="language-plaintext highlighter-rouge">&lt;path&gt;</code></p>
+
+<p>Following is a path filter to filter out everything except the running DNS
+configuration:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>dns-resolver.running
+</code></pre></div></div>
+
+<p>This will create a capture entry with the the following Nmstate</p>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">dns-resolver</span><span class="pi">:</span>
+  <span class="na">running</span><span class="pi">:</span>
+    <span class="na">search</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">redhat.com</span>
+    <span class="na">server</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">8.8.8.8</span>
+</code></pre></div></div>
+
+<p>This can be referened later on with:</p>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code>""
 </code></pre></div></div>
 
 <h3 id="replace-replaceexpression">Replace <code class="language-plaintext highlighter-rouge">&lt;replaceexpression&gt;</code>
