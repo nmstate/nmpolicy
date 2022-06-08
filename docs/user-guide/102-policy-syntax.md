@@ -99,8 +99,11 @@ dns-resolver:
 ```
 
 This can be referened later on with:
+
 ```
+{% raw %}
 "{{ capture.[capture name].dns-resolver.running }}"
+{% endraw %}
 ```
 
 ### Replace ```<replaceexpression>```
