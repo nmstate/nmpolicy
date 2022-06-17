@@ -1,0 +1,20 @@
+[package]
+name = "nmpolicyctl"
+version = "0.0.1"
+authors = ["Quique Llorente <ellorent@redhat.com>"]
+description = "Template engine for nmstate"
+license = "Apache-2.0"
+homepage = "https://nmstate.io/nmpolicy"
+documentation = "https://nmstate.io/nmpolicy"
+repository = "https://github.com/nmstate/nmpolicy"
+keywords = ["network", "linux"]
+categories = ["network-programming", "os::linux-apis"]
+edition = "2018"
+
+[[bin]]
+name = "nmpolicyctl"
+path = "nmpolicyctl.rs"
+
+[dependencies]
+nmpolicy = { path = "../lib" }
+
