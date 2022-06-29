@@ -21,15 +21,40 @@ use std::{iter::Peekable, str::CharIndices};
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub(crate) enum Token {
     Identity(usize, String),
-    Number(usize, u32),
+    Number(usize, i32),
     Str(usize, String),
     Dot(usize),      // .
     Pipe(usize),     // |
     Replace(usize),  // !=
     EqFilter(usize), // ==
     Merge(usize),    // +
-    True(usize),     // true
-    False(usize),    // false
+}
+
+impl Token {
+    pub(crate) fn literal(&self) -> String {
+        match &self {
+            Token::Number(_, n) => format!("{n}"),
+            Token::Identity(_, l) => l.to_string(),
+            Token::Str(_, l) => l.to_string(),
+            Token::Dot(_) => String::from("."),
+            Token::Pipe(_) => String::from("|"),
+            Token::Replace(_) => String::from(":="),
+            Token::Merge(_) => String::from("+"),
+            Token::EqFilter(_) => String::from("=="),
+        }
+    }
+    pub(crate) fn pos(self) -> usize {
+        match self {
+            Token::Number(pos, _) => pos,
+            Token::Identity(pos, _) => pos,
+            Token::Str(pos, _) => pos,
+            Token::Dot(pos) => pos,
+            Token::Pipe(pos) => pos,
+            Token::Replace(pos) => pos,
+            Token::Merge(pos) => pos,
+            Token::EqFilter(pos) => pos,
+        }
+    }
 }
 
 pub(crate) struct Tokens<'a> {
@@ -69,7 +94,7 @@ impl<'a> Tokens<'a> {
                     ch if ch.is_numeric() => self.tokenize_number(ch),
                     ch if ch.is_alphabetic() => self.tokenize_identity(ch),
                     ch => Err(NmpolicyError::new(
-                        ErrorKind::InvalidArgument,
+                        ErrorKind::InvalidExpression,
                         format!("illegal char {ch}"),
                     )),
                 };
@@ -101,12 +126,12 @@ impl<'a> Tokens<'a> {
             Some((pos, nch)) => {
                 self.pos = pos;
                 Err(NmpolicyError::new(
-                    ErrorKind::InvalidArgument,
+                    ErrorKind::InvalidExpression,
                     format!("invalid EQFILTER operation format ({nch} is not equal char)"),
                 ))
             }
             None => Err(NmpolicyError::new(
-                ErrorKind::InvalidArgument,
+                ErrorKind::InvalidExpression,
                 "invalid EQFILTER operation format (EOF)".to_string(),
             )),
         }
@@ -117,12 +142,12 @@ impl<'a> Tokens<'a> {
             Some((pos, nch)) => {
                 self.pos = pos;
                 Err(NmpolicyError::new(
-                    ErrorKind::InvalidArgument,
+                    ErrorKind::InvalidExpression,
                     format!("invalid REPLACE operation format ({nch} is not equal char)"),
                 ))
             }
             None => Err(NmpolicyError::new(
-                ErrorKind::InvalidArgument,
+                ErrorKind::InvalidExpression,
                 "invalid REPLACE operation format (EOF)".to_string(),
             )),
         }
@@ -148,7 +173,7 @@ impl<'a> Tokens<'a> {
             Ok(Token::Str(begin_pos, s))
         } else {
             Err(NmpolicyError::new(
-                ErrorKind::InvalidArgument,
+                ErrorKind::InvalidExpression,
                 format!("invalid string format (missing {delimiter} terminator)"),
             ))
         }
@@ -162,12 +187,12 @@ impl<'a> Tokens<'a> {
         }
         match self.char_indices.peek() {
             Some((_, ' ' | '.' | ':' | '+' | '|' | '=')) | None => {
-                Ok(Token::Number(begin_pos, number.parse::<u32>().unwrap()))
+                Ok(Token::Number(begin_pos, number.parse::<i32>().unwrap()))
             }
             Some((pos, ch)) => {
                 self.pos = *pos;
                 Err(NmpolicyError::new(
-                    ErrorKind::InvalidArgument,
+                    ErrorKind::InvalidExpression,
                     format!("invalid number format ({ch} is not a digit)"),
                 ))
             }
@@ -188,7 +213,7 @@ impl<'a> Tokens<'a> {
                 Ok(Token::Identity(begin_pos, identity))
             }
             Some((_, ch)) => Err(NmpolicyError::new(
-                ErrorKind::InvalidArgument,
+                ErrorKind::InvalidExpression,
                 format!("invalid identity format ({ch} is not a digit, letter or -)"),
             )),
         }

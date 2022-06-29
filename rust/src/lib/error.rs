@@ -5,17 +5,14 @@ use crate::snippet::snippet;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum ErrorKind {
-    InvalidArgument,
+    InvalidExpression,
+    InvalidPath,
+    InvalidEqFilter,
+    InvalidReplace,
+    InvalidPipe,
     Bug,
-    VerificationError,
     NotImplementedError,
     NotSupportedError,
-}
-
-impl std::fmt::Display for ErrorKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}", self)
-    }
 }
 
 impl std::fmt::Display for NmpolicyError {
@@ -24,9 +21,24 @@ impl std::fmt::Display for NmpolicyError {
     }
 }
 
+impl std::fmt::Display for ErrorKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ErrorKind::InvalidExpression => write!(f, "invalid expression"),
+            ErrorKind::InvalidPath => write!(f, "invalid path"),
+            ErrorKind::InvalidEqFilter => write!(f, "invalid equality filter"),
+            ErrorKind::InvalidReplace => write!(f, "invalid replace"),
+            ErrorKind::InvalidPipe => write!(f, "invalid pipe"),
+            ErrorKind::Bug => write!(f, "bug"),
+            ErrorKind::NotImplementedError => write!(f, "not implemented"),
+            ErrorKind::NotSupportedError => write!(f, "not supported"),
+        }
+    }
+}
+
 impl Error for NmpolicyError {}
 
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 #[non_exhaustive]
 pub struct NmpolicyError {
     kind: ErrorKind,

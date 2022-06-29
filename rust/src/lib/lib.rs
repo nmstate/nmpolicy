@@ -2,6 +2,7 @@
 mod ast;
 mod error;
 mod lex;
+mod parse;
 mod snippet;
 
 pub use crate::error::NmpolicyError;
