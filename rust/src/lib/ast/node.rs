@@ -40,24 +40,24 @@ pub enum NodeKind {
     Path(Vec<Node>),
 }
 
-pub fn string(pos: usize, value: &str) -> Box<Node> {
+pub fn string(pos: usize, literal: String) -> Box<Node> {
     Box::new(Node {
         pos,
-        kind: NodeKind::Str(value.to_string()),
+        kind: NodeKind::Str(literal),
     })
 }
 
-pub fn identity(pos: usize, value: &str) -> Box<Node> {
+pub fn identity(pos: usize, literal: String) -> Box<Node> {
     Box::new(Node {
         pos,
-        kind: NodeKind::Identity(value.to_string()),
+        kind: NodeKind::Identity(literal),
     })
 }
 
-pub fn number(pos: usize, value: i32) -> Box<Node> {
+pub fn number(pos: usize, literal: i32) -> Box<Node> {
     Box::new(Node {
         pos,
-        kind: NodeKind::Number(value),
+        kind: NodeKind::Number(literal),
     })
 }
 

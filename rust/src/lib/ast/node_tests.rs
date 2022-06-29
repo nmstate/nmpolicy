@@ -1,4 +1,15 @@
-use crate::ast::node::{current_state, eqfilter, identity, number, path, replace, string, Node};
+use crate::ast::{
+    node,
+    node::{current_state, eqfilter, number, path, replace, Node},
+};
+
+fn identity(pos: usize, literal: &str) -> Box<Node> {
+    node::identity(pos, literal.to_string())
+}
+
+fn string(pos: usize, literal: &str) -> Box<Node> {
+    node::string(pos, literal.to_string())
+}
 
 #[test]
 fn eqfilter_display() {
