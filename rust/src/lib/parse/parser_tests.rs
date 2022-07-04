@@ -320,4 +320,48 @@ parse_errors_tests! {
     r#"invalid path: missing identity or number after dot
 | routes..destination
 | .......^"#),
+    parse_eqfilter_failure_0: (from_tokens().eqfilter().string("0.0.0.0/0").eof(),
+    r#"invalid equality filter: missing left hand argument
+| ==0.0.0.0/0
+| ^"#),
+    parse_eqfilter_failure_1: (from_tokens().string("foo").eqfilter().string("0.0.0.0/0").eof(),
+    r#"invalid equality filter: left hand argument is not a path
+| foo==0.0.0.0/0
+| ...^"#),
+    parse_eqfilter_failure_2: (from_tokens().identity("routes").dot().identity("running").dot().identity("destination").eqfilter().eof(),
+    r#"invalid equality filter: missing right hand argument
+| routes.running.destination==
+| ..........................^"#),
+    parse_eqfilter_failure_3: (from_tokens().identity("routes").dot().identity("running").dot().identity("destination").eqfilter().eqfilter().eof(),
+    r#"invalid equality filter: right hand argument is not a string or identity
+| routes.running.destination====
+| ............................^"#),
+    parse_pipe_failure_0: (from_tokens().pipe().identity("routes").dot().identity("running").dot().identity("next-hop-interface").replace().string("br1").eof(),
+    r#"invalid pipe: missing pipe in expression
+| |routes.running.next-hop-interface:=br1
+| ^"#),
+    parse_pipe_failure_1: (from_tokens().identity("capture").dot().identity("default-gw").pipe().eof(),
+    r#"invalid pipe: missing pipe out expression
+| capture.default-gw|
+| ..................^"#),
+    parse_pipe_failure_2: (from_tokens().string("foo").pipe().identity("routes").dot().identity("running").dot().identity("next-hop-interface").replace().string("br1").eof(),
+    r#"invalid pipe: only paths can be piped in
+| foo|routes.running.next-hop-interface:=br1
+| ...^"#),
+    parse_replace_failure_0: (from_tokens().replace().string("0.0.0.0/0").eof(),
+    r#"invalid replace: missing left hand argument
+| :=0.0.0.0/0
+| ^"#),
+    parse_replace_failure_1: (from_tokens().string("foo").replace().string("0.0.0.0/0").eof(),
+    r#"invalid replace: left hand argument is not a path
+| foo:=0.0.0.0/0
+| ...^"#),
+    parse_replace_failure_2: (from_tokens().identity("routes").dot().identity("running").dot().identity("destination").replace().eof(),
+    r#"invalid replace: missing right hand argument
+| routes.running.destination:=
+| ..........................^"#),
+    parse_replace_failure_3: (from_tokens().identity("routes").dot().identity("running").dot().identity("destination").replace().replace().eof(),
+    r#"invalid replace: right hand argument is not a string or identity
+| routes.running.destination:=:=
+| ............................^"#),
 }
