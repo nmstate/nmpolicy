@@ -19,6 +19,7 @@ pub enum ErrorKind {
     InvalidExpressionUnexpectedToken(String),
     InvalidPipeMissingLeftPath,
     InvalidPipeMissingLeftExpression,
+    InvalidPipeMissingRightExpression,
     InvalidPathUnexpectedTokenAfterDot,
     InvalidPathMissingDot,
     InvalidTernaryUnexpectedRightHand(&'static str),
@@ -82,6 +83,9 @@ impl std::fmt::Display for ErrorKind {
             }
             ErrorKind::InvalidPipeMissingLeftExpression => {
                 write!(f, "invalid pipe: missing pipe in expression",)
+            }
+            ErrorKind::InvalidPipeMissingRightExpression => {
+                write!(f, "invalid pipe: missing pipe out expression",)
             }
             ErrorKind::InvalidPathUnexpectedTokenAfterDot => {
                 write!(f, "invalid path: missing identity or number after dot",)
