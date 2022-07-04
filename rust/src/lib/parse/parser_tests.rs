@@ -1,6 +1,6 @@
 use crate::{
     ast::node::Node,
-    error::{ErrorKind, NmpolicyError},
+    error::NmpolicyError,
     lex::tokens::{
         Token, Token::Dot, Token::EqFilter, Token::Identity, Token::Number, Token::Pipe,
         Token::Replace, Token::Str,
@@ -44,8 +44,8 @@ macro_rules! parse_errors_tests{
                 let tokens_iterator = &mut tokens.into_iter();
                 let mut parser = Parser::new(expression, tokens_iterator);
                 let obtained_result = parser.parse();
-                let expected_result: Result<Option<Box<Node>>, NmpolicyError> = Err(expected_error);
-                assert_eq!(expected_result, obtained_result);
+                assert_eq!(true, obtained_result.is_err());
+                assert_eq!(expected_error, obtained_result.unwrap_err().to_string());
 			}
 		)*
 		}
@@ -305,19 +305,19 @@ replace:
 
 parse_errors_tests! {
     parse_basic_failures: (from_tokens().dot().eof(),
-    NmpolicyError::new(ErrorKind::InvalidExpression, r#"unexpected token `.`
+    r#"invalid expression: unexpected token `.`
 | .
-| ^"#.to_string())),
+| ^"#),
     parse_path_failure_0: (from_tokens().identity("routes").dot().eof(),
-    NmpolicyError::new(ErrorKind::InvalidPath, r#"missing identity or number after dot
+    r#"invalid path: missing identity or number after dot
 | routes.
-| ......^"#.to_string())),
+| ......^"#),
     parse_path_failure_1: (from_tokens().identity("routes").identity("destination").eof(),
-    NmpolicyError::new(ErrorKind::InvalidPath, r#"missing dot
+    r#"invalid path: missing dot
 | routesdestination
-| ......^"#.to_string())),
+| ......^"#),
     parse_path_failure_2: (from_tokens().identity("routes").dot().dot().identity("destination").eof(),
-    NmpolicyError::new(ErrorKind::InvalidPath, r#"missing identity or number after dot
+    r#"invalid path: missing identity or number after dot
 | routes..destination
-| .......^"#.to_string())),
+| .......^"#),
 }

@@ -2,9 +2,29 @@ use std::error::Error;
 
 use crate::snippet::snippet;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum ErrorKind {
+    // Tokenizer
+    IllegalChar(char),
+    InvalidEqFilterMissingEqual(char),
+    InvalidEqFilterEOF,
+    InvalidReplaceMissingEqual(char),
+    InvalidReplaceEOF,
+    InvalidStringMissingDelimiter(char),
+    InvalidNumberFormat(char),
+    InvalidIdentityFormat(char),
+
+    // Parser
+    InvalidExpressionUnexpectedToken(String),
+    InvalidPipeMissingLeftPath,
+    InvalidPipeMissingLeftExpression,
+    InvalidPathUnexpectedTokenAfterDot,
+    InvalidPathMissingDot,
+    InvalidTernaryUnexpectedRightHand(&'static str),
+    InvalidTernaryMissingRightHand(&'static str),
+    InvalidTernaryUnexpectedLeftHand(&'static str),
+    InvalidTernaryMissingLeftHand(&'static str),
     InvalidExpression,
     InvalidPath,
     InvalidEqFilter,
@@ -17,13 +37,76 @@ pub enum ErrorKind {
 
 impl std::fmt::Display for NmpolicyError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}: {}", self.kind, self.msg,)
+        if self.expression.is_empty() {
+            write!(f, "{}", self.kind)
+        } else {
+            write!(
+                f,
+                "{}\n{}",
+                self.kind,
+                snippet(self.expression.clone(), self.pos)
+            )
+        }
     }
 }
 
 impl std::fmt::Display for ErrorKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            ErrorKind::IllegalChar(ch) => write!(f, "illegal char {ch}"),
+            ErrorKind::InvalidEqFilterMissingEqual(ch) => write!(
+                f,
+                "invalid EQFILTER operation format ({ch} is not equal char)"
+            ),
+            ErrorKind::InvalidEqFilterEOF => write!(f, "invalid EQFILTER operation format (EOF)"),
+            ErrorKind::InvalidReplaceMissingEqual(ch) => write!(
+                f,
+                "invalid REPLACE operation format ({ch} is not equal char)"
+            ),
+            ErrorKind::InvalidReplaceEOF => write!(f, "invalid REPLACE operation format (EOF)"),
+            ErrorKind::InvalidStringMissingDelimiter(delimiter) => {
+                write!(f, "invalid string format (missing {delimiter} terminator)")
+            }
+            ErrorKind::InvalidNumberFormat(ch) => {
+                write!(f, "invalid number format ({ch} is not a digit)")
+            }
+            ErrorKind::InvalidIdentityFormat(ch) => write!(
+                f,
+                "invalid identity format ({ch} is not a digit, letter or -)"
+            ),
+            ErrorKind::InvalidExpressionUnexpectedToken(literal) => {
+                write!(f, "invalid expression: unexpected token `{}`", literal)
+            }
+            ErrorKind::InvalidPipeMissingLeftPath => {
+                write!(f, "invalid pipe: only paths can be piped in",)
+            }
+            ErrorKind::InvalidPipeMissingLeftExpression => {
+                write!(f, "invalid pipe: missing pipe in expression",)
+            }
+            ErrorKind::InvalidPathUnexpectedTokenAfterDot => {
+                write!(f, "invalid path: missing identity or number after dot",)
+            }
+            ErrorKind::InvalidPathMissingDot => {
+                write!(f, "invalid path: missing dot",)
+            }
+            ErrorKind::InvalidTernaryUnexpectedRightHand(operator_name) => {
+                write!(
+                    f,
+                    "invalid {operator_name}: right hand argument is not a string or identity"
+                )
+            }
+            ErrorKind::InvalidTernaryUnexpectedLeftHand(operator_name) => {
+                write!(
+                    f,
+                    "invalid {operator_name}: left hand argument is not a path"
+                )
+            }
+            ErrorKind::InvalidTernaryMissingRightHand(operator_name) => {
+                write!(f, "invalid {operator_name}: missing right hand argument")
+            }
+            ErrorKind::InvalidTernaryMissingLeftHand(operator_name) => {
+                write!(f, "invalid {operator_name}: missing left hand argument")
+            }
             ErrorKind::InvalidExpression => write!(f, "invalid expression"),
             ErrorKind::InvalidPath => write!(f, "invalid path"),
             ErrorKind::InvalidEqFilter => write!(f, "invalid equality filter"),
@@ -42,23 +125,25 @@ impl Error for NmpolicyError {}
 #[non_exhaustive]
 pub struct NmpolicyError {
     kind: ErrorKind,
-    msg: String,
+    expression: String,
+    pos: usize,
 }
 
 impl NmpolicyError {
-    pub fn new(kind: ErrorKind, msg: String) -> Self {
-        Self { kind, msg }
+    pub fn new(kind: ErrorKind) -> Self {
+        Self {
+            kind,
+            expression: "".to_string(),
+            pos: 0,
+        }
     }
 
     pub fn kind(&self) -> ErrorKind {
-        self.kind
+        self.kind.clone()
     }
 
-    pub fn msg(&self) -> &str {
-        self.msg.as_str()
-    }
-
-    pub fn decorate(&mut self, expression: String, position: usize) {
-        self.msg = format!("{}\n{}", self.msg, snippet(expression, position).as_str())
+    pub fn decorate(&mut self, expression: String, pos: usize) {
+        self.expression = expression;
+        self.pos = pos;
     }
 }
