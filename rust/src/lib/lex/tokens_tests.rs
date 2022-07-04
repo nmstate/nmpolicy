@@ -1,10 +1,7 @@
-use crate::{
-    error::{ErrorKind, NmpolicyError},
-    lex::{
-        tokens::Token,
-        tokens::Token::{Dot, Identity, Merge, Number, Pipe, Replace, Str},
-        tokens::Tokens,
-    },
+use crate::lex::{
+    tokens::Token,
+    tokens::Token::{Dot, Identity, Merge, Number, Pipe, Replace, Str},
+    tokens::Tokens,
 };
 
 type Results<'a> = Vec<<Tokens<'a> as Iterator>::Item>;
@@ -71,7 +68,7 @@ macro_rules! failure_tests{
                 println!("{}", expression);
                 let mut tokens = Tokens::new(expression);
                 let obtained_error = tokens.find(Result::is_err);
-                assert_eq!(Some(Err(NmpolicyError::new(ErrorKind::InvalidExpression, expected_error))), obtained_error);
+                assert_eq!(expected_error, obtained_error.unwrap().unwrap_err().to_string());
                 assert_eq!(None, tokens.next());
             }
         )*

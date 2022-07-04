@@ -58,8 +58,7 @@ impl<'a> Parser<'a> {
             Some(Token::Replace(pos)) => self.parse_replace(pos),
             Some(Token::Pipe(pos)) => self.parse_pipe(pos),
             Some(t) => Err(NmpolicyError::new(
-                ErrorKind::InvalidExpression,
-                format!("unexpected token `{}`", t.literal()),
+                ErrorKind::InvalidExpressionUnexpectedToken(t.literal()),
             )),
             None => Ok(()),
         }
@@ -78,8 +77,7 @@ impl<'a> Parser<'a> {
                     }
                     Some(Ok(_)) | None => {
                         return Err(NmpolicyError::new(
-                            ErrorKind::InvalidPath,
-                            "missing identity or number after dot".to_string(),
+                            ErrorKind::InvalidPathUnexpectedTokenAfterDot,
                         ));
                     }
                     Some(Err(e)) => return Err(e),
@@ -91,12 +89,7 @@ impl<'a> Parser<'a> {
                     break;
                 }
                 None => break,
-                Some(Ok(_)) => {
-                    return Err(NmpolicyError::new(
-                        ErrorKind::InvalidPath,
-                        "missing dot".to_string(),
-                    ))
-                }
+                Some(Ok(_)) => return Err(NmpolicyError::new(ErrorKind::InvalidPathMissingDot)),
                 Some(Err(e)) => return Err(e),
             }
         }
@@ -105,7 +98,7 @@ impl<'a> Parser<'a> {
     }
 
     pub(crate) fn parse_eqfilter(&mut self, pos: usize) -> Result<(), NmpolicyError> {
-        match self.fill_in_ternary_operator() {
+        match self.fill_in_ternary_operator("eqfilter") {
             Ok((value1, value2, value3)) => {
                 self.eqfilter(pos, value1.unwrap(), value2.unwrap(), value3.unwrap());
                 Ok(())
@@ -115,7 +108,7 @@ impl<'a> Parser<'a> {
     }
 
     pub(crate) fn parse_replace(&mut self, pos: usize) -> Result<(), NmpolicyError> {
-        match self.fill_in_ternary_operator() {
+        match self.fill_in_ternary_operator("replace") {
             Ok((value1, value2, value3)) => {
                 self.replace(pos, value1.unwrap(), value2.unwrap(), value3.unwrap());
                 Ok(())
@@ -131,19 +124,18 @@ impl<'a> Parser<'a> {
                     self.piped_in_node = self.root_node.clone();
                     Ok(())
                 }
-                _ => Err(NmpolicyError::new(
-                    ErrorKind::InvalidExpression,
-                    "only paths can be piped in".to_string(),
-                )),
+                _ => Err(NmpolicyError::new(ErrorKind::InvalidPipeMissingLeftPath)),
             },
             None => Err(NmpolicyError::new(
-                ErrorKind::InvalidExpression,
-                "missing pipe in expression".to_string(),
+                ErrorKind::InvalidPipeMissingLeftExpression,
             )),
         }
     }
 
-    fn fill_in_ternary_operator(&mut self) -> Result<TernaryOperator, NmpolicyError> {
+    fn fill_in_ternary_operator(
+        &mut self,
+        operator_name: &'static str,
+    ) -> Result<TernaryOperator, NmpolicyError> {
         let mut values: TernaryOperator =
             (Default::default(), Default::default(), Default::default());
         match self.root_node.clone() {
@@ -169,24 +161,20 @@ impl<'a> Parser<'a> {
                             }
                         }
                         Some(Ok(_)) => Err(NmpolicyError::new(
-                            ErrorKind::InvalidExpression,
-                            "right hand argument is not a string or identity".to_string(),
+                            ErrorKind::InvalidTernaryUnexpectedRightHand(operator_name),
                         )),
                         Some(Err(e)) => Err(e),
                         None => Err(NmpolicyError::new(
-                            ErrorKind::InvalidExpression,
-                            "missing right hand argument".to_string(),
+                            ErrorKind::InvalidTernaryMissingRightHand(operator_name),
                         )),
                     }
                 }
                 _ => Err(NmpolicyError::new(
-                    ErrorKind::InvalidExpression,
-                    "left hand argument is not a path".to_string(),
+                    ErrorKind::InvalidTernaryUnexpectedLeftHand(operator_name),
                 )),
             },
             None => Err(NmpolicyError::new(
-                ErrorKind::InvalidExpression,
-                "missing left hand argument".to_string(),
+                ErrorKind::InvalidTernaryMissingLeftHand(operator_name),
             )),
         }
     }
