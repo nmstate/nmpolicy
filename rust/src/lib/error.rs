@@ -26,11 +26,18 @@ pub enum ErrorKind {
     InvalidTernaryMissingRightHand(&'static str),
     InvalidTernaryUnexpectedLeftHand(&'static str),
     InvalidTernaryMissingLeftHand(&'static str),
-    InvalidExpression,
-    InvalidPath,
-    InvalidEqFilter,
-    InvalidReplace,
-    InvalidPipe,
+
+    // Resolver
+    ResolveErrorCaptureEntryNotFound(String),
+    ResolveErrorNotSupportedValue,
+    ResolveErrorInvalidPathInputSource(String),
+    ResolveErrorInvalidInputSource(String),
+    ResolveErrorUnsupportedOperation(String),
+    ResolveErrorFailingFilteringPath(String),
+    ResolveErrorFailedFilterResultConvertion(serde_json::Value),
+    PathErrorUnexpectedMapStep(serde_json::Map<String, serde_json::Value>),
+    PathErrorStepInvalidType(serde_json::Value, String),
+
     Bug,
     NotImplementedError,
     NotSupportedError,
@@ -111,11 +118,43 @@ impl std::fmt::Display for ErrorKind {
             ErrorKind::InvalidTernaryMissingLeftHand(operator_name) => {
                 write!(f, "invalid {operator_name}: missing left hand argument")
             }
-            ErrorKind::InvalidExpression => write!(f, "invalid expression"),
-            ErrorKind::InvalidPath => write!(f, "invalid path"),
-            ErrorKind::InvalidEqFilter => write!(f, "invalid equality filter"),
-            ErrorKind::InvalidReplace => write!(f, "invalid replace"),
-            ErrorKind::InvalidPipe => write!(f, "invalid pipe"),
+            ErrorKind::ResolveErrorCaptureEntryNotFound(capture_entry_name) => {
+                write!(f, "capture entry '{capture_entry_name}' not found")
+            }
+            ErrorKind::ResolveErrorNotSupportedValue => {
+                write!(
+                    f,
+                    "not supported value. Only string or capture entry path are supported"
+                )
+            }
+            ErrorKind::ResolveErrorInvalidPathInputSource(node) => {
+                write!(
+                    f,
+                    "invalid path input source ({node}), only capture reference is supported"
+                )
+            }
+            ErrorKind::ResolveErrorInvalidInputSource(node) => {
+                write!(f, "invalid input source ({node}), only current state or capture reference is supported")
+            }
+            ErrorKind::ResolveErrorUnsupportedOperation(node) => {
+                write!(f, "root node has unsupported operation : {node}")
+            }
+            ErrorKind::ResolveErrorFailingFilteringPath(error) => {
+                write!(f, "failed applying operation on the path: {error}")
+            }
+            ErrorKind::ResolveErrorFailedFilterResultConvertion(value) => {
+                write!(f, "failed converting filtering result `{value}` to a map")
+            }
+            ErrorKind::PathErrorUnexpectedMapStep(map) => {
+                write!(
+                    f,
+                    "path error: unexpected non identity step for map state '{map:?}'"
+                )
+            }
+            ErrorKind::PathErrorStepInvalidType(input_state, step) => {
+                write!(f, "invalid type {input_state:?} for identity step '{step}'")
+            }
+
             ErrorKind::Bug => write!(f, "bug"),
             ErrorKind::NotImplementedError => write!(f, "not implemented"),
             ErrorKind::NotSupportedError => write!(f, "not supported"),
