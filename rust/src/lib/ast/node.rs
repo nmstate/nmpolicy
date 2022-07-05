@@ -17,15 +17,17 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
+pub(crate) type TernaryOperator = (Box<Node>, Box<Node>, Box<Node>);
+
 #[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
-pub struct Node {
+pub(crate) struct Node {
     pub pos: usize,
     #[serde(flatten)]
     pub kind: NodeKind,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
-pub enum NodeKind {
+pub(crate) enum NodeKind {
     #[serde(rename = "string")]
     Str(String),
     #[serde(rename = "identity")]
@@ -40,53 +42,63 @@ pub enum NodeKind {
     Path(Vec<Node>),
 }
 
-pub fn string(pos: usize, literal: String) -> Box<Node> {
+pub(crate) fn string(pos: usize, literal: String) -> Box<Node> {
     Box::new(Node {
         pos,
         kind: NodeKind::Str(literal),
     })
 }
 
-pub fn identity(pos: usize, literal: String) -> Box<Node> {
+pub(crate) fn identity(pos: usize, literal: String) -> Box<Node> {
     Box::new(Node {
         pos,
         kind: NodeKind::Identity(literal),
     })
 }
 
-pub fn number(pos: usize, literal: i32) -> Box<Node> {
+pub(crate) fn number(pos: usize, literal: i32) -> Box<Node> {
     Box::new(Node {
         pos,
         kind: NodeKind::Number(literal),
     })
 }
 
-pub fn eqfilter(pos: usize, value1: Box<Node>, value2: Box<Node>, value3: Box<Node>) -> Box<Node> {
+pub(crate) fn eqfilter(
+    pos: usize,
+    value1: Box<Node>,
+    value2: Box<Node>,
+    value3: Box<Node>,
+) -> Box<Node> {
     Box::new(Node {
         pos,
         kind: NodeKind::EqFilter(value1, value2, value3),
     })
 }
 
-pub fn replace(pos: usize, value1: Box<Node>, value2: Box<Node>, value3: Box<Node>) -> Box<Node> {
+pub(crate) fn replace(
+    pos: usize,
+    value1: Box<Node>,
+    value2: Box<Node>,
+    value3: Box<Node>,
+) -> Box<Node> {
     Box::new(Node {
         pos,
         kind: NodeKind::Replace(value1, value2, value3),
     })
 }
 
-pub fn path(pos: usize, nodes: Vec<Node>) -> Box<Node> {
+pub(crate) fn path(pos: usize, nodes: Vec<Node>) -> Box<Node> {
     Box::new(Node {
         pos,
         kind: NodeKind::Path(nodes),
     })
 }
 
-pub fn current_state_identity() -> NodeKind {
+pub(crate) fn current_state_identity() -> NodeKind {
     NodeKind::Identity(String::from("currentState"))
 }
 
-pub fn current_state(pos: usize) -> Box<Node> {
+pub(crate) fn current_state(pos: usize) -> Box<Node> {
     Box::new(Node {
         pos,
         kind: current_state_identity(),

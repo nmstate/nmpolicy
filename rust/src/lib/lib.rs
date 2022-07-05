@@ -3,7 +3,9 @@ mod ast;
 mod error;
 mod lex;
 mod parse;
+mod resolve;
 mod snippet;
+mod types;
 
 pub use crate::error::NmpolicyError;
 

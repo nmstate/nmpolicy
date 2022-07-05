@@ -6,7 +6,7 @@ use crate::{
 
 type TernaryOperator = (Option<Box<Node>>, Option<Box<Node>>, Option<Box<Node>>);
 
-pub struct Parser<'a> {
+pub(crate) struct Parser<'a> {
     expression: String,
     tokens: &'a mut dyn Iterator<Item = Result<Token, NmpolicyError>>,
     current_token: Option<Token>,
