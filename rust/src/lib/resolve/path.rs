@@ -49,7 +49,7 @@ impl Path {
                                         Step::Identity(_, capture_entry_name) => {
                                             path.capture_entry_name =
                                                 Some(capture_entry_name.clone());
-                                            path.steps = path.steps[1..].to_vec();
+                                            path.steps = path.steps[2..].to_vec();
                                         }
                                         _ => {
                                             return Err(NmpolicyError::new(
