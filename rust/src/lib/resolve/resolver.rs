@@ -1,7 +1,7 @@
 use crate::{
     ast::node::{current_state_identity, Node, NodeKind, TernaryOperator},
     error::{evaluation_error, NmpolicyError},
-    resolve::{filter, path::Path},
+    resolve::{filter, path::Path, walk},
     types::{Capture, CapturedState, CapturedStates, NMState},
 };
 
@@ -52,6 +52,9 @@ impl Resolver {
         &mut self,
         capture_entry_name: &String,
     ) -> Result<NMState, NmpolicyError> {
+        if let Some(captured_state_entry) = self.captured_states.get(capture_entry_name) {
+            return Ok(captured_state_entry.clone().state);
+        }
         match self.capture.get(capture_entry_name) {
             Some(capture_entry) => {
                 self.current_expression = Some(capture_entry.expression.clone());
@@ -111,6 +114,7 @@ impl Resolver {
         self.current_node = Some(rhs.clone());
         let value: Value = match rhs.kind {
             NodeKind::Str(string) => Value::String(string),
+            NodeKind::Path(_) => self.resolve_capture_entry_path()?,
             _ => {
                 return Err(evaluation_error(
                     "not supported value. Only string or capture entry path are supported"
@@ -120,6 +124,18 @@ impl Resolver {
         };
         self.current_node = operator_node;
         Ok((input_source, path, value))
+    }
+
+    fn resolve_capture_entry_path(&mut self) -> Result<Value, NmpolicyError> {
+        let current_node = self.current_node.clone().unwrap();
+        let path = Path::compose_from_node(*current_node)?;
+        match path.clone().capture_entry_name {
+            Some(capture_entry_name) => {
+                let captured_state_entry = self.resolve_capture_entry_by_name(&capture_entry_name)?;
+                walk::visit_state(captured_state_entry, path)
+            }
+            None => Err(evaluation_error("not supported filtered value path. Only paths with a capture entry reference are supported".to_string()))
+        }
     }
 
     fn resolve_input_source(&mut self) -> Result<NMState, NmpolicyError> {

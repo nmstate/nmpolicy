@@ -161,7 +161,7 @@ specific-ipv4:
 
     filter_capture_ref: Test{
         capture: HashMap::from([
-            ("base-iface-route", "routes.running.next-hop-interface==capture.default-gw.routes.running.0.next-hop-interface")
+            ("base-iface-routes", "routes.running.next-hop-interface==capture.default-gw.routes.running.0.next-hop-interface")
         ]),
         cache: r#"
 default-gw:
@@ -184,6 +184,36 @@ default-gw:
         table-id: 254
 base-iface-routes:
   state:
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+      - destination: 1.1.1.0/24
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+"#,
+        error: "",
+    },
+    filter_capture_ref_without_captured_state: Test{
+        capture: HashMap::from([
+            ("default-gw", "routes.running.destination=='0.0.0.0/0'"),
+            ("base-iface-routes", "routes.running.next-hop-interface==capture.default-gw.routes.running.0.next-hop-interface"),
+        ]),
+        cache: "",
+        captured: r#"
+default-gw:
+  state: 
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+base-iface-routes:
+  state: 
     routes:
       running:
       - destination: 0.0.0.0/0
