@@ -1,7 +1,7 @@
 use std::iter::FromIterator;
 
 use crate::{
-    error::{ErrorKind, NmpolicyError},
+    error::{evaluation_error, NmpolicyError},
     resolve::{
         path::{Path, Step},
         visitor,
@@ -32,13 +32,11 @@ pub(crate) fn visit_state(
         Ok(filtered) => match filtered {
             Value::Object(map) => Ok(map),
             Value::Null => Ok(NMState::new()),
-            _ => Err(NmpolicyError::new(
-                ErrorKind::ResolveErrorFailedFilterResultConvertion(filtered),
-            )),
+            _ => Err(evaluation_error(format!(
+                "failed converting filtering result `{filtered}` to a map"
+            ))),
         },
-        Err(e) => Err(NmpolicyError::new(
-            ErrorKind::ResolveErrorFailingFilteringPath(e.to_string()),
-        )),
+        Err(e) => Err(e.ctx("failed applying operation on the path".to_string())),
     }
 }
 
@@ -49,7 +47,7 @@ impl visitor::StateVisitor for FilterVisitor {
         map_to_filter: Map<String, Value>,
     ) -> Result<Value, NmpolicyError> {
         match path.current_step() {
-            Step::Identity(step) => match map_to_filter.get(step) {
+            Step::Identity(pos, step) => match map_to_filter.get(step) {
                 Some(obtained_value) => match self.expected_value {
                     Value::Null => Ok(Value::from(Map::<String, Value>::from_iter([(
                         step.clone(),
@@ -57,7 +55,10 @@ impl visitor::StateVisitor for FilterVisitor {
                     )]))),
                     _ => {
                         if !value_has_same_type(&self.expected_value, obtained_value) {
-                            Err(NmpolicyError::new(ErrorKind::NotImplementedError))
+                            Err(evaluation_error(format!("type missmatch: the value in the path doesn't match the value to filter. {} != {}", 
+                                        serde_json::to_string(obtained_value)?, 
+                                        serde_json::to_string(&self.expected_value)?))
+                                .path(*pos))
                         } else if *obtained_value == self.expected_value {
                             Ok(Value::from(map_to_filter))
                         } else {
@@ -67,7 +68,10 @@ impl visitor::StateVisitor for FilterVisitor {
                 },
                 None => Ok(Value::Null),
             },
-            _ => Err(NmpolicyError::new(ErrorKind::NotImplementedError)),
+            Step::Number(pos, _) => Err(evaluation_error(
+                "unexpected step type visiting last map".to_string(),
+            )
+            .path(*pos)),
         }
     }
     fn visit_last_slice(
@@ -76,8 +80,11 @@ impl visitor::StateVisitor for FilterVisitor {
         slice_to_visit: Vec<Value>,
     ) -> Result<Value, NmpolicyError> {
         match path.current_step() {
-            Step::Identity(_) => self.visit_slice(path, slice_to_visit),
-            _ => Err(NmpolicyError::new(ErrorKind::NotImplementedError)),
+            Step::Identity(_, _) => self.visit_slice(path, slice_to_visit),
+            Step::Number(pos, _) => Err(evaluation_error(
+                "failed filtering map: path with index not supported".to_string(),
+            )
+            .path(*pos)),
         }
     }
     fn visit_map(
@@ -86,7 +93,7 @@ impl visitor::StateVisitor for FilterVisitor {
         map_to_visit: Map<String, Value>,
     ) -> Result<Value, NmpolicyError> {
         match path.clone().current_step() {
-            Step::Identity(step) => match map_to_visit.get(step) {
+            Step::Identity(pos, step) => match map_to_visit.get(step) {
                 Some(value_to_visit) => {
                     path.next_step();
                     match visitor::visit_state(path.clone(), value_to_visit.clone(), self) {
@@ -102,12 +109,15 @@ impl visitor::StateVisitor for FilterVisitor {
                                 Ok(Value::from(filtered_map))
                             }
                         },
-                        Err(e) => Err(e),
+                        Err(e) => Err(e.path(*pos)),
                     }
                 }
                 None => Ok(Value::Null),
             },
-            Step::Number(_) => Err(NmpolicyError::new(ErrorKind::NotImplementedError)),
+            Step::Number(pos, _) => Err(evaluation_error(
+                "failed filtering map: path with index not supported".to_string(),
+            )
+            .path(*pos)),
         }
     }
     fn visit_slice(
@@ -116,7 +126,7 @@ impl visitor::StateVisitor for FilterVisitor {
         slice_to_visit: Vec<Value>,
     ) -> Result<Value, NmpolicyError> {
         match path.current_step() {
-            Step::Identity(_) => {
+            Step::Identity(_, _) => {
                 let mut filtered_slice = Vec::<Value>::new();
                 let mut has_visit_result = false;
                 for value_to_visit in slice_to_visit {
@@ -141,7 +151,10 @@ impl visitor::StateVisitor for FilterVisitor {
                     Ok(Value::from(filtered_slice))
                 }
             }
-            Step::Number(_) => Err(NmpolicyError::new(ErrorKind::NotImplementedError)),
+            Step::Number(pos, _) => Err(evaluation_error(
+                "failed filtering slice: path with index not supported".to_string(),
+            )
+            .path(*pos)),
         }
     }
 }

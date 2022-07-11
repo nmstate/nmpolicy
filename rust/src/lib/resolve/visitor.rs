@@ -1,5 +1,5 @@
 use crate::{
-    error::{ErrorKind, NmpolicyError},
+    error::{evaluation_error, NmpolicyError},
     resolve::path::{Path, Step},
 };
 
@@ -25,10 +25,11 @@ pub(crate) fn visit_state(
         Value::Object(original_map) => {
             if path.has_more_steps() {
                 match path.current_step() {
-                    Step::Identity(_) => state_visitor.visit_map(path, original_map),
-                    _ => Err(NmpolicyError::new(ErrorKind::PathErrorUnexpectedMapStep(
-                        original_map,
-                    ))),
+                    Step::Identity(_, _) => state_visitor.visit_map(path, original_map),
+                    Step::Number(pos, _) => Err(evaluation_error(format!(
+                        "unexpected non identity step for map state '{original_map:?}'"
+                    ))
+                    .path(*pos)),
                 }
             } else {
                 state_visitor.visit_last_map(path, original_map)
@@ -41,9 +42,11 @@ pub(crate) fn visit_state(
                 state_visitor.visit_last_slice(path, original_slice)
             }
         }
-        _ => Err(NmpolicyError::new(ErrorKind::PathErrorStepInvalidType(
+        _ => Err(evaluation_error(format!(
+            "invalid type {:?} for identity step '{}'",
             input_state,
-            format!("{}", path.current_step()),
-        ))),
+            path.current_step(),
+        ))
+        .path(0)),
     }
 }

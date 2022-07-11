@@ -1,9 +1,11 @@
 use crate::{
     ast::node::{current_state_identity, Node, NodeKind, TernaryOperator},
-    error::{ErrorKind, NmpolicyError},
+    error::{evaluation_error, NmpolicyError},
     resolve::{filter, path::Path},
     types::{Capture, CapturedState, CapturedStates, NMState},
 };
+
+use serde_json::Value;
 
 pub(crate) struct Resolver {
     capture: Capture,
@@ -34,8 +36,12 @@ impl Resolver {
             self.captured_states = c
         };
         for capture_entry_name in self.capture.clone().keys() {
-            if let Err(e) = self.resolve_capture_entry_by_name(capture_entry_name) {
-                return Err(e);
+            if let Err(mut e) = self.resolve_capture_entry_by_name(capture_entry_name) {
+                e = e.expression(self.current_expression.clone()).resolver();
+                match self.current_node.clone() {
+                    Some(current_node) => return Err(e.pos(current_node.pos)),
+                    None => return Err(e),
+                }
             }
         }
 
@@ -52,9 +58,10 @@ impl Resolver {
                 self.current_node = Some(capture_entry.ast.clone());
             }
             _ => {
-                return Err(NmpolicyError::new(
-                    ErrorKind::ResolveErrorCaptureEntryNotFound(capture_entry_name.clone()),
-                ));
+                return Err(evaluation_error(format!(
+                    "capture entry '{}' not found",
+                    capture_entry_name.clone()
+                )));
             }
         }
         let resolved_state = self.resolve_current_capture_entry()?;
@@ -71,24 +78,27 @@ impl Resolver {
     fn resolve_current_capture_entry(&mut self) -> Result<NMState, NmpolicyError> {
         match self.current_node.clone() {
             Some(current_node) => match current_node.kind {
-                NodeKind::EqFilter(lhs, ms, rhs) => self.resolve_eqfilter((lhs, ms, rhs)),
-                _ => Err(NmpolicyError::new(
-                    ErrorKind::ResolveErrorUnsupportedOperation(format!("{:?}", current_node)),
-                )),
+                NodeKind::EqFilter(lhs, ms, rhs) => match self.resolve_eqfilter((lhs, ms, rhs)) {
+                    Ok(state) => Ok(state),
+                    Err(e) => Err(e.eqfilter()),
+                },
+                _ => Err(evaluation_error(format!(
+                    "root node has unsupported operation : {current_node}"
+                ))),
             },
             None => Ok(NMState::new()),
         }
     }
 
     fn resolve_eqfilter(&mut self, operator: TernaryOperator) -> Result<NMState, NmpolicyError> {
-        self.resolve_ternary_operator(operator, filter::visit_state)
+        let (input_source, path, value) = self.resolve_ternary_operator(operator)?;
+        filter::visit_state(input_source, path, value)
     }
 
     fn resolve_ternary_operator(
         &mut self,
         operator: TernaryOperator,
-        resolver_fn: fn(NMState, Path, serde_json::Value) -> Result<NMState, NmpolicyError>,
-    ) -> Result<NMState, NmpolicyError> {
+    ) -> Result<(NMState, Path, Value), NmpolicyError> {
         let operator_node = self.current_node.clone();
         let (lhs, ms, rhs) = operator;
 
@@ -96,44 +106,40 @@ impl Resolver {
         let input_source = self.resolve_input_source()?;
 
         self.current_node = Some(ms.clone());
-        let path = Path::compose_from_node(ms.kind)?;
+        let path = Path::compose_from_node(*ms)?;
 
         self.current_node = Some(rhs.clone());
-        let value: serde_json::Value = match rhs.kind {
-            NodeKind::Str(string) => serde_json::Value::String(string),
+        let value: Value = match rhs.kind {
+            NodeKind::Str(string) => Value::String(string),
             _ => {
-                return Err(NmpolicyError::new(ErrorKind::ResolveErrorNotSupportedValue));
+                return Err(evaluation_error(
+                    "not supported value. Only string or capture entry path are supported"
+                        .to_string(),
+                ));
             }
         };
         self.current_node = operator_node;
-        resolver_fn(input_source, path, value)
+        Ok((input_source, path, value))
     }
 
     fn resolve_input_source(&mut self) -> Result<NMState, NmpolicyError> {
         let current_node = self.current_node.clone().unwrap();
         match current_node.kind {
             n if n == current_state_identity() => Ok(self.current_state.clone().unwrap()),
-            _ => match Path::compose_from_node(current_node.kind) {
+            _ => match Path::compose_from_node(*current_node) {
                 Ok(path) => match path.capture_entry_name {
                     Some(capture_entry_name) => {
                         self.resolve_capture_entry_by_name(&capture_entry_name)
                     }
                     None => {
-                        return Err(NmpolicyError::new(
-                            ErrorKind::ResolveErrorInvalidPathInputSource(format!(
-                                "{:?}",
-                                self.current_node
-                            )),
-                        ));
+                        return Err(evaluation_error(format!(
+                            "invalid path input source ({:?}), only capture reference is supported",
+                            self.current_node
+                        )))
                     }
                 },
                 Err(_) => {
-                    return Err(NmpolicyError::new(
-                        ErrorKind::ResolveErrorInvalidInputSource(format!(
-                            "{:?}",
-                            self.current_node
-                        )),
-                    ));
+                    return Err(evaluation_error(format!("invalid input source ({:?}), only current state or capture reference is supported", self.current_node)));
                 }
             },
         }

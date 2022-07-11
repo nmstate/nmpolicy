@@ -1,6 +1,6 @@
 use crate::{
     ast::node::{current_state, eqfilter, identity, number, path, replace, string, Node, NodeKind},
-    error::{ErrorKind, NmpolicyError},
+    error::{validation_error, NmpolicyError},
     lex::tokens::Token,
 };
 
@@ -35,7 +35,7 @@ impl<'a> Parser<'a> {
             Ok(root_node) => Ok(root_node),
             Err(mut e) => {
                 if let Some(current_token) = self.current_token.clone() {
-                    e.decorate(self.expression.clone(), current_token.pos())
+                    e = e.decorate(self.expression.clone(), current_token.pos())
                 }
                 Err(e)
             }
@@ -57,8 +57,8 @@ impl<'a> Parser<'a> {
         }
         match self.piped_in_node.clone() {
             None => Ok(self.root_node.clone()),
-            Some(_) => Err(NmpolicyError::new(
-                ErrorKind::InvalidPipeMissingRightExpression,
+            Some(_) => Err(validation_error(
+                "invalid pipe: missing pipe out expression".to_string(),
             )),
         }
     }
@@ -70,13 +70,14 @@ impl<'a> Parser<'a> {
             Some(Token::Replace(pos)) => self.parse_replace(pos),
             Some(Token::Pipe(pos)) => self.parse_pipe(pos),
             Some(Token::Str(pos, literal)) => self.parse_string(pos, literal),
-            Some(t) => Err(NmpolicyError::new(
-                ErrorKind::InvalidExpressionUnexpectedToken(t.literal()),
-            )),
+            Some(t) => Err(validation_error(format!(
+                "invalid expression: unexpected token `{}`",
+                t.literal()
+            ))),
             None => match self.piped_in_node.clone() {
                 None => Ok(()),
-                Some(_) => Err(NmpolicyError::new(
-                    ErrorKind::InvalidPipeMissingRightExpression,
+                Some(_) => Err(validation_error(
+                    "invalid pipe: missing pipe out expression".to_string(),
                 )),
             },
         }
@@ -94,8 +95,8 @@ impl<'a> Parser<'a> {
                         steps.push(*self.number(npos, nliteral))
                     }
                     Some(Ok(_)) | None => {
-                        return Err(NmpolicyError::new(
-                            ErrorKind::InvalidPathUnexpectedTokenAfterDot,
+                        return Err(validation_error(
+                            "invalid path: missing identity or number after dot".to_string(),
                         ));
                     }
                     Some(Err(e)) => return Err(e),
@@ -107,7 +108,9 @@ impl<'a> Parser<'a> {
                     break;
                 }
                 None => break,
-                Some(Ok(_)) => return Err(NmpolicyError::new(ErrorKind::InvalidPathMissingDot)),
+                Some(Ok(_)) => {
+                    return Err(validation_error("invalid path: missing dot".to_string()))
+                }
                 Some(Err(e)) => return Err(e),
             }
         }
@@ -148,10 +151,12 @@ impl<'a> Parser<'a> {
                     self.piped_in_node = self.root_node.clone();
                     Ok(())
                 }
-                _ => Err(NmpolicyError::new(ErrorKind::InvalidPipeMissingLeftPath)),
+                _ => Err(validation_error(
+                    "invalid pipe: only paths can be piped in".to_string(),
+                )),
             },
-            None => Err(NmpolicyError::new(
-                ErrorKind::InvalidPipeMissingLeftExpression,
+            None => Err(validation_error(
+                "invalid pipe: missing pipe in expression".to_string(),
             )),
         }
     }
@@ -187,22 +192,22 @@ impl<'a> Parser<'a> {
                                 Err(e) => Err(e),
                             }
                         }
-                        Some(Ok(_)) => Err(NmpolicyError::new(
-                            ErrorKind::InvalidTernaryUnexpectedRightHand(operator_name),
+                        Some(Ok(_)) => Err(validation_error(
+                            format!("invalid {operator_name}: right hand argument is not a string or identity"),
                         )),
                         Some(Err(e)) => Err(e),
-                        None => Err(NmpolicyError::new(
-                            ErrorKind::InvalidTernaryMissingRightHand(operator_name),
+                        None => Err(validation_error(
+                            format!("invalid {operator_name}: missing right hand argument"),
                         )),
                     }
                 }
-                _ => Err(NmpolicyError::new(
-                    ErrorKind::InvalidTernaryUnexpectedLeftHand(operator_name),
-                )),
+                _ => Err(validation_error(format!(
+                    "invalid {operator_name}: left hand argument is not a path",
+                ))),
             },
-            None => Err(NmpolicyError::new(
-                ErrorKind::InvalidTernaryMissingLeftHand(operator_name),
-            )),
+            None => Err(validation_error(format!(
+                "invalid {operator_name}: missing left hand argument"
+            ))),
         }
     }
     fn next_token(&mut self) -> Option<Result<Token, NmpolicyError>> {

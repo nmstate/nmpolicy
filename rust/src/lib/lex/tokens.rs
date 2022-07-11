@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use crate::error::{ErrorKind, NmpolicyError};
+use crate::error::{validation_error, NmpolicyError};
 
 use std::{iter::Peekable, str::CharIndices};
 
@@ -93,14 +93,13 @@ impl<'a> Tokens<'a> {
                     '"' | '\'' => self.tokenize_string(ch),
                     ch if ch.is_numeric() => self.tokenize_number(ch),
                     ch if ch.is_alphabetic() => self.tokenize_identity(ch),
-                    ch => Err(NmpolicyError::new(ErrorKind::IllegalChar(ch))),
+                    ch => Err(validation_error(format!("illegal char {ch}"))),
                 };
                 match result {
                     Ok(token) => Some(Ok(token)),
-                    Err(mut e) => {
+                    Err(e) => {
                         self.has_error = true;
-                        e.decorate(self.input.to_string(), self.pos);
-                        Some(Err(e))
+                        Some(Err(e.decorate(self.input.to_string(), self.pos)))
                     }
                 }
             }
@@ -122,11 +121,13 @@ impl<'a> Tokens<'a> {
             Some((_, '=')) => Ok(Token::EqFilter(self.pos)),
             Some((pos, nch)) => {
                 self.pos = pos;
-                Err(NmpolicyError::new(ErrorKind::InvalidEqFilterMissingEqual(
-                    nch,
+                Err(validation_error(format!(
+                    "invalid EQFILTER operation format ({nch} is not equal char)"
                 )))
             }
-            None => Err(NmpolicyError::new(ErrorKind::InvalidEqFilterEOF)),
+            None => Err(validation_error(
+                "invalid EQFILTER operation format (EOF)".to_string(),
+            )),
         }
     }
     fn tokenize_colon(&mut self, _: char) -> Result<Token, NmpolicyError> {
@@ -134,11 +135,13 @@ impl<'a> Tokens<'a> {
             Some((_, '=')) => Ok(Token::Replace(self.pos)),
             Some((pos, nch)) => {
                 self.pos = pos;
-                Err(NmpolicyError::new(ErrorKind::InvalidReplaceMissingEqual(
-                    nch,
+                Err(validation_error(format!(
+                    "invalid REPLACE operation format ({nch} is not equal char)"
                 )))
             }
-            None => Err(NmpolicyError::new(ErrorKind::InvalidReplaceEOF)),
+            None => Err(validation_error(
+                "invalid REPLACE operation format (EOF)".to_string(),
+            )),
         }
     }
     fn tokenize_string(&mut self, delimiter: char) -> Result<Token, NmpolicyError> {
@@ -161,9 +164,9 @@ impl<'a> Tokens<'a> {
         if last_matched == delimiter {
             Ok(Token::Str(begin_pos, s))
         } else {
-            Err(NmpolicyError::new(
-                ErrorKind::InvalidStringMissingDelimiter(delimiter),
-            ))
+            Err(validation_error(format!(
+                "invalid string format (missing {delimiter} terminator)"
+            )))
         }
     }
     fn tokenize_number(&mut self, ch: char) -> Result<Token, NmpolicyError> {
@@ -179,7 +182,9 @@ impl<'a> Tokens<'a> {
             }
             Some((pos, ch)) => {
                 self.pos = *pos;
-                Err(NmpolicyError::new(ErrorKind::InvalidNumberFormat(*ch)))
+                Err(validation_error(format!(
+                    "invalid number format ({ch} is not a digit)"
+                )))
             }
         }
     }
@@ -197,7 +202,9 @@ impl<'a> Tokens<'a> {
             Some((_, ' ' | '.' | ':' | '+' | '|' | '=')) | None => {
                 Ok(Token::Identity(begin_pos, identity))
             }
-            Some((_, ch)) => Err(NmpolicyError::new(ErrorKind::InvalidIdentityFormat(*ch))),
+            Some((_, ch)) => Err(validation_error(format!(
+                "invalid identity format ({ch} is not a digit, letter or -)"
+            ))),
         }
     }
 }

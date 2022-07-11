@@ -1,21 +1,12 @@
 use crate::{
-    ast::node::NodeKind,
+    ast::node::{Node, NodeKind},
     error::{ErrorKind, NmpolicyError},
 };
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub(crate) enum Step {
-    Identity(String),
-    Number(usize),
-}
-
-impl Step {
-    fn is_identity(&self) -> bool {
-        matches!(self, Step::Identity(_))
-    }
-    fn is_number(&self) -> bool {
-        matches!(self, Step::Number(_))
-    }
+    Identity(usize, String),
+    Number(usize, usize),
 }
 
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -26,15 +17,19 @@ pub(crate) struct Path {
 }
 
 impl Path {
-    pub(crate) fn compose_from_node(node_kind: NodeKind) -> Result<Path, NmpolicyError> {
-        match node_kind {
+    pub(crate) fn compose_from_node(node: Node) -> Result<Path, NmpolicyError> {
+        match node.kind {
             NodeKind::Path(node_steps) => match node_steps {
                 node_steps if !node_steps.is_empty() => {
                     let mut steps = Vec::<Step>::new();
                     for node_step in node_steps {
                         match node_step.kind {
-                            NodeKind::Identity(step) => steps.push(Step::Identity(step)),
-                            NodeKind::Number(step) => steps.push(Step::Number(step as usize)),
+                            NodeKind::Identity(step) => {
+                                steps.push(Step::Identity(node_step.pos, step))
+                            }
+                            NodeKind::Number(step) => {
+                                steps.push(Step::Number(node_step.pos, step as usize))
+                            }
                             _ => return Err(NmpolicyError::new(ErrorKind::NotImplementedError)),
                         }
                     }
@@ -44,14 +39,14 @@ impl Path {
                         current_step_idx: 0,
                     };
                     match &path.steps[0] {
-                        Step::Identity(first_step) => {
+                        Step::Identity(_, first_step) => {
                             if first_step == "capture" {
                                 let capture_ref_size = 2;
                                 if path.steps.len() < capture_ref_size {
                                     return Err(NmpolicyError::new(ErrorKind::NotImplementedError));
                                 } else {
                                     match &path.steps[1] {
-                                        Step::Identity(capture_entry_name) => {
+                                        Step::Identity(_, capture_entry_name) => {
                                             path.capture_entry_name =
                                                 Some(capture_entry_name.clone());
                                             path.steps = path.steps[1..].to_vec();
@@ -92,8 +87,8 @@ impl Path {
 impl std::fmt::Display for Step {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Step::Identity(identity) => write!(f, "identity({identity})"),
-            Step::Number(number) => write!(f, "number({number})"),
+            Step::Identity(_, identity) => write!(f, "identity({identity})"),
+            Step::Number(_, number) => write!(f, "number({number})"),
         }
     }
 }
