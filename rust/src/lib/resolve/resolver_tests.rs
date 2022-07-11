@@ -134,4 +134,67 @@ up-interfaces:
 "#,
         error: "",
     },
+    filter_list: Test{
+        capture: HashMap::from([
+            ("specific-ipv4", "interfaces.ipv4.address.ip=='10.244.0.1'")
+        ]),
+        cache: "",
+        captured: r#"
+specific-ipv4:
+  state: 
+    interfaces:
+    - name: eth1
+      description: "1st ethernet interface"
+      type: ethernet
+      state: up
+      ipv4:
+        address:
+        - ip: 10.244.0.1
+          prefix-length: 24
+        - ip: 169.254.1.0
+          prefix-length: 16
+        dhcp: false
+        enabled: true
+"#,
+        error: "",
+    },
+
+    filter_capture_ref: Test{
+        capture: HashMap::from([
+            ("base-iface-route", "routes.running.next-hop-interface==capture.default-gw.routes.running.0.next-hop-interface")
+        ]),
+        cache: r#"
+default-gw:
+  state: 
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+"#,
+        captured: r#"
+default-gw:
+  state: 
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+base-iface-routes:
+  state:
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+      - destination: 1.1.1.0/24
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+"#,
+        error: "",
+    },
 }
