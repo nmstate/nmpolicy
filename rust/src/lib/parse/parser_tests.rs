@@ -19,7 +19,6 @@ macro_rules! parse_tokens_tests{
                 } else {
                     Some(serde_yaml::from_str(expected_ast_yaml).unwrap())
                 };
-            	println!("{:?}", from_tokens);
                 let tokens = from_tokens.tokens.clone();
                 let expression = from_tokens.expression.clone();
                 let tokens_iterator = &mut tokens.into_iter();
@@ -38,7 +37,6 @@ macro_rules! parse_errors_tests{
 			#[test]
 			fn $name() {
                 let (from_tokens, expected_error) = $value;
-            	println!("{:?}", from_tokens);
                 let tokens = from_tokens.tokens.clone();
                 let expression = from_tokens.expression.clone();
                 let tokens_iterator = &mut tokens.into_iter();

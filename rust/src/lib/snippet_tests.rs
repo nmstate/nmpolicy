@@ -6,7 +6,6 @@ macro_rules! expression_snippet_tests{
 			#[test]
 			fn $name() {
                 let (expression, pos, expected_snippet) = $value;
-            	println!("pos: {}, expression: {}", pos, expression);
                 let mut obtained_snippet = String::from('\n');
             	obtained_snippet.push_str(snippet(expression.to_string(), pos).as_str());
             	assert_eq!(expected_snippet.to_string(), obtained_snippet);

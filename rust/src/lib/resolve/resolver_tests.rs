@@ -53,11 +53,45 @@ interfaces:
       enabled: false
 "#;
 
-struct Test<'a> {
-    capture: HashMap<&'a str, &'a str>,
-    cache: &'a str,
-    captured: &'a str,
-    error: &'a str,
+struct Test {
+    capture: HashMap<&'static str, &'static str>,
+    cache: &'static str,
+    captured: &'static str,
+    error: &'static str,
+    current: &'static str,
+}
+
+fn test_with() -> Test {
+    Test {
+        capture: HashMap::from([]),
+        cache: "",
+        captured: "",
+        error: "",
+        current: CURRENT_STATE_YAML,
+    }
+}
+
+impl Test {
+    fn current(mut self, current: &'static str) -> Self {
+        self.current = current;
+        self
+    }
+    fn capture(mut self, capture: HashMap<&'static str, &'static str>) -> Self {
+        self.capture = capture;
+        self
+    }
+    fn cache(mut self, cache: &'static str) -> Self {
+        self.cache = cache;
+        self
+    }
+    fn captured(mut self, captured: &'static str) -> Self {
+        self.captured = captured;
+        self
+    }
+    fn error(mut self, error: &'static str) -> Self {
+        self.error = error;
+        self
+    }
 }
 
 macro_rules! resolve_capture_tests{
@@ -65,8 +99,8 @@ macro_rules! resolve_capture_tests{
 		$(
 			#[test]
 			fn $name() {
-                let current_state: NMState = serde_yaml::from_str(CURRENT_STATE_YAML).unwrap();
                 let test  = $value;
+                let current_state: NMState = serde_yaml::from_str(test.current).unwrap();
                 let mut capture = Capture::new();
                 for (k, expression) in test.capture.iter() {
                     let tokens: &mut Tokens = &mut Tokens::new(expression);
@@ -96,12 +130,11 @@ macro_rules! resolve_capture_tests{
 	}
 
 resolve_capture_tests! {
-    filter_map_list_on_second_path_identity: Test{
-        capture: HashMap::from([
+    filter_map_list_on_second_path_identity: test_with()
+        .capture(HashMap::from([
             ("default-gw", "routes.running.destination == '0.0.0.0/0'")
-        ]),
-        cache: "",
-        captured: r#"
+        ]))
+        .captured(r#"
 default-gw:
   state:
     routes:
@@ -110,15 +143,13 @@ default-gw:
         next-hop-address: 192.168.100.1
         next-hop-interface: eth1
         table-id: 254
-"#,
-        error: "",
-    },
-    filter_map_list_on_first_path_identity: Test{
-        capture: HashMap::from([
+"#),
+    filter_map_list_on_first_path_identity: test_with()
+        .capture(HashMap::from([
             ("up-interfaces", "interfaces.state=='down'")
-        ]),
-        cache: "",
-        captured: r#"
+        ]))
+        .cache("")
+        .captured(r#"
 up-interfaces:
   state: 
     interfaces:
@@ -131,15 +162,15 @@ up-interfaces:
             prefix-length: 24
           dhcp: false
           enabled: false
-"#,
-        error: "",
-    },
-    filter_list: Test{
-        capture: HashMap::from([
+"#)
+        .error("")
+    ,
+    filter_list: test_with()
+        .capture(HashMap::from([
             ("specific-ipv4", "interfaces.ipv4.address.ip=='10.244.0.1'")
-        ]),
-        cache: "",
-        captured: r#"
+        ]))
+        .cache("")
+        .captured(r#"
 specific-ipv4:
   state: 
     interfaces:
@@ -155,15 +186,15 @@ specific-ipv4:
           prefix-length: 16
         dhcp: false
         enabled: true
-"#,
-        error: "",
-    },
+"#)
+        .error("")
+    ,
 
-    filter_capture_ref: Test{
-        capture: HashMap::from([
+    filter_capture_ref: test_with()
+        .capture(HashMap::from([
             ("base-iface-routes", "routes.running.next-hop-interface==capture.default-gw.routes.running.0.next-hop-interface")
-        ]),
-        cache: r#"
+        ]))
+        .cache(r#"
 default-gw:
   state: 
     routes:
@@ -172,8 +203,8 @@ default-gw:
         next-hop-address: 192.168.100.1
         next-hop-interface: eth1
         table-id: 254
-"#,
-        captured: r#"
+"#)
+        .captured(r#"
 default-gw:
   state: 
     routes:
@@ -194,16 +225,16 @@ base-iface-routes:
         next-hop-address: 192.168.100.1
         next-hop-interface: eth1
         table-id: 254
-"#,
-        error: "",
-    },
-    filter_capture_ref_without_captured_state: Test{
-        capture: HashMap::from([
+"#)
+        .error("")
+    ,
+    filter_capture_ref_without_captured_state: test_with()
+        .capture(HashMap::from([
             ("default-gw", "routes.running.destination=='0.0.0.0/0'"),
             ("base-iface-routes", "routes.running.next-hop-interface==capture.default-gw.routes.running.0.next-hop-interface"),
-        ]),
-        cache: "",
-        captured: r#"
+        ]))
+        .cache("")
+        .captured(r#"
 default-gw:
   state: 
     routes:
@@ -224,7 +255,207 @@ base-iface-routes:
         next-hop-address: 192.168.100.1
         next-hop-interface: eth1
         table-id: 254
-"#,
-        error: "",
-    },
+"#)
+        .error("")
+    ,
+    filter_capture_ref_not_found: test_with()
+        .capture(HashMap::from([
+            ("base-iface-routes", "routes.running.next-hop-interface==capture.default-gw.routes"),
+        ]))
+        .cache("")
+        .captured("")
+        .error(r#"resolve error: eqfilter error: capture entry 'default-gw' not found
+| routes.running.next-hop-interface==capture.default-gw.routes
+| ...................................^"#)
+    ,
+    filter_bad_capture_ref: test_with()
+        .capture(HashMap::from([
+            ("base-iface-routes", "routes.running.next-hop-interface==capture"),
+        ]))
+        .cache("")
+        .captured("")
+        .error(r#"resolve error: eqfilter error: path capture ref is missing capture entry name
+| routes.running.next-hop-interface==capture
+| ...................................^"#)
+    ,
+    filter_capture_ref_invalid_state_for_path_map: test_with()
+        .capture(HashMap::from([
+            ("base-iface-routes", "routes.running.next-hop-interface==capture.default-gw.routes.running.badfield.next-hop-interface"),
+        ]))
+        .cache(r#"
+default-gw:
+  state:
+    routes:
+       running:
+       - destination: 0.0.0.0/0
+         next-hop-address: 192.168.100.1
+         next-hop-interface: eth1
+         table-id: 254
+"#)
+        .captured("")
+        .error(r#"resolve error: eqfilter error: failed walking path: invalid path: unexpected non numeric step for slice state '[{"destination":"0.0.0.0/0","next-hop-address":"192.168.100.1","next-hop-interface":"eth1","table-id":254}]'
+| routes.running.next-hop-interface==capture.default-gw.routes.running.badfield.next-hop-interface
+| .....................................................................^"#)
+    ,
+    filter_capture_ref_invalid_state_for_path_slice: test_with()
+        .capture(HashMap::from([
+            ("base-iface-routes", "routes.running.next-hop-interface==capture.default-gw.routes.1.0.next-hop-interface"),
+        ]))
+        .cache(r#"
+default-gw:
+  state: 
+    routes:
+      running:
+       - destination: 0.0.0.0/0
+         next-hop-address: 192.168.100.1
+         next-hop-interface: eth1
+         table-id: 254
+"#)
+        .captured("")
+        .error(r#"resolve error: eqfilter error: failed walking path: invalid path: unexpected non identity step for map state '{"running":[{"destination":"0.0.0.0/0","next-hop-address":"192.168.100.1","next-hop-interface":"eth1","table-id":254}]}'
+| routes.running.next-hop-interface==capture.default-gw.routes.1.0.next-hop-interface
+| .............................................................^"#)
+    ,
+    filter_capture_ref_path_not_found_map: test_with()
+        .capture(HashMap::from([
+            ("base-iface-routes", "routes.running.next-hop-interface==capture.default-gw.routes.badfield"),
+        ]))
+        .cache(r#"
+default-gw:
+  state: 
+    routes:
+      running:
+       - destination: 0.0.0.0/0
+         next-hop-address: 192.168.100.1
+         next-hop-interface: eth1
+         table-id: 254
+"#)
+        .captured("")
+        .error(r#"resolve error: eqfilter error: failed walking path: invalid path: step not found at map state '{"running":[{"destination":"0.0.0.0/0","next-hop-address":"192.168.100.1","next-hop-interface":"eth1","table-id":254}]}'
+| routes.running.next-hop-interface==capture.default-gw.routes.badfield
+| .............................................................^"#)
+    ,
+    filter_capture_ref_path_not_found_slice: test_with()
+        .capture(HashMap::from([
+            ("base-iface-routes", "routes.running.next-hop-interface==capture.default-gw.routes.running.6"),
+        ]))
+        .cache(r#"
+default-gw:
+  state: 
+    routes:
+      running:
+       - destination: 0.0.0.0/0
+         next-hop-address: 192.168.100.1
+         next-hop-interface: eth1
+         table-id: 254
+"#)
+        .captured("")
+        .error(r#"resolve error: eqfilter error: failed walking path: invalid path: step not found at slice state '[{"destination":"0.0.0.0/0","next-hop-address":"192.168.100.1","next-hop-interface":"eth1","table-id":254}]'
+| routes.running.next-hop-interface==capture.default-gw.routes.running.6
+| .....................................................................^"#)
+    ,
+    filter_different_type_on_path: test_with()
+        .capture(HashMap::from([
+            ("invalid-path-type", "interfaces.ipv4.address=='10.244.0.1'"),
+        ]))
+        .cache("")
+        .captured("")
+        .error(r#"resolve error: eqfilter error: failed applying operation on the path: invalid path: type missmatch: the value in the path doesn't match the value to filter. [{"ip":"10.244.0.1","prefix-length":24},{"ip":"169.254.1.0","prefix-length":16}] != "10.244.0.1"
+| interfaces.ipv4.address=='10.244.0.1'
+| ................^"#)
+    ,
+    filter_optional_field: test_with()
+        .capture(HashMap::from([
+            ("description-eth1", "interfaces.description=='1st ethernet interface'"),
+        ]))
+        .captured(r#"
+description-eth1: 
+  state:
+    interfaces:
+    - name: eth1
+      description: "1st ethernet interface"
+      type: ethernet
+      state: up
+      ipv4:
+        address:
+        - ip: 10.244.0.1
+          prefix-length: 24
+        - ip: 169.254.1.0
+          prefix-length: 16
+        dhcp: false
+        enabled: true
+"#)
+    .cache("")
+    .error("")
+    ,
+    filter_non_capture_ref_path_at_third_arg: test_with()
+        .capture(HashMap::from([
+            ("base-iface-routes", "routes.running.next-hop-interface==routes.running"),
+        ]))
+        .error(r#"resolve error: eqfilter error: not supported filtered value path. Only paths with a capture entry reference are supported
+| routes.running.next-hop-interface==routes.running
+| ...................................^"#)
+        .cache("")
+        .captured("")
+    ,
+    filter_by_path: test_with()
+        .capture(HashMap::from([
+            ("running-routes", "routes.running")
+        ]))
+        .captured(r#"
+running-routes:
+  state:
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+      - destination: 1.1.1.0/24
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+      - destination: 2.2.2.0/24
+        next-hop-address: 192.168.200.1
+        next-hop-interface: eth2
+        table-id: 254
+"#)
+    .cache("")
+    .error("")
+    ,
+    filter_with_invalid_input_source: test_with()
+        .capture(HashMap::from([
+            ("base-iface-routes", "invalidInputSource | routes.running.next-hop-interface=='eth1'")
+        ]))
+        .error(r#"resolve error: eqfilter error: invalid path input source (Path=[Identity=invalidInputSource]), only capture reference is supported
+| invalidInputSource | routes.running.next-hop-interface=='eth1'
+| ^"#)
+        .cache("")
+        .captured("")
+    ,
+    filter_with_invalid_type_in_source: test_with()
+        .current(r#"
+routes:
+   running:
+"#)
+        .capture(HashMap::from([
+            ("base-iface-routes", "routes.running.next-hop-interface=='eth1'")
+        ]))
+        .error(r#"resolve error: eqfilter error: failed applying operation on the path: invalid path: invalid type Null for identity step 'identity(next-hop-interface)'
+| routes.running.next-hop-interface=='eth1'
+| ...............^"#)
+        .cache("")
+        .captured("")
+    ,
+    filter_bad_path: test_with()
+        .capture(HashMap::from([
+            ("base-iface-routes", "routes.badfield.next-hop-interface=='eth1'")
+        ]))
+        .captured(r#"
+base-iface-routes:
+  state: {}
+        "#)
+        .cache("")
+        .error("")
+    ,
 }

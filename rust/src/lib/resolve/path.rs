@@ -1,12 +1,21 @@
 use crate::{
     ast::node::{Node, NodeKind},
-    error::{ErrorKind, NmpolicyError},
+    error::{validation_error, ErrorKind, NmpolicyError},
 };
 
 #[derive(Clone, Eq, PartialEq, Debug)]
 pub(crate) enum Step {
     Identity(usize, String),
     Number(usize, usize),
+}
+
+impl Step {
+    pub(crate) fn pos(&self) -> usize {
+        match self {
+            Step::Identity(pos, _) => *pos,
+            Step::Number(pos, _) => *pos,
+        }
+    }
 }
 
 #[derive(Clone, Eq, PartialEq, Debug)]
@@ -43,7 +52,10 @@ impl Path {
                             if first_step == "capture" {
                                 let capture_ref_size = 2;
                                 if path.steps.len() < capture_ref_size {
-                                    return Err(NmpolicyError::new(ErrorKind::NotImplementedError));
+                                    return Err(validation_error(
+                                        "path capture ref is missing capture entry name"
+                                            .to_string(),
+                                    ));
                                 } else {
                                     match &path.steps[1] {
                                         Step::Identity(_, capture_entry_name) => {
