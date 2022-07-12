@@ -27,7 +27,8 @@ pub(crate) fn visit_state(
                 match path.current_step() {
                     Step::Identity(_, _) => state_visitor.visit_map(path, original_map),
                     Step::Number(pos, _) => Err(evaluation_error(format!(
-                        "unexpected non identity step for map state '{original_map:?}'"
+                        "unexpected non identity step for map state '{}'",
+                        serde_json::to_string(&original_map)?,
                     ))
                     .path(*pos)),
                 }
@@ -47,6 +48,6 @@ pub(crate) fn visit_state(
             input_state,
             path.current_step(),
         ))
-        .path(0)),
+        .path(path.current_step().pos())),
     }
 }

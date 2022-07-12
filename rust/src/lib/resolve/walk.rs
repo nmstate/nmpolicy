@@ -69,7 +69,7 @@ fn access_map_with_current_state(
             .path(*pos)),
         },
         Step::Number(pos, _) => Err(evaluation_error(format!(
-            "unexpected non identity step for smap state '{}'",
+            "unexpected non identity step for map state '{}'",
             serde_json::to_string(&map_to_access)?,
         ))
         .path(*pos)),

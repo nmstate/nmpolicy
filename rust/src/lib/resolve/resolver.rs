@@ -149,20 +149,20 @@ impl Resolver {
         let current_node = self.current_node.clone().unwrap();
         match current_node.kind {
             n if n == current_state_identity() => Ok(self.current_state.clone().unwrap()),
-            _ => match Path::compose_from_node(*current_node) {
+            _ => match Path::compose_from_node(*current_node.clone()) {
                 Ok(path) => match path.capture_entry_name {
                     Some(capture_entry_name) => {
                         self.resolve_capture_entry_by_name(&capture_entry_name)
                     }
                     None => {
                         return Err(evaluation_error(format!(
-                            "invalid path input source ({:?}), only capture reference is supported",
-                            self.current_node
+                            "invalid path input source ({}), only capture reference is supported",
+                            current_node
                         )))
                     }
                 },
                 Err(_) => {
-                    return Err(evaluation_error(format!("invalid input source ({:?}), only current state or capture reference is supported", self.current_node)));
+                    return Err(evaluation_error(format!("invalid input source ({}), only current state or capture reference is supported", current_node)));
                 }
             },
         }

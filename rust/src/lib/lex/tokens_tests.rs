@@ -12,7 +12,6 @@ macro_rules! basic_expression_tests{
 			#[test]
 			fn $name() {
                 let (expression, expected_tokens) = $value;
-            	println!("{}", expression);
             	let tokens = Tokens::new(expression);
                 let obtained_result: Results = tokens.collect();
                 let expected_result: Results = expected_tokens.iter().map(|t| Ok(t.clone())).collect();
@@ -65,7 +64,6 @@ macro_rules! failure_tests{
             #[test]
             fn $name() {
                 let (expression, expected_error) = $value;
-                println!("{}", expression);
                 let mut tokens = Tokens::new(expression);
                 let obtained_error = tokens.find(Result::is_err);
                 assert_eq!(expected_error, obtained_error.unwrap().unwrap_err().to_string());
