@@ -1,5 +1,6 @@
 mod filter;
 mod path;
+mod replace;
 mod resolver;
 mod visitor;
 mod walk;
