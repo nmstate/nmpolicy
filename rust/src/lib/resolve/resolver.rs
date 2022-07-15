@@ -1,7 +1,7 @@
 use crate::{
     ast::node::{current_state_identity, Node, NodeKind, TernaryOperator},
     error::{evaluation_error, NmpolicyError},
-    resolve::{filter, path::Path, walk},
+    resolve::{filter, path::Path, replace, walk},
     types::{Capture, CapturedState, CapturedStates, NMState},
 };
 
@@ -85,6 +85,10 @@ impl Resolver {
                     Ok(state) => Ok(state),
                     Err(e) => Err(e.eqfilter()),
                 },
+                NodeKind::Replace(lhs, ms, rhs) => match self.resolve_replace((lhs, ms, rhs)) {
+                    Ok(state) => Ok(state),
+                    Err(e) => Err(e.replace()),
+                },
                 NodeKind::Path(_) => self.resolve_path_filter(*current_node),
                 _ => Err(evaluation_error(format!(
                     "root node has unsupported operation : {current_node}"
@@ -99,12 +103,16 @@ impl Resolver {
         filter::visit_state(input_source, path, value)
     }
 
+    fn resolve_replace(&mut self, operator: TernaryOperator) -> Result<NMState, NmpolicyError> {
+        let (input_source, path, value) = self.resolve_ternary_operator(operator)?;
+        replace::visit_state(input_source, path, value)
+    }
+
     fn resolve_path_filter(&mut self, node: Node) -> Result<NMState, NmpolicyError> {
         let path = Path::compose_from_node(node)?;
         let current_state = self.current_state.clone().unwrap();
         filter::visit_state(current_state, path, Value::Null)
     }
-
     fn resolve_ternary_operator(
         &mut self,
         operator: TernaryOperator,

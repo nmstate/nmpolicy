@@ -458,4 +458,166 @@ base-iface-routes:
         .cache("")
         .error("")
     ,
+    replace_current_state: test_with()
+        .capture(HashMap::from([
+            ("bridge-routes", "routes.running.next-hop-interface := 'br1'")
+        ]))
+        .captured(r#"
+bridge-routes:
+  state:
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: br1
+        table-id: 254
+      - destination: 1.1.1.0/24
+        next-hop-address: 192.168.100.1
+        next-hop-interface: br1
+        table-id: 254
+      - destination: 2.2.2.0/24
+        next-hop-address: 192.168.200.1
+        next-hop-interface: br1
+        table-id: 254
+      config:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+      - destination: 1.1.1.0/24
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+    interfaces:
+      - name: eth1
+        description: "1st ethernet interface"
+        type: ethernet
+        state: up
+        ipv4:
+          address:
+          - ip: 10.244.0.1
+            prefix-length: 24
+          - ip: 169.254.1.0
+            prefix-length: 16
+          dhcp: false
+          enabled: true
+      - name: eth2
+        type: ethernet
+        state: down
+        ipv4:
+          address:
+          - ip: 1.2.3.4
+            prefix-length: 24
+          dhcp: false
+          enabled: false
+"#),
+    replace_captured_state: test_with()
+    .cache(r#"
+default-gw:
+  state:
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+    "#)
+    .capture(HashMap::from([
+        ("bridge-routes", "capture.default-gw | routes.running.next-hop-interface := 'br1'")
+    ]))
+    .captured(r#"
+default-gw:
+  state:
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+bridge-routes:
+  state:
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: br1
+        table-id: 254
+    "#),
+    replace_with_capture_ref: test_with()
+    .cache(r#"
+default-gw:
+  state:
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: br1
+        table-id: 254
+
+br1-bridge:
+  state:
+    interfaces:
+    - name: br1
+      type: linux-bridge
+      bridge:
+        port:
+        - name: eth3
+"#)
+    .capture(HashMap::from([
+        ("default-gw-br1-first-port", "capture.default-gw | routes.running.next-hop-interface := capture.br1-bridge.interfaces.0.bridge.port.0.name")
+    ]))
+    .captured(r#"
+default-gw:
+  state:
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: br1
+        table-id: 254
+br1-bridge:
+  state:
+    interfaces:
+    - name: br1
+      type: linux-bridge
+      bridge:
+        port:
+        - name: eth3
+default-gw-br1-first-port:
+  state:
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth3
+        table-id: 254
+
+"#), 
+    replace_optional_field: test_with()
+    .cache(r#"
+eth2-interface:
+  state:
+    interfaces:
+    - name: eth2
+      type: ethernet
+      state: down
+"#)
+    .capture(HashMap::from([
+        ("description-eth2", "capture.eth2-interface | interfaces.description := '2nd ethernet interface'")
+    ]))
+    .captured(r#"
+eth2-interface:
+  state:
+    interfaces:
+    - name: eth2
+      type: ethernet
+      state: down
+description-eth2:
+  state:
+    interfaces:
+    - name: eth2
+      description: "2nd ethernet interface"
+      type: ethernet
+      state: down
+"#),
 }

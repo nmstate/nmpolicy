@@ -76,6 +76,9 @@ impl NmpolicyError {
     pub fn eqfilter(self) -> Self {
         self.ctx("eqfilter error".to_string())
     }
+    pub fn replace(self) -> Self {
+        self.ctx("replace error".to_string())
+    }
     pub fn path(self, pos: usize) -> Self {
         self.pos(pos).ctx("invalid path".to_string())
     }
