@@ -85,6 +85,7 @@ impl Resolver {
                     Ok(state) => Ok(state),
                     Err(e) => Err(e.eqfilter()),
                 },
+                NodeKind::Path(_) => self.resolve_path_filter(*current_node),
                 _ => Err(evaluation_error(format!(
                     "root node has unsupported operation : {current_node}"
                 ))),
@@ -96,6 +97,12 @@ impl Resolver {
     fn resolve_eqfilter(&mut self, operator: TernaryOperator) -> Result<NMState, NmpolicyError> {
         let (input_source, path, value) = self.resolve_ternary_operator(operator)?;
         filter::visit_state(input_source, path, value)
+    }
+
+    fn resolve_path_filter(&mut self, node: Node) -> Result<NMState, NmpolicyError> {
+        let path = Path::compose_from_node(node)?;
+        let current_state = self.current_state.clone().unwrap();
+        filter::visit_state(current_state, path, Value::Null)
     }
 
     fn resolve_ternary_operator(
