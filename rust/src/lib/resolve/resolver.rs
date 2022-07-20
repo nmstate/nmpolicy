@@ -15,6 +15,10 @@ pub(crate) struct Resolver {
     current_expression: Option<String>,
 }
 
+pub(crate) trait CapturePathResolver {
+    fn resolve_capture_entry_path(&self, capture_path: String) -> Result<Value, NmpolicyError>;
+}
+
 impl Resolver {
     pub(crate) fn new(capture: Capture) -> Self {
         Self {

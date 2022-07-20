@@ -96,6 +96,12 @@ impl From<serde_json::Error> for NmpolicyError {
     }
 }
 
+impl From<regex::Error> for NmpolicyError {
+    fn from(error: regex::Error) -> NmpolicyError {
+        evaluation_error(error.to_string())
+    }
+}
+
 pub(crate) fn error(kind: ErrorKind, msg: String) -> NmpolicyError {
     NmpolicyError {
         kind,

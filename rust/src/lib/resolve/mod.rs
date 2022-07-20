@@ -1,7 +1,7 @@
 mod filter;
 mod path;
 mod replace;
-mod resolver;
+pub(crate) mod resolver;
 mod visitor;
 mod walk;
 
