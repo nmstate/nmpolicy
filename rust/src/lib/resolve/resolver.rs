@@ -1,8 +1,9 @@
 use crate::{
     ast::node::{current_state_identity, Node, NodeKind, TernaryOperator},
+    capture::Capture,
     error::{evaluation_error, NmpolicyError},
     resolve::{filter, path::Path, replace, walk},
-    types::{Capture, CapturedState, CapturedStates, NMState},
+    types::{CapturedState, CapturedStates, NMState},
 };
 
 use serde_json::Value;
@@ -27,6 +28,20 @@ impl Resolver {
             captured_states: CapturedStates::new(),
             current_node: None,
             current_expression: None,
+        }
+    }
+
+    pub(crate) fn from_capture_entry_and_captured(
+        capture_entry_expression: String,
+        capture_entry_node: Box<Node>,
+        captured_states: CapturedStates,
+    ) -> Self {
+        Self {
+            capture: Capture::new(),
+            current_state: None,
+            captured_states,
+            current_node: Some(capture_entry_node),
+            current_expression: Some(capture_entry_expression),
         }
     }
 
@@ -145,7 +160,7 @@ impl Resolver {
         Ok((input_source, path, value))
     }
 
-    fn resolve_capture_entry_path(&mut self) -> Result<Value, NmpolicyError> {
+    pub(crate) fn resolve_capture_entry_path(&mut self) -> Result<Value, NmpolicyError> {
         let current_node = self.current_node.clone().unwrap();
         let path = Path::compose_from_node(*current_node)?;
         match path.clone().capture_entry_name {

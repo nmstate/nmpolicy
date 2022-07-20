@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 mod ast;
+mod capture;
 mod error;
 mod expand;
 mod lex;
