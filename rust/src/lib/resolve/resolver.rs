@@ -31,17 +31,17 @@ impl Resolver {
         }
     }
 
-    pub(crate) fn from_capture_entry_and_captured(
-        capture_entry_expression: String,
-        capture_entry_node: Box<Node>,
+    pub(crate) fn from_captured(
+        expression: String,
+        node: Box<Node>,
         captured_states: CapturedStates,
     ) -> Self {
         Self {
             capture: Capture::new(),
             current_state: None,
             captured_states,
-            current_node: Some(capture_entry_node),
-            current_expression: Some(capture_entry_expression),
+            current_node: Some(node),
+            current_expression: Some(expression),
         }
     }
 
