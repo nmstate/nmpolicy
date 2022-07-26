@@ -4,6 +4,7 @@ mod capture;
 mod error;
 mod expand;
 mod lex;
+mod operations;
 mod parse;
 mod resolve;
 mod snippet;

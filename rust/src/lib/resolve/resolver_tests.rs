@@ -1,8 +1,9 @@
 use crate::{
+    capture::{Capture, CaptureEntry},
     lex::tokens::Tokens,
     parse::parser::Parser,
     resolve::resolver::Resolver,
-    types::{Capture, CaptureEntry, CapturedStates, NMState},
+    types::{CapturedStates, NMState},
 };
 use std::collections::HashMap;
 const CURRENT_STATE_YAML: &str = r#"

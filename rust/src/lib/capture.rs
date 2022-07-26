@@ -5,22 +5,22 @@ use crate::{
     error::{ErrorKind, NmpolicyError},
     lex::tokens::Tokens,
     parse::parser::Parser,
-    resolve::resolver::Resolver,
+    resolve::resolver::{CapturePathResolver, Resolver},
     types::{CapturedStates, NMState},
 };
 use std::collections::HashMap;
 
 use serde_json::Value;
 
-pub(crate) type Capture = HashMap<String, CaptureEntry>;
+pub type Capture = HashMap<String, CaptureEntry>;
 
 #[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
-pub(crate) struct CaptureEntry {
+pub struct CaptureEntry {
     pub expression: String,
-    pub ast: Box<Node>,
+    pub(crate) ast: Box<Node>,
 }
 
-fn resolve_entries(
+pub(crate) fn resolve_entries(
     capture: Capture,
     current_state: NMState,
     cache: Option<CapturedStates>,
@@ -40,16 +40,13 @@ fn resolve_entries(
     Ok(captured_states)
 }
 
-fn resolve_entry_path(
+pub(crate) fn resolve_entry_path(
     expression: String,
     captured_states: CapturedStates,
 ) -> Result<Value, NmpolicyError> {
     let capture_entry = parse(expression)?;
-    let mut resolver = Resolver::from_capture_entry_and_captured(
-        capture_entry.expression,
-        capture_entry.ast,
-        captured_states,
-    );
+    let mut resolver =
+        Resolver::from_captured(capture_entry.expression, capture_entry.ast, captured_states);
     resolver.resolve_capture_entry_path()
 }
 
@@ -84,5 +81,21 @@ fn filter_capture_by_cache(capture: Capture, cache_op: Option<CapturedStates>) -
             .filter(|(k, _)| cache.get(k).is_some())
             .collect(),
         None => capture,
+    }
+}
+
+pub(crate) struct CaptureEntryResolver {
+    captured_states: CapturedStates,
+}
+
+impl CaptureEntryResolver {
+    pub(crate) fn new(captured_states: CapturedStates) -> Self {
+        Self { captured_states }
+    }
+}
+
+impl CapturePathResolver for CaptureEntryResolver {
+    fn resolve_capture_entry_path(&self, capture_path: String) -> Result<Value, NmpolicyError> {
+        resolve_entry_path(capture_path, self.captured_states.clone())
     }
 }
