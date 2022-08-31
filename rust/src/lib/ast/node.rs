@@ -19,7 +19,7 @@ use std::fmt;
 
 pub(crate) type TernaryOperator = (Box<Node>, Box<Node>, Box<Node>);
 
-#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Default, Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
 pub(crate) struct Node {
     pub pos: usize,
     #[serde(flatten)]
@@ -40,6 +40,12 @@ pub(crate) enum NodeKind {
     Replace(Box<Node>, Box<Node>, Box<Node>),
     #[serde(rename = "path")]
     Path(Vec<Node>),
+}
+
+impl Default for NodeKind {
+    fn default() -> Self {
+        NodeKind::Identity("nil".to_string())
+    }
 }
 
 pub(crate) fn string(pos: usize, literal: String) -> Box<Node> {

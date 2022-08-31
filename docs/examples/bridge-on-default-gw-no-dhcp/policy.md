@@ -16,8 +16,8 @@ desiredState:
       options:
         stp:
           enabled: false
-        port:
-        - name: "{{ capture.base-iface.interfaces.0.name }}"
+      port:
+      - name: "{{ capture.base-iface.interfaces.0.name }}"
   routes:
     config: "{{ capture.bridge-routes.routes.running }}"
 {% endraw %}

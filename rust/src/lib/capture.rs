@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::{
     ast::node::Node,
@@ -14,9 +14,12 @@ use serde_json::Value;
 
 pub type Capture = HashMap<String, CaptureEntry>;
 
-#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Debug, Deserialize)]
+#[serde(transparent)]
 pub struct CaptureEntry {
+    #[serde(flatten)]
     pub expression: String,
+    #[serde(skip)]
     pub(crate) ast: Box<Node>,
 }
 
@@ -25,6 +28,9 @@ pub(crate) fn resolve_entries(
     current_state: NMState,
     cache: Option<CapturedStates>,
 ) -> Result<CapturedStates, NmpolicyError> {
+    if capture.is_empty() || current_state.is_empty() && cache.is_none() {
+        return Ok(CapturedStates::new());
+    }
     let filtered_cache = filter_cache_by_capture(cache.clone(), capture.clone());
     let filtered_capture = filter_capture_by_cache(capture, cache);
     let parsed_capture = filtered_capture

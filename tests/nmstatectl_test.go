@@ -53,7 +53,7 @@ func TestNmstatectl(t *testing.T) {
 func testEmptyPolicy(t *testing.T) {
 	t.Run("is empty cmd", func(t *testing.T) {
 		capturedStatesOutput := capturedStates(t)
-		obtainedState, err := nmpolicyctl("", "gen", "testdata/policy/empty.yaml", "-o", capturedStatesOutput)
+		obtainedState, err := nmpolicyctl("", "policy", "testdata/policy/empty.yaml", "-o", capturedStatesOutput)
 		assert.NoError(t, err)
 		assert.Empty(t, obtainedState)
 		assert.Empty(t, file(t, capturedStatesOutput))
@@ -63,7 +63,7 @@ func testEmptyPolicy(t *testing.T) {
 func testPolicyWithOnlyDesiredState(t *testing.T) {
 	t.Run("with only desired state", func(t *testing.T) {
 		capturedStatesOutput := capturedStates(t)
-		obtainedState, err := nmpolicyctl("", "gen", "testdata/policy/dummy-no-capture.yaml", "-o", capturedStatesOutput)
+		obtainedState, err := nmpolicyctl("", "policy", "testdata/policy/dummy-no-capture.yaml", "-o", capturedStatesOutput)
 		assert.NoError(t, err)
 		assert.YAMLEq(t, file(t, "testdata/state/dummy.yaml"), string(obtainedState))
 		assert.Empty(t, file(t, capturedStatesOutput))
@@ -73,8 +73,8 @@ func testPolicyWithOnlyDesiredState(t *testing.T) {
 func testPolicyWithCachedCaptureAndDesiredStateWithoutRef(t *testing.T) {
 	t.Run("with all captures cached and desired state that has no ref", func(t *testing.T) {
 		capturedStatesOutput := capturedStates(t)
-		obtainedState, err := nmpolicyctl("", "gen", "testdata/policy/dummy.yaml",
-			"-i", "testdata/cache/dummy.yaml", "-o", capturedStatesOutput)
+		obtainedState, err := nmpolicyctl("", "policy", "testdata/policy/dummy.yaml",
+			"-a", "testdata/cache/dummy.yaml", "-o", capturedStatesOutput)
 		assert.NoError(t, err)
 		assert.YAMLEq(t, file(t, "testdata/state/dummy.yaml"), string(obtainedState))
 		assert.YAMLEq(t, file(t, "testdata/cache/dummy.yaml"), file(t, capturedStatesOutput))
@@ -84,8 +84,8 @@ func testPolicyWithCachedCaptureAndDesiredStateWithoutRef(t *testing.T) {
 func testPolicyWithoutCache(t *testing.T) {
 	t.Run("without cache", func(t *testing.T) {
 		capturedStatesOutput := capturedStates(t)
-		obtainedState, err := nmpolicyctl(file(t, "testdata/state/main.yaml"), "gen", "testdata/policy/linux-bridge-default-gw-no-cache.yaml",
-			"-i", "testdata/cache/dummy.yaml", "-o", capturedStatesOutput)
+		obtainedState, err := nmpolicyctl(file(t, "testdata/state/main.yaml"), "policy", "testdata/policy/linux-bridge-default-gw-no-cache.yaml",
+			"-a", "testdata/cache/dummy.yaml", "-o", capturedStatesOutput)
 		assert.NoError(t, err)
 		assert.YAMLEq(t, file(t, "testdata/state/linux-bridge-default-gw.yaml"), string(obtainedState))
 		assert.YAMLEq(t, resetTimeStampFromCache(t,
@@ -96,21 +96,21 @@ func testPolicyWithoutCache(t *testing.T) {
 func testPolicyWithFullCache(t *testing.T) {
 	t.Run("with full cache", func(t *testing.T) {
 		capturedStatesOutput := capturedStates(t)
-		obtainedState, err := nmpolicyctl(file(t, "testdata/state/main.yaml"), "gen", "testdata/policy/linux-bridge-default-gw-full-cache.yaml",
-			"-i", "testdata/cache/linux-bridge-default-gw.yaml", "-o", capturedStatesOutput)
+		obtainedState, err := nmpolicyctl(file(t, "testdata/state/main.yaml"), "policy", "testdata/policy/linux-bridge-default-gw-full-cache.yaml",
+			"-a", "testdata/cache/linux-bridge-default-gw.yaml", "-o", capturedStatesOutput)
 		assert.NoError(t, err)
 		assert.YAMLEq(t, file(t, "testdata/state/linux-bridge-default-gw.yaml"), string(obtainedState))
 		assert.YAMLEq(t, resetTimeStampFromCache(t,
-			file(t, "testdata/cache/base-iface-and-bridge-routes.yaml")), resetTimeStampFromCache(t, file(t, capturedStatesOutput)))
+			file(t, "testdata/cache/base-aface-and-bridge-routes.yaml")), resetTimeStampFromCache(t, file(t, capturedStatesOutput)))
 	})
 }
 
 func testPolicyWithPartialCache(t *testing.T) {
 	t.Run("with partial cache", func(t *testing.T) {
 		capturedStatesOutput := capturedStates(t)
-		obtainedState, err := nmpolicyctl(file(t, "testdata/state/main.yaml"), "gen",
+		obtainedState, err := nmpolicyctl(file(t, "testdata/state/main.yaml"), "policy",
 			"testdata/policy/linux-bridge-default-gw-partial-cache.yaml",
-			"-i", "testdata/cache/default-gw.yaml", "-o", capturedStatesOutput)
+			"-a", "testdata/cache/default-gw.yaml", "-o", capturedStatesOutput)
 		assert.NoError(t, err)
 		assert.YAMLEq(t, file(t, "testdata/state/linux-bridge-default-gw.yaml"), string(obtainedState))
 		assert.YAMLEq(t, resetTimeStampFromCache(t,
@@ -122,8 +122,8 @@ func testGenerateUniqueTimestamps(t *testing.T) {
 	t.Run("with no cache all the timestamps should be the same", func(t *testing.T) {
 		beforeGenerate := time.Now()
 		capturedStatesOutput := capturedStates(t)
-		_, err := nmpolicyctl(file(t, "testdata/state/main.yaml"), "gen", "testdata/policy/linux-bridge-default-gw-no-cache.yaml",
-			"-i", "testdata/cache/dummy.yaml", "-o", capturedStatesOutput)
+		_, err := nmpolicyctl(file(t, "testdata/state/main.yaml"), "policy", "testdata/policy/linux-bridge-default-gw-no-cache.yaml",
+			"-a", "testdata/cache/dummy.yaml", "-o", capturedStatesOutput)
 		assert.NoError(t, err)
 
 		capturedStates := map[string]types.CaptureState{}
@@ -146,8 +146,8 @@ func testGenerateUniqueTimestamps(t *testing.T) {
 func testFailureLexer(t *testing.T) {
 	t.Run("with lexer error", func(t *testing.T) {
 		capturedStatesOutput := capturedStates(t)
-		_, err := nmpolicyctl(file(t, "testdata/state/main.yaml"), "gen", "testdata/policy/bad-lexer.yaml",
-			"-i", "testdata/cache/dummy.yaml", "-o", capturedStatesOutput)
+		_, err := nmpolicyctl(file(t, "testdata/state/main.yaml"), "policy", "testdata/policy/bad-lexer.yaml",
+			"-a", "testdata/cache/dummy.yaml", "-o", capturedStatesOutput)
 		assert.EqualError(t, err,
 			`'' 'Error: failed to generate state, err: failed to resolve capture expression, err: illegal rune -
 | routes.running.destination==-"0.0.0.0/0"
@@ -159,8 +159,8 @@ func testFailureLexer(t *testing.T) {
 func testFailureParser(t *testing.T) {
 	t.Run("with parser error", func(t *testing.T) {
 		capturedStatesOutput := capturedStates(t)
-		_, err := nmpolicyctl(file(t, "testdata/state/main.yaml"), "gen", "testdata/policy/bad-parser.yaml",
-			"-i", "testdata/cache/dummy.yaml", "-o", capturedStatesOutput)
+		_, err := nmpolicyctl(file(t, "testdata/state/main.yaml"), "policy", "testdata/policy/bad-parser.yaml",
+			"-a", "testdata/cache/dummy.yaml", "-o", capturedStatesOutput)
 
 		assert.EqualError(t, err,
 			"'' 'Error: failed to generate state, err: failed to resolve capture expression, "+
@@ -174,8 +174,8 @@ func testFailureParser(t *testing.T) {
 func testFailureResolver(t *testing.T) {
 	t.Run("with resolver error", func(t *testing.T) {
 		capturedStatesOutput := capturedStates(t)
-		_, err := nmpolicyctl(file(t, "testdata/state/main.yaml"), "gen", "testdata/policy/bad-resolver.yaml",
-			"-i", "testdata/cache/dummy.yaml", "-o", capturedStatesOutput)
+		_, err := nmpolicyctl(file(t, "testdata/state/main.yaml"), "policy", "testdata/policy/bad-resolver.yaml",
+			"-a", "testdata/cache/dummy.yaml", "-o", capturedStatesOutput)
 
 		assert.EqualError(t, err,
 			"'' 'Error: failed to generate state, err: failed to resolve capture expression, "+
@@ -205,7 +205,11 @@ func resetTimeStampFromCache(t *testing.T, marshaled string) string {
 }
 
 func nmpolicyctl(input string, args ...string) ([]byte, error) {
-	cmd := exec.Command("../.out/nmpolicyctl", args...)
+	nmpolicyctl_path := os.Getenv("NMPOLICYCTL")
+	if nmpolicyctl_path == "" {
+		nmpolicyctl_path = "../.out/nmpolicyctl"
+	}
+	cmd := exec.Command(nmpolicyctl_path, args...)
 	var stdout, stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	cmd.Stdout = &stdout
@@ -247,4 +251,12 @@ func file(t *testing.T, filePath string) string {
 
 func capturedStates(t *testing.T) string {
 	return filepath.Join(t.TempDir(), "captured-states.yaml")
+}
+
+func writeFile(t *testing.T, fileName string, dataToWrite []byte) (string, error) {
+	filePath := filepath.Join(t.TempDir(), fileName)
+	if err := os.WriteFile(filePath, dataToWrite, 0655); err != nil {
+		return "", err
+	}
+	return filePath, nil
 }
