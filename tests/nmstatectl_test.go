@@ -205,7 +205,11 @@ func resetTimeStampFromCache(t *testing.T, marshaled string) string {
 }
 
 func nmpolicyctl(input string, args ...string) ([]byte, error) {
-	cmd := exec.Command("../.out/nmpolicyctl", args...)
+	nmpolicyctl_path := os.Getenv("NMPOLICYCTL")
+	if nmpolicyctl_path == "" {
+		nmpolicyctl_path = "../.out/nmpolicyctl"
+	}
+	cmd := exec.Command(nmpolicyctl_path, args...)
 	var stdout, stderr bytes.Buffer
 	cmd.Stderr = &stderr
 	cmd.Stdout = &stdout

@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
 use crate::{
     ast::node::Node,
@@ -14,9 +14,12 @@ use serde_json::Value;
 
 pub type Capture = HashMap<String, CaptureEntry>;
 
-#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Clone, Eq, PartialEq, Debug, Deserialize)]
+#[serde(transparent)]
 pub struct CaptureEntry {
+    #[serde(flatten)]
     pub expression: String,
+    #[serde(skip)]
     pub(crate) ast: Box<Node>,
 }
 

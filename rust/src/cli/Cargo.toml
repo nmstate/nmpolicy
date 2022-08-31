@@ -16,5 +16,7 @@ name = "nmpolicyctl"
 path = "nmpolicyctl.rs"
 
 [dependencies]
+serde_yaml = "0.8"
 nmpolicy = { path = "../lib" }
+clap = { version = "3.2.15", features = ["cargo"] }
 

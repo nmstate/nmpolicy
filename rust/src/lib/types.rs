@@ -20,8 +20,10 @@ pub struct CapturedState {
     pub meta_info: Option<MetaInfo>,
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, Serialize, Deserialize)]
+#[derive(Default, Clone, Eq, PartialEq, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PolicySpec {
+    #[serde(default)]
     pub capture: Capture,
     pub desired_state: NMState,
 }
@@ -30,4 +32,13 @@ pub struct PolicySpec {
 pub struct GeneratedState {
     pub cache: CapturedStates,
     pub desired_state: NMState,
+}
+
+impl PolicySpec {
+    pub fn new() -> Self {
+        PolicySpec {
+            capture: Capture::new(),
+            desired_state: NMState::new(),
+        }
+    }
 }

@@ -102,6 +102,18 @@ impl From<regex::Error> for NmpolicyError {
     }
 }
 
+impl From<std::io::Error> for NmpolicyError {
+    fn from(error: std::io::Error) -> NmpolicyError {
+        evaluation_error(error.to_string())
+    }
+}
+
+impl From<serde_yaml::Error> for NmpolicyError {
+    fn from(error: serde_yaml::Error) -> NmpolicyError {
+        evaluation_error(error.to_string())
+    }
+}
+
 pub(crate) fn error(kind: ErrorKind, msg: String) -> NmpolicyError {
     NmpolicyError {
         kind,
