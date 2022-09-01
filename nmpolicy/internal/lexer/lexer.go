@@ -162,7 +162,7 @@ func (l *lexer) lexIdentityOrBoolean() (*Token, error) {
 		}
 
 		if l.isDelimiter() {
-			if token.isTrue() || token.isFalse() {
+			if token.IsTrue() || token.IsFalse() {
 				token.Type = BOOLEAN
 			}
 			if l.isEOF() || l.isSpace() {
