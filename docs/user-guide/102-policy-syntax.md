@@ -36,6 +36,7 @@ The following is a semi-formal definition of the capture entry expression:
 <digit> ::= [0-9]
 <number> ::= <digit>+
 <identity> ::= <letter> ( <digit> | "-" | <letter> )*
+<boolean> ::= "true" | "false"
 <dot> ::= "."
 <path> ::= <identity> ( <dot> ( <identity> | <number> ))*
 <string> ::= \" (<all characters>)* \"
@@ -43,9 +44,9 @@ The following is a semi-formal definition of the capture entry expression:
 <captureid> ::= <identity>
 <capturepath> ::= "capture" <dot> <captureid> <path>
 <eqoperator> ::= "=="
-<eqexpression> ::= <path> <eqoperator> (<string> | <number> | <capturepath>)
+<eqexpression> ::= <path> <eqoperator> (<string> | <number> | <boolean> | <capturepath>)
 <replaceoperator> ::= ":="
-<replaceexpression> ::= <path> <replaceoperator> (<string> | <number> | <capturepath>)
+<replaceexpression> ::= <path> <replaceoperator> (<string> | <number> | <boolean> | <capturepath>)
 <pathexpression> ::= <path>
 <expression> ::= <pathexpression> | <eqexpression> | <replaceexpression>
 <pipe> ::= "|"
