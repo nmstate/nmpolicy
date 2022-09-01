@@ -1,0 +1,9 @@
+interfaces:
+- name: eth0
+  type: ethernet
+  lldp:
+    enabled: true
+- name: eth1
+  type: ethernet
+  lldp:
+    enabled: true

@@ -354,6 +354,7 @@ network state and stores the result.</p>
 &lt;digit&gt; ::= [0-9]
 &lt;number&gt; ::= &lt;digit&gt;+
 &lt;identity&gt; ::= &lt;letter&gt; ( &lt;digit&gt; | "-" | &lt;letter&gt; )*
+&lt;boolean&gt; ::= "true" | "false"
 &lt;dot&gt; ::= "."
 &lt;path&gt; ::= &lt;identity&gt; ( &lt;dot&gt; ( &lt;identity&gt; | &lt;number&gt; ))*
 &lt;string&gt; ::= \" (&lt;all characters&gt;)* \"
@@ -361,9 +362,9 @@ network state and stores the result.</p>
 &lt;captureid&gt; ::= &lt;identity&gt;
 &lt;capturepath&gt; ::= "capture" &lt;dot&gt; &lt;captureid&gt; &lt;path&gt;
 &lt;eqoperator&gt; ::= "=="
-&lt;eqexpression&gt; ::= &lt;path&gt; &lt;eqoperator&gt; (&lt;string&gt; | &lt;number&gt; | &lt;capturepath&gt;)
+&lt;eqexpression&gt; ::= &lt;path&gt; &lt;eqoperator&gt; (&lt;string&gt; | &lt;number&gt; | &lt;boolean&gt; | &lt;capturepath&gt;)
 &lt;replaceoperator&gt; ::= ":="
-&lt;replaceexpression&gt; ::= &lt;path&gt; &lt;replaceoperator&gt; (&lt;string&gt; | &lt;number&gt; | &lt;capturepath&gt;)
+&lt;replaceexpression&gt; ::= &lt;path&gt; &lt;replaceoperator&gt; (&lt;string&gt; | &lt;number&gt; | &lt;boolean&gt; | &lt;capturepath&gt;)
 &lt;pathexpression&gt; ::= &lt;path&gt;
 &lt;expression&gt; ::= &lt;pathexpression&gt; | &lt;eqexpression&gt; | &lt;replaceexpression&gt;
 &lt;pipe&gt; ::= "|"
