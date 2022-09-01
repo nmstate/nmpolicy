@@ -373,6 +373,33 @@ replace:
 				eof(),
 			),
 		),
+		expectAST(t, `
+pos: 23
+replace:
+- pos: 0
+  identity: currentState
+- pos: 0
+  path:
+  - pos: 0
+    identity: interfaces
+  - pos: 11
+    identity: lldp
+  - pos: 16
+    identity: enabled
+- pos: 25
+  boolean: true
+`,
+			fromTokens(
+				identity("interfaces"),
+				dot(),
+				identity("lldp"),
+				dot(),
+				identity("enabled"),
+				replace(),
+				boolean(true),
+				eof(),
+			),
+		),
 	}
 	runTest(t, tests)
 }
@@ -596,6 +623,10 @@ func str(literal string) lexer.Token {
 
 func number(literal int) lexer.Token {
 	return lexer.Token{Type: lexer.NUMBER, Literal: fmt.Sprintf("%d", literal)}
+}
+
+func boolean(literal bool) lexer.Token {
+	return lexer.Token{Type: lexer.BOOLEAN, Literal: fmt.Sprintf("%t", literal)}
 }
 
 func dot() lexer.Token {

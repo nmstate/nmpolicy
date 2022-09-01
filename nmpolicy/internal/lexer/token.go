@@ -64,10 +64,10 @@ type Token struct {
 	Literal  string
 }
 
-func (t *Token) isTrue() bool {
+func (t *Token) IsTrue() bool {
 	return t.Literal == "true"
 }
 
-func (t *Token) isFalse() bool {
+func (t *Token) IsFalse() bool {
 	return t.Literal == "false"
 }
