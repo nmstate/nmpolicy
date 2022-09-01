@@ -119,3 +119,27 @@ replace:
 	assert.Equal(t, "Replace([Identity=currentState Path=[Identity=routes Identity=running Identity=next-hop-interface] String=br1])",
 		node.String())
 }
+
+func TestReplaceBoolean(t *testing.T) {
+	astYAML := `
+pos: 1
+replace:
+- pos: 2
+  identity: currentState
+- pos: 3
+  path:
+  - pos: 4
+    identity: routes
+  - pos: 5
+    identity: running
+  - pos: 6
+    identity: next-hop-interface
+- pos: 7
+  boolean: true`
+
+	node := &ast.Node{}
+	assert.NoError(t, yaml.Unmarshal([]byte(astYAML), node))
+
+	assert.Equal(t, "Replace([Identity=currentState Path=[Identity=routes Identity=running Identity=next-hop-interface] Boolean=true])",
+		node.String())
+}
