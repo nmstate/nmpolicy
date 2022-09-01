@@ -123,6 +123,7 @@ func TestFilter(t *testing.T) {
 	t.Run("Resolve Filter", func(t *testing.T) {
 		testFilterMapListOnSecondPathIdentity(t)
 		testFilterMapListOnFirstPathIdentity(t)
+		testFilterMapListOnFirstPathBoolean(t)
 		testFilterList(t)
 		testFilterCaptureRef(t)
 		testFilterCaptureRefWithoutCapturedState(t)
@@ -213,6 +214,48 @@ up-interfaces:
             prefix-length: 24
           dhcp: false
           enabled: false
+`,
+		}
+		runTest(t, &testToRun)
+	})
+}
+
+func testFilterMapListOnFirstPathBoolean(t *testing.T) {
+	t.Run("Filter map, list on first path boolean", func(t *testing.T) {
+		testToRun := test{
+			captureASTPool: `
+ipv4-enabled-interfaces: 
+  pos: 1
+  eqfilter:
+  - pos: 2
+    identity: currentState
+  - pos: 3
+    path:
+    - pos: 4
+      identity: interfaces
+    - pos: 5
+      identity: ipv4
+    - pos: 6
+      identity: enabled
+  - pos: 7
+    boolean: true
+`,
+			expectedCapturedStates: `
+ipv4-enabled-interfaces:
+  state: 
+    interfaces:
+    - name: eth1
+      description: "1st ethernet interface"
+      type: ethernet
+      state: up
+      ipv4:
+        address:
+        - ip: 10.244.0.1
+          prefix-length: 24
+        - ip: 169.254.1.0
+          prefix-length: 16
+        dhcp: false
+        enabled: true
 `,
 		}
 		runTest(t, &testToRun)
