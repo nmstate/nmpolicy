@@ -145,6 +145,7 @@ func TestFilter(t *testing.T) {
 		testReplaceCapturedState(t)
 		testReplaceWithCaptureRef(t)
 		testReplaceOptionalField(t)
+		testFilterStateCaptureRef(t)
 	})
 }
 
@@ -370,6 +371,101 @@ base-iface-routes:
         next-hop-address: 192.168.100.1
         next-hop-interface: eth1
         table-id: 254
+`,
+		}
+		runTest(t, &testToRun)
+	})
+}
+
+func testFilterStateCaptureRef(t *testing.T) {
+	t.Run("Replace boolean in filtered list with capture reference", func(t *testing.T) {
+		testToRun := test{
+			capturedStatesCache: `
+ethernets:
+  state:
+    interfaces:
+    - name: eth1
+      description: "1st ethernet interface"
+      type: ethernet
+      state: up
+      ipv4:
+        address:
+        - ip: 10.244.0.1
+          prefix-length: 24
+        - ip: 169.254.1.0
+          prefix-length: 16
+        dhcp: false
+        enabled: true
+    - name: eth2
+      type: ethernet
+      state: down
+      ipv4:
+        address:
+        - ip: 1.2.3.4
+          prefix-length: 24
+        dhcp: false
+        enabled: false
+`,
+			captureASTPool: `
+ethernets-up:
+  pos: 1
+  eqfilter:
+  - pos: 2
+    path:
+    - pos: 3
+      identity: capture
+    - pos: 4
+      identity: ethernets
+  - pos: 5
+    path:
+    - pos: 6
+      identity: interfaces
+    - pos: 7
+      identity: state
+  - pos: 8
+    string: up
+`,
+
+			expectedCapturedStates: `
+ethernets:
+  state:
+    interfaces:
+    - name: eth1
+      description: "1st ethernet interface"
+      type: ethernet
+      state: up
+      ipv4:
+        address:
+        - ip: 10.244.0.1
+          prefix-length: 24
+        - ip: 169.254.1.0
+          prefix-length: 16
+        dhcp: false
+        enabled: true
+    - name: eth2
+      type: ethernet
+      state: down
+      ipv4:
+        address:
+        - ip: 1.2.3.4
+          prefix-length: 24
+        dhcp: false
+        enabled: false
+ethernets-up:
+  state:
+    interfaces:
+    - name: eth1
+      description: "1st ethernet interface"
+      type: ethernet
+      state: up
+      ipv4:
+        address:
+        - ip: 10.244.0.1
+          prefix-length: 24
+        - ip: 169.254.1.0
+          prefix-length: 16
+        dhcp: false
+        enabled: true
 `,
 		}
 		runTest(t, &testToRun)
