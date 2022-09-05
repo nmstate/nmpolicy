@@ -45,3 +45,15 @@ func (p path) nextStep() path {
 func (p path) hasMoreSteps() bool {
 	return p.currentStepIndex+1 < len(p.steps)
 }
+
+func (p *path) nextStepByRef() path {
+	if p.hasMoreSteps() {
+		p.currentStepIndex++
+	}
+	p.currentStep = &p.steps[p.currentStepIndex]
+	return *p
+}
+
+func (p *path) getRemainingSteps() []ast.Node {
+	return p.steps[p.currentStepIndex:]
+}

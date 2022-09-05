@@ -17,6 +17,8 @@
 package resolver
 
 import (
+	"fmt"
+
 	"github.com/nmstate/nmpolicy/nmpolicy/internal/ast"
 )
 
@@ -61,7 +63,18 @@ func (r replaceOpVisitor) visitMap(p path, mapToVisit map[string]interface{}) (i
 	}
 	interfaceToVisit, ok := mapToVisit[*p.currentStep.Identity]
 	if !ok {
-		return nil, nil
+		newSteps, err := constructState(newPath(p.getRemainingSteps()), mapToVisit, p.currentStep.Identity)
+		if err != nil {
+			return nil, err
+		}
+		mapToVisit, ok = newSteps.(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("failed to convert constructed steps back to a map")
+		}
+		interfaceToVisit, ok = mapToVisit[*p.currentStep.Identity]
+		if !ok {
+			return nil, fmt.Errorf("failed access the just added map key")
+		}
 	}
 
 	visitResult, err := visitState(p.nextStep(), interfaceToVisit, &r)

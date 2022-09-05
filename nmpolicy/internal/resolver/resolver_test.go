@@ -145,6 +145,7 @@ func TestFilter(t *testing.T) {
 		testReplaceCapturedState(t)
 		testReplaceWithCaptureRef(t)
 		testReplaceOptionalField(t)
+		testReplaceMissingKey(t)
 	})
 }
 
@@ -990,6 +991,85 @@ running-routes:
         next-hop-interface: eth2
         table-id: 254
 `
+		runTest(t, &testToRun)
+	})
+}
+
+func testReplaceMissingKey(t *testing.T) {
+	t.Run("Cannot replace boolean value under missing key with capture reference", func(t *testing.T) {
+		testToRun := test{
+			captureASTPool: `
+ethernets-lldp:
+  pos: 1
+  replace:
+  - pos: 3
+    identity: currentState
+  - pos: 5
+    path:
+    - pos: 5
+      identity: interfaces
+    - pos: 6
+      identity: lldp
+    - pos: 7
+      identity: enabled
+  - pos: 8
+    boolean: true
+`,
+
+			expectedCapturedStates: `
+ethernets-lldp:
+  state:
+    routes:
+      running:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+      - destination: 1.1.1.0/24
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+      - destination: 2.2.2.0/24
+        next-hop-address: 192.168.200.1
+        next-hop-interface: eth2
+        table-id: 254
+      config:
+      - destination: 0.0.0.0/0
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+      - destination: 1.1.1.0/24
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+    interfaces:
+      - name: eth1
+        description: "1st ethernet interface"
+        type: ethernet
+        state: up
+        lldp:
+          enabled: true
+        ipv4:
+          address:
+          - ip: 10.244.0.1
+            prefix-length: 24
+          - ip: 169.254.1.0
+            prefix-length: 16
+          dhcp: false
+          enabled: true
+      - name: eth2
+        type: ethernet
+        state: down
+        lldp:
+          enabled: true
+        ipv4:
+          address:
+          - ip: 1.2.3.4
+            prefix-length: 24
+          dhcp: false
+          enabled: false
+`,
+		}
 		runTest(t, &testToRun)
 	})
 }
