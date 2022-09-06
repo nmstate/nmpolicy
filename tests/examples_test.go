@@ -105,7 +105,8 @@ func TestExamples(t *testing.T) {
 			assert.NoError(t, err)
 			obtainedCaptuerdStates, err := formatCapturedStates(obtained.Cache.Capture)
 			assert.NoError(t, err)
-			assert.Equal(t, resetCapturedStatesTimeStamp(expectedCapturedStates), resetCapturedStatesTimeStamp(obtainedCaptuerdStates))
+			assert.YAMLEq(t, marshalCapturedStates(t, resetCapturedStatesTimeStamp(expectedCapturedStates)),
+				marshalCapturedStates(t, resetCapturedStatesTimeStamp(obtainedCaptuerdStates)))
 		})
 	}
 }
@@ -126,4 +127,10 @@ func formatCapturedStates(capturedStates map[string]types.CaptureState) (map[str
 		capturedStates[captureID] = captureState
 	}
 	return capturedStates, nil
+}
+
+func marshalCapturedStates(t *testing.T, capturedStates map[string]types.CaptureState) string {
+	marshaledBytes, err := yaml.Marshal(capturedStates)
+	assert.NoError(t, err)
+	return string(marshaledBytes)
 }
