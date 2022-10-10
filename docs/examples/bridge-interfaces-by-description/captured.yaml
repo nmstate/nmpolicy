@@ -1,0 +1,22 @@
+primary-nic:
+  metaInfo:
+    time: "2021-12-15T13:45:40Z"
+    version: "0"
+  state:
+    interfaces:
+    - name: eth0
+      description: primary
+      type: ethernet
+      state: up
+      mac-address: 00:00:5E:00:00:01
+secondary-nic:
+  metaInfo:
+     time: "2021-12-15T13:45:40Z"
+     version: "0"
+  state:
+    interfaces:
+    - name: eth1
+      description: secondary
+      type: ethernet
+      state: up
+      mac-address: 00:00:5E:00:00:02
