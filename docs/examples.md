@@ -24,3 +24,11 @@ It uses the `description` field to filter between primary and secondary NIC.
 ## Set all linux bridges down
 
 {% include_relative examples/example.md example="all-linux-bridges-down" %}
+
+## Convert DHCP aware interface to static addressing
+
+{% include_relative examples/example.md example="convert-dhcp-to-static" %}
+
+## Turn LLDP to true at interfaces active interfaces
+
+{% include_relative examples/example.md example="all-ethernet-up" %}
