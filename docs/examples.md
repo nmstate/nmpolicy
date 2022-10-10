@@ -32,3 +32,7 @@ It uses the `description` field to filter between primary and secondary NIC.
 ## Turn LLDP to true at interfaces active interfaces
 
 {% include_relative examples/example.md example="all-ethernet-up" %}
+
+## Create a linux-bridge with all the interfaces matching description
+
+{% include_relative examples/example.md example="bridge-interfaces-by-description" %}
