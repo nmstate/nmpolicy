@@ -335,6 +335,30 @@
 <li><a href="#captured-states-3">captured states</a></li>
 </ul>
 </li>
+<li>
+<a href="#convert-dhcp-aware-interface-to-static-addressing">Convert DHCP aware interface to static addressing</a><ul>
+<li><a href="#policy-4">policy</a></li>
+<li><a href="#current-state-4">current state</a></li>
+<li><a href="#generated-state-4">generated state</a></li>
+<li><a href="#captured-states-4">captured states</a></li>
+</ul>
+</li>
+<li>
+<a href="#turn-lldp-to-true-at-interfaces-active-interfaces">Turn LLDP to true at interfaces active interfaces</a><ul>
+<li><a href="#policy-5">policy</a></li>
+<li><a href="#current-state-5">current state</a></li>
+<li><a href="#generated-state-5">generated state</a></li>
+<li><a href="#captured-states-5">captured states</a></li>
+</ul>
+</li>
+<li>
+<a href="#create-a-linux-bridge-with-all-the-interfaces-matching-description">Create a linux-bridge with all the interfaces matching description</a><ul>
+<li><a href="#policy-6">policy</a></li>
+<li><a href="#current-state-6">current state</a></li>
+<li><a href="#generated-state-6">generated state</a></li>
+<li><a href="#captured-states-6">captured states</a></li>
+</ul>
+</li>
 </ul>
 
             </nav>
@@ -796,6 +820,371 @@
       <span class="na">type</span><span class="pi">:</span> <span class="s">linux-bridge</span>
       <span class="na">state</span><span class="pi">:</span> <span class="s">down</span>
 
+
+</code></pre></div></div>
+
+<h2 id="convert-dhcp-aware-interface-to-static-addressing">Convert DHCP aware interface to static addressing</h2>
+
+<h3 id="policy-4">policy</h3>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="na">capture</span><span class="pi">:</span>
+  <span class="na">eth1-iface</span><span class="pi">:</span> <span class="s">interfaces.name == "eth1"</span>
+  <span class="na">eth1-routes</span><span class="pi">:</span> <span class="s">routes.running.next-hop-interface == "eth1"</span>
+  <span class="na">dns</span><span class="pi">:</span> <span class="s">dns-resolver.running</span>
+<span class="na">desiredState</span><span class="pi">:</span>
+  <span class="na">interfaces</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">eth1</span>
+    <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
+    <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+    <span class="na">ipv4</span><span class="pi">:</span>
+      <span class="na">address</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">capture.eth1-iface.interfaces.0.ipv4.address</span><span class="nv"> </span><span class="s">}}"</span>
+      <span class="na">dhcp</span><span class="pi">:</span> <span class="no">false</span>
+      <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
+  <span class="na">routes</span><span class="pi">:</span>
+    <span class="na">config</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">capture.eth1-routes.routes.running</span><span class="nv"> </span><span class="s">}}"</span>
+  <span class="na">dns-resolver</span><span class="pi">:</span>
+    <span class="na">config</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">capture.dns.dns-resolver.running</span><span class="nv"> </span><span class="s">}}"</span>
+
+
+</code></pre></div></div>
+
+<h3 id="current-state-4">current state</h3>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">dns-resolver</span><span class="pi">:</span>
+  <span class="na">running</span><span class="pi">:</span>
+    <span class="na">search</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">example.com</span>
+    <span class="pi">-</span> <span class="s">example.org</span>
+    <span class="na">server</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">8.8.8.8</span>
+    <span class="pi">-</span> <span class="s">2001:4860:4860::8888</span>
+<span class="na">routes</span><span class="pi">:</span>
+  <span class="na">running</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span> <span class="s">0.0.0.0/0</span>
+    <span class="na">next-hop-address</span><span class="pi">:</span> <span class="s">192.168.100.1</span>
+    <span class="na">next-hop-interface</span><span class="pi">:</span> <span class="s">eth1</span>
+    <span class="na">table-id</span><span class="pi">:</span> <span class="m">254</span>
+  <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span> <span class="s">1.1.1.0/24</span>
+    <span class="na">next-hop-address</span><span class="pi">:</span> <span class="s">192.168.100.1</span>
+    <span class="na">next-hop-interface</span><span class="pi">:</span> <span class="s">eth1</span>
+    <span class="na">table-id</span><span class="pi">:</span> <span class="m">254</span>
+<span class="na">interfaces</span><span class="pi">:</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">eth1</span>
+  <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
+  <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+  <span class="na">ipv4</span><span class="pi">:</span>
+    <span class="na">address</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">ip</span><span class="pi">:</span> <span class="s">10.244.0.1</span>
+      <span class="na">prefix-length</span><span class="pi">:</span> <span class="m">24</span>
+    <span class="pi">-</span> <span class="na">ip</span><span class="pi">:</span> <span class="s">169.254.1.0</span>
+      <span class="na">prefix-length</span><span class="pi">:</span> <span class="m">16</span>
+    <span class="na">dhcp</span><span class="pi">:</span> <span class="no">true</span>
+    <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
+
+</code></pre></div></div>
+
+<h3 id="generated-state-4">generated state</h3>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">dns-resolver</span><span class="pi">:</span>
+  <span class="na">config</span><span class="pi">:</span>
+    <span class="na">search</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">example.com</span>
+    <span class="pi">-</span> <span class="s">example.org</span>
+    <span class="na">server</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="s">8.8.8.8</span>
+    <span class="pi">-</span> <span class="s">2001:4860:4860::8888</span>
+<span class="na">routes</span><span class="pi">:</span>
+  <span class="na">config</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span> <span class="s">0.0.0.0/0</span>
+    <span class="na">next-hop-address</span><span class="pi">:</span> <span class="s">192.168.100.1</span>
+    <span class="na">next-hop-interface</span><span class="pi">:</span> <span class="s">eth1</span>
+    <span class="na">table-id</span><span class="pi">:</span> <span class="m">254</span>
+  <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span> <span class="s">1.1.1.0/24</span>
+    <span class="na">next-hop-address</span><span class="pi">:</span> <span class="s">192.168.100.1</span>
+    <span class="na">next-hop-interface</span><span class="pi">:</span> <span class="s">eth1</span>
+    <span class="na">table-id</span><span class="pi">:</span> <span class="m">254</span>
+<span class="na">interfaces</span><span class="pi">:</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">eth1</span>
+  <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
+  <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+  <span class="na">ipv4</span><span class="pi">:</span>
+    <span class="na">address</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">ip</span><span class="pi">:</span> <span class="s">10.244.0.1</span>
+      <span class="na">prefix-length</span><span class="pi">:</span> <span class="m">24</span>
+    <span class="pi">-</span> <span class="na">ip</span><span class="pi">:</span> <span class="s">169.254.1.0</span>
+      <span class="na">prefix-length</span><span class="pi">:</span> <span class="m">16</span>
+    <span class="na">dhcp</span><span class="pi">:</span> <span class="no">false</span>
+    <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
+
+</code></pre></div></div>
+
+<h3 id="captured-states-4">captured states</h3>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">eth1-iface</span><span class="pi">:</span>
+  <span class="na">metaInfo</span><span class="pi">:</span>
+    <span class="na">time</span><span class="pi">:</span> <span class="s2">"</span><span class="s">2021-12-15T13:45:40Z"</span>
+    <span class="na">version</span><span class="pi">:</span> <span class="s2">"</span><span class="s">0"</span>
+  <span class="na">state</span><span class="pi">:</span>
+    <span class="na">interfaces</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">eth1</span>
+        <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
+        <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+        <span class="na">ipv4</span><span class="pi">:</span>
+          <span class="na">address</span><span class="pi">:</span>
+          <span class="pi">-</span> <span class="na">ip</span><span class="pi">:</span> <span class="s">10.244.0.1</span>
+            <span class="na">prefix-length</span><span class="pi">:</span> <span class="m">24</span>
+          <span class="pi">-</span> <span class="na">ip</span><span class="pi">:</span> <span class="s">169.254.1.0</span>
+            <span class="na">prefix-length</span><span class="pi">:</span> <span class="m">16</span>
+          <span class="na">dhcp</span><span class="pi">:</span> <span class="no">true</span>
+          <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
+<span class="na">eth1-routes</span><span class="pi">:</span>
+  <span class="na">metaInfo</span><span class="pi">:</span>
+    <span class="na">time</span><span class="pi">:</span> <span class="s2">"</span><span class="s">2021-12-15T13:45:40Z"</span>
+    <span class="na">version</span><span class="pi">:</span> <span class="s2">"</span><span class="s">0"</span>
+  <span class="na">state</span><span class="pi">:</span>
+    <span class="na">routes</span><span class="pi">:</span>
+      <span class="na">running</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span> <span class="s">0.0.0.0/0</span>
+        <span class="na">next-hop-address</span><span class="pi">:</span> <span class="s">192.168.100.1</span>
+        <span class="na">next-hop-interface</span><span class="pi">:</span> <span class="s">eth1</span>
+        <span class="na">table-id</span><span class="pi">:</span> <span class="m">254</span>
+      <span class="pi">-</span> <span class="na">destination</span><span class="pi">:</span> <span class="s">1.1.1.0/24</span>
+        <span class="na">next-hop-address</span><span class="pi">:</span> <span class="s">192.168.100.1</span>
+        <span class="na">next-hop-interface</span><span class="pi">:</span> <span class="s">eth1</span>
+        <span class="na">table-id</span><span class="pi">:</span> <span class="m">254</span>
+<span class="na">dns</span><span class="pi">:</span>
+  <span class="na">metaInfo</span><span class="pi">:</span>
+    <span class="na">time</span><span class="pi">:</span> <span class="s2">"</span><span class="s">2021-12-15T13:45:40Z"</span>
+    <span class="na">version</span><span class="pi">:</span> <span class="s2">"</span><span class="s">0"</span>
+  <span class="na">state</span><span class="pi">:</span>
+    <span class="na">dns-resolver</span><span class="pi">:</span>
+      <span class="na">running</span><span class="pi">:</span>
+        <span class="na">search</span><span class="pi">:</span>
+        <span class="pi">-</span> <span class="s">example.com</span>
+        <span class="pi">-</span> <span class="s">example.org</span>
+        <span class="na">server</span><span class="pi">:</span>
+        <span class="pi">-</span> <span class="s">8.8.8.8</span>
+        <span class="pi">-</span> <span class="s">2001:4860:4860::8888</span>
+
+</code></pre></div></div>
+
+<h2 id="turn-lldp-to-true-at-interfaces-active-interfaces">Turn LLDP to true at interfaces active interfaces</h2>
+
+<h3 id="policy-5">policy</h3>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="na">capture</span><span class="pi">:</span>
+  <span class="na">ethernets</span><span class="pi">:</span> <span class="s">interfaces.type=="ethernet"</span>
+  <span class="na">ethernets-up</span><span class="pi">:</span> <span class="s">capture.ethernets.interfaces.state=="up"</span>
+  <span class="na">ethernets-lldp</span><span class="pi">:</span> <span class="s">capture.ethernets-up | interfaces.lldp.enabled:=true</span>
+
+<span class="na">desiredState</span><span class="pi">:</span> 
+  <span class="na">interfaces</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">capture.ethernets-lldp.interfaces</span><span class="nv"> </span><span class="s">}}"</span>
+
+
+</code></pre></div></div>
+
+<h3 id="current-state-5">current state</h3>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">interfaces</span><span class="pi">:</span>
+<span class="pi">-</span> <span class="na">accept-all-mac-addresses</span><span class="pi">:</span> <span class="no">false</span>
+  <span class="na">lldp</span><span class="pi">:</span>
+    <span class="na">enabled</span><span class="pi">:</span> <span class="no">false</span>
+  <span class="na">mac-address</span><span class="pi">:</span> <span class="s">52:55:00:D1:55:01</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">eth0</span>
+  <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+  <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
+<span class="pi">-</span> <span class="na">accept-all-mac-addresses</span><span class="pi">:</span> <span class="no">false</span>
+  <span class="na">lldp</span><span class="pi">:</span>
+    <span class="na">enabled</span><span class="pi">:</span> <span class="no">false</span>
+  <span class="na">mac-address</span><span class="pi">:</span> <span class="s">52:55:00:D1:56:02</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">eth1</span>
+  <span class="na">state</span><span class="pi">:</span> <span class="s">down</span>
+  <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
+<span class="pi">-</span> <span class="na">accept-all-mac-addresses</span><span class="pi">:</span> <span class="no">false</span>
+  <span class="na">mac-address</span><span class="pi">:</span> <span class="s">52:55:00:D1:57:03</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">eth4</span>
+  <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+  <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
+<span class="pi">-</span> <span class="na">accept-all-mac-addresses</span><span class="pi">:</span> <span class="no">false</span>
+  <span class="na">mac-address</span><span class="pi">:</span> <span class="s">52:55:00:D1:56:04</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">eth2</span>
+  <span class="na">state</span><span class="pi">:</span> <span class="s">down</span>
+  <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
+
+
+</code></pre></div></div>
+
+<h3 id="generated-state-5">generated state</h3>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">interfaces</span><span class="pi">:</span>
+<span class="pi">-</span> <span class="na">accept-all-mac-addresses</span><span class="pi">:</span> <span class="no">false</span>
+  <span class="na">lldp</span><span class="pi">:</span>
+    <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
+  <span class="na">mac-address</span><span class="pi">:</span> <span class="s">52:55:00:D1:55:01</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">eth0</span>
+  <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+  <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
+<span class="pi">-</span> <span class="na">accept-all-mac-addresses</span><span class="pi">:</span> <span class="no">false</span>
+  <span class="na">lldp</span><span class="pi">:</span>
+    <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
+  <span class="na">mac-address</span><span class="pi">:</span> <span class="s">52:55:00:D1:57:03</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">eth4</span>
+  <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+  <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
+
+</code></pre></div></div>
+
+<h3 id="captured-states-5">captured states</h3>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">ethernets</span><span class="pi">:</span>
+  <span class="na">metaInfo</span><span class="pi">:</span>
+    <span class="na">time</span><span class="pi">:</span> <span class="s2">"</span><span class="s">2021-12-15T13:45:40Z"</span>
+    <span class="na">version</span><span class="pi">:</span> <span class="s2">"</span><span class="s">0"</span>
+  <span class="na">state</span><span class="pi">:</span>
+    <span class="na">interfaces</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">accept-all-mac-addresses</span><span class="pi">:</span> <span class="no">false</span>
+      <span class="na">lldp</span><span class="pi">:</span>
+        <span class="na">enabled</span><span class="pi">:</span> <span class="no">false</span>
+      <span class="na">mac-address</span><span class="pi">:</span> <span class="s">52:55:00:D1:55:01</span>
+      <span class="na">name</span><span class="pi">:</span> <span class="s">eth0</span>
+      <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+      <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
+    <span class="pi">-</span> <span class="na">accept-all-mac-addresses</span><span class="pi">:</span> <span class="no">false</span>
+      <span class="na">lldp</span><span class="pi">:</span>
+        <span class="na">enabled</span><span class="pi">:</span> <span class="no">false</span>
+      <span class="na">mac-address</span><span class="pi">:</span> <span class="s">52:55:00:D1:56:02</span>
+      <span class="na">name</span><span class="pi">:</span> <span class="s">eth1</span>
+      <span class="na">state</span><span class="pi">:</span> <span class="s">down</span>
+      <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
+    <span class="pi">-</span> <span class="na">accept-all-mac-addresses</span><span class="pi">:</span> <span class="no">false</span>
+      <span class="na">mac-address</span><span class="pi">:</span> <span class="s">52:55:00:D1:57:03</span>
+      <span class="na">name</span><span class="pi">:</span> <span class="s">eth4</span>
+      <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+      <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
+    <span class="pi">-</span> <span class="na">accept-all-mac-addresses</span><span class="pi">:</span> <span class="no">false</span>
+      <span class="na">mac-address</span><span class="pi">:</span> <span class="s">52:55:00:D1:56:04</span>
+      <span class="na">name</span><span class="pi">:</span> <span class="s">eth2</span>
+      <span class="na">state</span><span class="pi">:</span> <span class="s">down</span>
+      <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
+<span class="na">ethernets-up</span><span class="pi">:</span>
+  <span class="na">metaInfo</span><span class="pi">:</span>
+    <span class="na">time</span><span class="pi">:</span> <span class="s2">"</span><span class="s">2021-12-15T13:45:40Z"</span>
+    <span class="na">version</span><span class="pi">:</span> <span class="s2">"</span><span class="s">0"</span>
+  <span class="na">state</span><span class="pi">:</span>
+    <span class="na">interfaces</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">accept-all-mac-addresses</span><span class="pi">:</span> <span class="no">false</span>
+      <span class="na">lldp</span><span class="pi">:</span>
+        <span class="na">enabled</span><span class="pi">:</span> <span class="no">false</span>
+      <span class="na">mac-address</span><span class="pi">:</span> <span class="s">52:55:00:D1:55:01</span>
+      <span class="na">name</span><span class="pi">:</span> <span class="s">eth0</span>
+      <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+      <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
+    <span class="pi">-</span> <span class="na">accept-all-mac-addresses</span><span class="pi">:</span> <span class="no">false</span>
+      <span class="na">mac-address</span><span class="pi">:</span> <span class="s">52:55:00:D1:57:03</span>
+      <span class="na">name</span><span class="pi">:</span> <span class="s">eth4</span>
+      <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+      <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
+<span class="na">ethernets-lldp</span><span class="pi">:</span>
+  <span class="na">metaInfo</span><span class="pi">:</span>
+    <span class="na">time</span><span class="pi">:</span> <span class="s2">"</span><span class="s">2021-12-15T13:45:40Z"</span>
+    <span class="na">version</span><span class="pi">:</span> <span class="s2">"</span><span class="s">0"</span>
+  <span class="na">state</span><span class="pi">:</span>
+    <span class="na">interfaces</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">accept-all-mac-addresses</span><span class="pi">:</span> <span class="no">false</span>
+      <span class="na">lldp</span><span class="pi">:</span>
+        <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
+      <span class="na">mac-address</span><span class="pi">:</span> <span class="s">52:55:00:D1:55:01</span>
+      <span class="na">name</span><span class="pi">:</span> <span class="s">eth0</span>
+      <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+      <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
+    <span class="pi">-</span> <span class="na">accept-all-mac-addresses</span><span class="pi">:</span> <span class="no">false</span>
+      <span class="na">lldp</span><span class="pi">:</span>
+        <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
+      <span class="na">mac-address</span><span class="pi">:</span> <span class="s">52:55:00:D1:57:03</span>
+      <span class="na">name</span><span class="pi">:</span> <span class="s">eth4</span>
+      <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+      <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
+
+</code></pre></div></div>
+
+<h2 id="create-a-linux-bridge-with-all-the-interfaces-matching-description">Create a linux-bridge with all the interfaces matching description</h2>
+
+<h3 id="policy-6">policy</h3>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="na">capture</span><span class="pi">:</span>
+  <span class="na">primary-nic</span><span class="pi">:</span> <span class="s">interfaces.description == "primary"</span>
+  <span class="na">secondary-nic</span><span class="pi">:</span> <span class="s">interfaces.description == "secondary"</span>
+<span class="na">desiredState</span><span class="pi">:</span>
+  <span class="na">interfaces</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">br1</span>
+    <span class="na">type</span><span class="pi">:</span> <span class="s">linux-bridge</span>
+    <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+    <span class="na">mac-address</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">capture.primary-nic.interfaces.0.mac-address</span><span class="nv"> </span><span class="s">}}"</span>
+    <span class="na">ipv4</span><span class="pi">:</span> 
+      <span class="na">dhcp</span><span class="pi">:</span> <span class="no">true</span>
+      <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
+    <span class="na">bridge</span><span class="pi">:</span>
+      <span class="na">options</span><span class="pi">:</span>
+        <span class="na">stp</span><span class="pi">:</span> 
+          <span class="na">enabled</span><span class="pi">:</span> <span class="no">false</span>
+      <span class="na">port</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">capture.primary-nic.interfaces.0.name</span><span class="nv"> </span><span class="s">}}"</span>
+      <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">{{</span><span class="nv"> </span><span class="s">capture.secondary-nic.interfaces.0.name</span><span class="nv"> </span><span class="s">}}"</span>
+
+
+</code></pre></div></div>
+
+<h3 id="current-state-6">current state</h3>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">interfaces</span><span class="pi">:</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">eth0</span>
+  <span class="na">description</span><span class="pi">:</span> <span class="s">primary</span>
+  <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
+  <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+  <span class="na">mac-address</span><span class="pi">:</span> <span class="s">00:00:5E:00:00:01</span>
+<span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">eth1</span>
+  <span class="na">description</span><span class="pi">:</span> <span class="s">secondary</span>
+  <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
+  <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+  <span class="na">mac-address</span><span class="pi">:</span> <span class="s">00:00:5E:00:00:02</span>
+
+</code></pre></div></div>
+
+<h3 id="generated-state-6">generated state</h3>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">interfaces</span><span class="pi">:</span>
+<span class="pi">-</span> <span class="na">bridge</span><span class="pi">:</span>
+    <span class="na">options</span><span class="pi">:</span>
+      <span class="na">stp</span><span class="pi">:</span>
+        <span class="na">enabled</span><span class="pi">:</span> <span class="no">false</span>
+    <span class="na">port</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">eth0</span>
+    <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">eth1</span>
+  <span class="na">ipv4</span><span class="pi">:</span>
+    <span class="na">dhcp</span><span class="pi">:</span> <span class="no">true</span>
+    <span class="na">enabled</span><span class="pi">:</span> <span class="no">true</span>
+  <span class="na">mac-address</span><span class="pi">:</span> <span class="s">00:00:5E:00:00:01</span>
+  <span class="na">name</span><span class="pi">:</span> <span class="s">br1</span>
+  <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+  <span class="na">type</span><span class="pi">:</span> <span class="s">linux-bridge</span>
+
+</code></pre></div></div>
+
+<h3 id="captured-states-6">captured states</h3>
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">primary-nic</span><span class="pi">:</span>
+  <span class="na">metaInfo</span><span class="pi">:</span>
+    <span class="na">time</span><span class="pi">:</span> <span class="s2">"</span><span class="s">2021-12-15T13:45:40Z"</span>
+    <span class="na">version</span><span class="pi">:</span> <span class="s2">"</span><span class="s">0"</span>
+  <span class="na">state</span><span class="pi">:</span>
+    <span class="na">interfaces</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">eth0</span>
+      <span class="na">description</span><span class="pi">:</span> <span class="s">primary</span>
+      <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
+      <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+      <span class="na">mac-address</span><span class="pi">:</span> <span class="s">00:00:5E:00:00:01</span>
+<span class="na">secondary-nic</span><span class="pi">:</span>
+  <span class="na">metaInfo</span><span class="pi">:</span>
+     <span class="na">time</span><span class="pi">:</span> <span class="s2">"</span><span class="s">2021-12-15T13:45:40Z"</span>
+     <span class="na">version</span><span class="pi">:</span> <span class="s2">"</span><span class="s">0"</span>
+  <span class="na">state</span><span class="pi">:</span>
+    <span class="na">interfaces</span><span class="pi">:</span>
+    <span class="pi">-</span> <span class="na">name</span><span class="pi">:</span> <span class="s">eth1</span>
+      <span class="na">description</span><span class="pi">:</span> <span class="s">secondary</span>
+      <span class="na">type</span><span class="pi">:</span> <span class="s">ethernet</span>
+      <span class="na">state</span><span class="pi">:</span> <span class="s">up</span>
+      <span class="na">mac-address</span><span class="pi">:</span> <span class="s">00:00:5E:00:00:02</span>
 
 </code></pre></div></div>
 
