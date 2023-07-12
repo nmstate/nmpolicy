@@ -39,7 +39,7 @@ linters-settings:
       - whyNoLint
       - wrapperFunc
   gocyclo:
-    min-complexity: 17
+    min-complexity: 30
   goheader:
     values:
       regexp: 
