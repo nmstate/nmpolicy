@@ -31,6 +31,7 @@ import (
 func TestParser(t *testing.T) {
 	testParsePath(t)
 	testParseEqFilter(t)
+	testParseNeFilter(t)
 	testParseReplace(t)
 	testParseReplaceWithPath(t)
 	testParseCapturePipeReplace(t)
@@ -38,6 +39,7 @@ func TestParser(t *testing.T) {
 	testParseBasicFailures(t)
 	testParsePathFailures(t)
 	testParseEqFilterFailure(t)
+	testParseNeFilterFailure(t)
 	testParseReplaceFailure(t)
 
 	testParserReuse(t)
@@ -188,6 +190,59 @@ func testParseEqFilterFailure(t *testing.T) {
 	runTest(t, tests)
 }
 
+func testParseNeFilterFailure(t *testing.T) {
+	var tests = []test{
+		expectError(`invalid inequality filter: missing left hand argument
+| !=0.0.0.0/0
+| ^`,
+			fromTokens(
+				nefilter(),
+				str("0.0.0.0/0"),
+				eof(),
+			),
+		),
+		expectError(`invalid inequality filter: left hand argument is not a path
+| foo!=0.0.0.0/0
+| ...^`,
+			fromTokens(
+				str("foo"),
+				nefilter(),
+				str("0.0.0.0/0"),
+				eof(),
+			),
+		),
+		expectError(`invalid inequality filter: missing right hand argument
+| routes.running.destination!=
+| ...........................^`,
+			fromTokens(
+				identity("routes"),
+				dot(),
+				identity("running"),
+				dot(),
+				identity("destination"),
+				nefilter(),
+				eof(),
+			),
+		),
+
+		expectError(`invalid inequality filter: right hand argument is not a string or identity
+| routes.running.destination!=!=
+| ............................^`,
+			fromTokens(
+				identity("routes"),
+				dot(),
+				identity("running"),
+				dot(),
+				identity("destination"),
+				nefilter(),
+				nefilter(),
+				eof(),
+			),
+		),
+	}
+	runTest(t, tests)
+}
+
 func testParseReplaceFailure(t *testing.T) {
 	var tests = []test{
 		expectError(`invalid replace: missing left hand argument
@@ -328,6 +383,83 @@ eqfilter:
 				dot(),
 				identity("next-hop-interface"),
 				eqfilter(),
+				identity("capture"),
+				dot(),
+				identity("default-gw"),
+				dot(),
+				identity("routes"),
+				dot(),
+				number(0),
+				dot(),
+				identity("next-hop-interface"),
+				eof(),
+			),
+		),
+	}
+	runTest(t, tests)
+}
+
+func testParseNeFilter(t *testing.T) {
+	var tests = []test{
+		expectAST(t, `
+pos: 26
+nefilter: 
+- pos: 0
+  identity: currentState
+- pos: 0
+  path: 
+  - pos: 0
+    identity: routes
+  - pos: 7
+    identity: running
+  - pos: 15
+    identity: destination
+- pos: 28 
+  string: 0.0.0.0/0`,
+			fromTokens(
+				identity("routes"),
+				dot(),
+				identity("running"),
+				dot(),
+				identity("destination"),
+				nefilter(),
+				str("0.0.0.0/0"),
+				eof(),
+			),
+		),
+		expectAST(t, `
+pos: 33
+nefilter:
+- pos: 0
+  identity: currentState
+- pos: 0 
+  path: 
+  - pos: 0 
+    identity: routes
+  - pos: 7
+    identity: running
+  - pos: 15
+    identity: next-hop-interface
+- pos: 35
+  path:
+  - pos: 35 
+    identity: capture
+  - pos: 43
+    identity: default-gw
+  - pos: 54
+    identity: routes
+  - pos: 61
+    number: 0
+  - pos: 63
+    identity: next-hop-interface
+`,
+			fromTokens(
+				identity("routes"),
+				dot(),
+				identity("running"),
+				dot(),
+				identity("next-hop-interface"),
+				nefilter(),
 				identity("capture"),
 				dot(),
 				identity("default-gw"),
@@ -639,6 +771,10 @@ func eof() lexer.Token {
 
 func eqfilter() lexer.Token {
 	return lexer.Token{Type: lexer.EQFILTER, Literal: "=="}
+}
+
+func nefilter() lexer.Token {
+	return lexer.Token{Type: lexer.NEFILTER, Literal: "!="}
 }
 
 func replace() lexer.Token {

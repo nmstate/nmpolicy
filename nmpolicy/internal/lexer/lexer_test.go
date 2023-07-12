@@ -40,6 +40,7 @@ func TestLexer(t *testing.T) {
 	testLinuxBridgeAtDefaultGwScenario(t)
 }
 
+//nolint:dupl
 func testBasicExpressions(t *testing.T) {
 	t.Run("basic expressions", func(t *testing.T) {
 		runTest(t, []test{
@@ -97,7 +98,7 @@ func testBasicExpressions(t *testing.T) {
 				{47, lexer.IDENTITY, "doo3"},
 				{50, lexer.EOF, ""}},
 			}},
-			{" . foo1.dar1:=foo2 . dar2 ... moo3+boo3|doo3 == := :=", expected{tokens: []lexer.Token{
+			{" . foo1.dar1:=foo2 . dar2 ... moo3+boo3|doo3 == := := !=", expected{tokens: []lexer.Token{
 				{1, lexer.DOT, "."},
 				{3, lexer.IDENTITY, "foo1"},
 				{7, lexer.DOT, "."},
@@ -117,7 +118,8 @@ func testBasicExpressions(t *testing.T) {
 				{45, lexer.EQFILTER, "=="},
 				{48, lexer.REPLACE, ":="},
 				{51, lexer.REPLACE, ":="},
-				{52, lexer.EOF, ""}},
+				{54, lexer.NEFILTER, "!="},
+				{55, lexer.EOF, ""}},
 			}},
 			{"foo1.3|foo2", expected{tokens: []lexer.Token{
 				{0, lexer.IDENTITY, "foo1"},

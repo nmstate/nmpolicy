@@ -140,6 +140,7 @@ func TestFilter(t *testing.T) {
 		testFilterWithInvalidInputSource(t)
 		testFilterWithInvalidTypeInSource(t)
 		testFilterBadPath(t)
+		testNeFilter(t)
 
 		testReplaceCurrentState(t)
 		testReplaceCapturedState(t)
@@ -177,6 +178,45 @@ default-gw:
       - destination: 0.0.0.0/0
         next-hop-address: 192.168.100.1
         next-hop-interface: eth1
+        table-id: 254
+`,
+		}
+		runTest(t, &testToRun)
+	})
+}
+
+func testNeFilter(t *testing.T) {
+	t.Run("Filter map with inequality, list on second path identity", func(t *testing.T) {
+		testToRun := test{
+			captureASTPool: `
+non-default-gw:
+  nefilter:
+  - pos: 2
+    identity: currentState
+  - pos: 3
+    path:
+    - pos: 4
+      identity: routes
+    - pos: 5
+      identity: running
+    - pos: 6
+      identity: destination
+  - pos: 7
+    string: 0.0.0.0/0
+`,
+
+			expectedCapturedStates: `
+non-default-gw:
+  state:
+    routes:
+      running:
+      - destination: 1.1.1.0/24
+        next-hop-address: 192.168.100.1
+        next-hop-interface: eth1
+        table-id: 254
+      - destination: 2.2.2.0/24
+        next-hop-address: 192.168.200.1
+        next-hop-interface: eth2
         table-id: 254
 `,
 		}
